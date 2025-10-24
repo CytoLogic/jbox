@@ -1,0 +1,19 @@
+# MiniShell grammar for BNFC (C backend)
+comment "/*" "*/" ;
+comment "//" "\n" ;
+token Word (letter (letter | digit | [._/\-])*) ;
+entry Input ;
+StartInput. Input ::= ListJob ;
+OneJobFG. Job ::= CommandLine ;
+OneJobBG. Job ::= CommandLine "&" ;
+separator nonempty Job ";" ListJob ;
+MkCmdLine. CommandLine ::= Pipeline OptRedir ;
+NoRedir. OptRedir ::= ;
+InOutRedir. OptRedir ::= "<" Word ">" Word ;
+OutInRedir. OptRedir ::= ">" Word "<" Word ;
+OutRedir. OptRedir ::= ">" Word ;
+InRedir. OptRedir ::= "<" Word ;
+Single. Pipeline ::= CommandPart ;
+Pipe. Pipeline ::= CommandPart "|" Pipeline ;
+Cmd. CommandPart ::= Word ListWord ;
+separator Word " " ListWord ;
