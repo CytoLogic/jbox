@@ -6,6 +6,7 @@ all:
 	$(COMPILE)
 
 jbox:
+	mkdir -p bin/
 	$(COMPILE) -o bin/jbox src/jbox.c src/jsh.c src/utils/*
 	ln -s jbox bin/cat
 	ln -s jbox bin/cp
