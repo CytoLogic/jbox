@@ -1,0 +1,3 @@
+git: true
+read: [CONVENTIONS.md]
+watch-files: true
