@@ -6,7 +6,7 @@ all:
 	$(COMPILE)
 
 jbox:
-	$(COMPILE) -o bin/jbox src/jbox.c src/utils/*
+	$(COMPILE) -o bin/jbox src/jbox.c src/jsh.c src/utils/*
 	ln -s jbox bin/cat
 	ln -s jbox bin/cp
 	ln -s jbox bin/echo

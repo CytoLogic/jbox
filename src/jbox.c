@@ -1,4 +1,5 @@
 #include <jbox.h>
+#include "jsh.h"
 
 
 typedef int (*CmdFunc)(int, char *[]);
@@ -25,33 +26,33 @@ CmdEntry cmd_table[] = {
 
 
 int cmd_cmp_func(const void *key, const void *cmd_entry) {
-    return strcmp(key, ((CmdEntry *)cmd_entry)->name);
+  return strcmp(key, ((CmdEntry *)cmd_entry)->name);
 }
 
 int main(int argc, char *argv[]) {
-    char *cmd = argv[0];
+  char *cmd = argv[0];
 
-    // get addr after slash
-    char *after_slash = strrchr(cmd, '/') + 1;
+  // get addr after slash
+  char *after_slash = strrchr(cmd, '/') + 1;
 
-    // move target substring forward
-    memmove(cmd, after_slash, strlen(after_slash) + 1);
+  // move target substring forward
+  memmove(cmd, after_slash, strlen(after_slash) + 1);
 
-    if (strcmp(cmd, "jbox")==0) {
-        // run the shell
-        printf("welcome to jbox!\n");
-        exit(EXIT_SUCCESS);
-    }
+  if (strcmp(cmd, "jbox")==0) {
+    printf("welcome to jbox!\n");
+    jsh_main();
+    exit(EXIT_SUCCESS);
+  }
 
-    // get cmd_func
-    size_t cmd_entry_sz = sizeof(CmdEntry);
-    size_t num_cmds = sizeof(cmd_table) / cmd_entry_sz;
-    CmdEntry *cmd_entry = bsearch(cmd, cmd_table, num_cmds, cmd_entry_sz, cmd_cmp_func);
+  // get cmd_func
+  size_t cmd_entry_sz = sizeof(CmdEntry);
+  size_t num_cmds = sizeof(cmd_table) / cmd_entry_sz;
+  CmdEntry *cmd_entry = bsearch(cmd, cmd_table, num_cmds, cmd_entry_sz, cmd_cmp_func);
 
-    if (cmd_entry == NULL) {
-        printf("invalid cmd!\n");
-        exit(EXIT_FAILURE);
-    }
+  if (cmd_entry == NULL) {
+    printf("invalid cmd!\n");
+    exit(EXIT_FAILURE);
+  }
 
-    cmd_entry->cmd_func(argc, argv);
+  cmd_entry->cmd_func(argc, argv);
 }
