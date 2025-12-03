@@ -1,0 +1,37 @@
+-- jsh grammar
+
+comment "/*" "*/" ;
+comment "//" "\n" ;
+
+entrypoints Input ;
+
+separator nonempty Job ";" ;
+StartInput. Input ::= [Job] ;
+
+FGJob. Job ::= CommandLine ;
+BGJob. Job ::= CommandLine "&" ;
+
+-- assignment stores stdout of pipeline into variable reference
+AssignJob. Job ::= VarRef "=" CommandLine ;
+
+CmdLine. CommandLine ::= Pipeline OptInRedir OptOutRedir;
+
+SingleCmd. Pipeline ::= CommandPart ;
+PipeCmd. Pipeline ::= CommandPart "|" Pipeline ;
+
+-- words
+token Word (letter (letter | digit | '.' | '_' | '/' | '\\' | '-')*) ;
+token VarRef ('$' (letter | digit | '.' | '_' | '/' | '\\' | '-')+) ;
+
+separator nonempty LitOrVarWord " " ;
+Cmd. CommandPart ::= [LitOrVarWord] ;
+
+-- redirection
+NoInRedir. OptInRedir ::= ;
+InRedir. OptInRedir ::= "<" LitOrVarWord ;
+
+NoOutRedir. OptOutRedir ::= ;
+OutRedir. OptOutRedir ::= ">" LitOrVarWord ;
+
+LitWord . LitOrVarWord ::= Word ;
+VarWord . LitOrVarWord ::= VarRef ;

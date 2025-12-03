@@ -17,7 +17,7 @@ ARGTABLE3_SRC := $(ARGTABLE3_DIST)/argtable3.c
 ARGTABLE3_HDR := $(ARGTABLE3_DIST)/argtable3.h
 
 BNFC_GEN := $(PROJECT_ROOT)/gen/bnfc
-BNFC_GRAMMAR := $(SRC_DIR)/parser/Grammar.cf
+BNFC_GRAMMAR := $(SRC_DIR)/shell-grammar/Grammar.cf
 
 all:
 	$(COMPILE)
@@ -41,11 +41,11 @@ $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 argtable3-dist:
 	@if [ ! -f $(ARGTABLE3_SRC) ]; then \
 		cd $(ARGTABLE3_DIR)/tools && ./build dist; \
-		cd ../../..; \
 	fi
 
 bnfc:
 	bnfc -m --c -o $(BNFC_GEN) $(BNFC_GRAMMAR)
+	cd $(BNFC_GEN) && make
 
 ast-traverser:
 	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/ast-traverser.c
