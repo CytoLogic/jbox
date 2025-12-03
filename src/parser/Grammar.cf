@@ -1,4 +1,4 @@
--- jbox shell grammar
+-- jsh grammar
 comment "/*" "*/" ;
 comment "//" "\n" ;
 
