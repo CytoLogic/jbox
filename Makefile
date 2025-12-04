@@ -1,6 +1,7 @@
 # Compiler Settings
 CC = gcc
-CFLAGS = -Isrc -std=gnu23 -Wall -Werror -ggdb3 -fsanitize=address,undefined
+CFLAGS = -Isrc -Igen/bnfc -std=gnu23 -Wall -Werror -ggdb3 -fsanitize=address,undefined
+#LDFLAGS = 
 COMPILE = $(CC) $(CFLAGS)
 
 # Directories
@@ -18,13 +19,20 @@ ARGTABLE3_HDR := $(ARGTABLE3_DIST)/argtable3.h
 
 BNFC_GEN := $(PROJECT_ROOT)/gen/bnfc
 BNFC_GRAMMAR := $(SRC_DIR)/shell-grammar/Grammar.cf
+BNFC_HDRS := $(BNFC_GEN)/Absyn.h \
+			 $(BNFC_GEN)/Parser.h \
+			 $(BNFC_GEN)/Printer.h
 
+BNFC_OBJS := $(BNFC_GEN)/Absyn.o \
+			 $(BNFC_GEN)/Parser.o \
+			 $(BNFC_GEN)/Lexer.o \
+			 $(BNFC_GEN)/Printer.o
 all:
 	$(COMPILE)
 
 jbox:
 	mkdir -p bin/
-	$(COMPILE) -o $(BIN_DIR)/jbox /jbox src/jbox.c src/jsh.c src/utils/*
+	$(COMPILE) src/jbox.c src/jsh.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 	ln -s jbox bin/cat
 	ln -s jbox bin/cp
 	ln -s jbox bin/echo
@@ -50,6 +58,8 @@ bnfc:
 ast-traverser:
 	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/ast-traverser.c
 	cp -b $(BNFC_GEN)/Skeleton.h $(AST_DIR)/ast-traverser.h
+	sed -i 's/Skeleton.h/ast-traverser.h/g' $(AST_DIR)/ast-traverser.c
+	sed -i 's/SKELETON_HEADER/AST-TRAVERSER/g' $(AST_DIR)/ast-traverser.h
 
 standalone:
 	find src/utils-standalone -name "*.c"

@@ -2,13 +2,13 @@
 
 /*** Visitor Traversal Skeleton. ***/
 /* This traverses the abstract syntax tree.
-   To use, copy Skeleton.h and Skeleton.c to
+   To use, copy ast-traverser.h and Skeleton.c to
    new files. */
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "Skeleton.h"
+#include "ast-traverser.h"
 
 void visitListJob(ListJob listjob)
 {
@@ -47,6 +47,11 @@ void visitJob(Job p)
     /* Code for BGJob Goes Here */
     visitCommandLine(p->u.bGJob_.commandline_);
     break;
+  case is_AssignJob:
+    /* Code for AssignJob Goes Here */
+    visitVariableWord(p->u.assignJob_.variableword_);
+    visitCommandLine(p->u.assignJob_.commandline_);
+    break;
 
   default:
     fprintf(stderr, "Error: bad kind field when printing Job!\n");
@@ -58,10 +63,11 @@ void visitCommandLine(CommandLine p)
 {
   switch(p->kind)
   {
-  case is_CmdLine:
-    /* Code for CmdLine Goes Here */
-    visitPipeline(p->u.cmdLine_.pipeline_);
-    visitOptRedir(p->u.cmdLine_.optredir_);
+  case is_FullCommandLine:
+    /* Code for FullCommandLine Goes Here */
+    visitCommandPart(p->u.fullCommandLine_.commandpart_);
+    visitOptInRedir(p->u.fullCommandLine_.optinredir_);
+    visitOptOutRedir(p->u.fullCommandLine_.optoutredir_);
     break;
 
   default:
@@ -70,22 +76,22 @@ void visitCommandLine(CommandLine p)
   }
 }
 
-void visitPipeline(Pipeline p)
+void visitCommandPart(CommandPart p)
 {
   switch(p->kind)
   {
-  case is_SingleCmd:
-    /* Code for SingleCmd Goes Here */
-    visitCommandPart(p->u.singleCmd_.commandpart_);
+  case is_SingleCommand:
+    /* Code for SingleCommand Goes Here */
+    visitCommand(p->u.singleCommand_.command_);
     break;
-  case is_PipeCmd:
-    /* Code for PipeCmd Goes Here */
-    visitCommandPart(p->u.pipeCmd_.commandpart_);
-    visitPipeline(p->u.pipeCmd_.pipeline_);
+  case is_PipelineCommand:
+    /* Code for PipelineCommand Goes Here */
+    visitCommand(p->u.pipelineCommand_.command_);
+    visitCommandPart(p->u.pipelineCommand_.commandpart_);
     break;
 
   default:
-    fprintf(stderr, "Error: bad kind field when printing Pipeline!\n");
+    fprintf(stderr, "Error: bad kind field when printing CommandPart!\n");
     exit(1);
   }
 }
@@ -100,41 +106,27 @@ void visitListWord(ListWord listword)
   }
 }
 
-void visitCommandPart(CommandPart p)
+void visitCommand(Command p)
 {
   switch(p->kind)
   {
-  case is_Cmd:
-    /* Code for Cmd Goes Here */
-    visitListWord(p->u.cmd_.listword_);
+  case is_FullCommand:
+    /* Code for FullCommand Goes Here */
+    visitListWord(p->u.fullCommand_.listword_);
     break;
 
   default:
-    fprintf(stderr, "Error: bad kind field when printing CommandPart!\n");
+    fprintf(stderr, "Error: bad kind field when printing Command!\n");
     exit(1);
   }
 }
 
-void visitOptRedir(OptRedir p)
+void visitOptInRedir(OptInRedir p)
 {
   switch(p->kind)
   {
-  case is_NoRedir:
-    /* Code for NoRedir Goes Here */
-    break;
-  case is_InOutRedir:
-    /* Code for InOutRedir Goes Here */
-    visitWord(p->u.inOutRedir_.word_1);
-    visitWord(p->u.inOutRedir_.word_2);
-    break;
-  case is_OutInRedir:
-    /* Code for OutInRedir Goes Here */
-    visitWord(p->u.outInRedir_.word_1);
-    visitWord(p->u.outInRedir_.word_2);
-    break;
-  case is_OutRedir:
-    /* Code for OutRedir Goes Here */
-    visitWord(p->u.outRedir_.word_);
+  case is_NoInRedir:
+    /* Code for NoInRedir Goes Here */
     break;
   case is_InRedir:
     /* Code for InRedir Goes Here */
@@ -142,14 +134,63 @@ void visitOptRedir(OptRedir p)
     break;
 
   default:
-    fprintf(stderr, "Error: bad kind field when printing OptRedir!\n");
+    fprintf(stderr, "Error: bad kind field when printing OptInRedir!\n");
+    exit(1);
+  }
+}
+
+void visitOptOutRedir(OptOutRedir p)
+{
+  switch(p->kind)
+  {
+  case is_NoOutRedir:
+    /* Code for NoOutRedir Goes Here */
+    break;
+  case is_OutRedir:
+    /* Code for OutRedir Goes Here */
+    visitWord(p->u.outRedir_.word_);
+    break;
+
+  default:
+    fprintf(stderr, "Error: bad kind field when printing OptOutRedir!\n");
     exit(1);
   }
 }
 
 void visitWord(Word p)
 {
-  /* Code for Word Goes Here */
+  switch(p->kind)
+  {
+  case is_PlainWord:
+    /* Code for PlainWord Goes Here */
+    visitPlainWord(p->u.plainWord_.plainword_);
+    break;
+  case is_VarWord:
+    /* Code for VarWord Goes Here */
+    visitVariableWord(p->u.varWord_.variableword_);
+    break;
+  case is_StringWord:
+    /* Code for StringWord Goes Here */
+    visitStringWord(p->u.stringWord_.stringword_);
+    break;
+
+  default:
+    fprintf(stderr, "Error: bad kind field when printing Word!\n");
+    exit(1);
+  }
+}
+
+void visitPlainWord(PlainWord p)
+{
+  /* Code for PlainWord Goes Here */
+}
+void visitVariableWord(VariableWord p)
+{
+  /* Code for VariableWord Goes Here */
+}
+void visitStringWord(StringWord p)
+{
+  /* Code for StringWord Goes Here */
 }
 void visitIdent(Ident i)
 {

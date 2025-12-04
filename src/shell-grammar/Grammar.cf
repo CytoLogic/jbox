@@ -1,5 +1,13 @@
 -- jsh grammar
 
+-- tokens
+token PlainWord (letter (letter | digit | '.' | '_' | '/' | '\\' | '-')*) ;
+
+token VariableWord ('$' (letter | digit | '.' | '_' | '/' | '\\' | '-')+) ;
+
+-- token StringWord ('`' (letter | digit | '.' | '_' | '/' | '\\' | '-')* '`') ;   
+token StringWord ('`' ( (char - '`')* | ('\\' '`') )* '`') ;   
+
 comment "/*" "*/" ;
 comment "//" "\n" ;
 
@@ -12,26 +20,21 @@ FGJob. Job ::= CommandLine ;
 BGJob. Job ::= CommandLine "&" ;
 
 -- assignment stores stdout of pipeline into variable reference
-AssignJob. Job ::= VarRef "=" CommandLine ;
+AssignJob. Job ::= VariableWord "=" CommandLine ;
 
-CmdLine. CommandLine ::= Pipeline OptInRedir OptOutRedir;
+FullCommandLine. CommandLine ::= CommandPart OptInRedir OptOutRedir;
 
-SingleCmd. Pipeline ::= CommandPart ;
-PipeCmd. Pipeline ::= CommandPart "|" Pipeline ;
+SingleCommand. CommandPart ::= Command ;
+PipelineCommand. CommandPart ::= Command "|" CommandPart ;
 
--- words
-token Word (letter (letter | digit | '.' | '_' | '/' | '\\' | '-')*) ;
-token VarRef ('$' (letter | digit | '.' | '_' | '/' | '\\' | '-')+) ;
+separator nonempty Word " " ;
+FullCommand. Command ::= [Word] ;
 
-separator nonempty LitOrVarWord " " ;
-Cmd. CommandPart ::= [LitOrVarWord] ;
-
--- redirection
 NoInRedir. OptInRedir ::= ;
-InRedir. OptInRedir ::= "<" LitOrVarWord ;
-
+InRedir. OptInRedir ::= "<" Word ;
 NoOutRedir. OptOutRedir ::= ;
-OutRedir. OptOutRedir ::= ">" LitOrVarWord ;
+OutRedir. OptOutRedir ::= ">" Word ;
 
-LitWord . LitOrVarWord ::= Word ;
-VarWord . LitOrVarWord ::= VarRef ;
+PlainWord. Word ::= PlainWord ;
+VarWord. Word ::= VariableWord ;
+StringWord. Word ::= StringWord ;
