@@ -1,0 +1,861 @@
+Input: ls
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  
+
+
+
+Input: echo hello
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  hello  
+
+
+
+Input: cat file.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file.txt  
+
+
+
+Input: pwd
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "pwd")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+pwd  
+
+
+
+Input: cp source.txt dest.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cp"), (Wrd "source.txt"), (Wrd "dest.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cp  source.txt  dest.txt  
+
+
+
+Input: mv old.txt new.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "mv"), (Wrd "old.txt"), (Wrd "new.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+mv  old.txt  new.txt  
+
+
+
+Input: echo hello world from shell
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello"), (Wrd "world"), (Wrd "from"), (Wrd "shell")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  hello  world  from  shell  
+
+
+
+Input: cat file1.txt file2.txt file3.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file1.txt"), (Wrd "file2.txt"), (Wrd "file3.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file1.txt  file2.txt  file3.txt  
+
+
+
+Input: echo $HOME
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Var "$HOME")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  $HOME  
+
+
+
+Input: cat $FILE
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Var "$FILE")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  $FILE  
+
+
+
+Input: ls $DIR
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls"), (Var "$DIR")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  $DIR  
+
+
+
+Input: echo $USER $HOME $PATH
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Var "$USER"), (Var "$HOME"), (Var "$PATH")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  $USER  $HOME  $PATH  
+
+
+
+Input: echo "hello world"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Str ""hello world"")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  "hello world"  
+
+
+
+Input: cat "my file.txt"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Str ""my file.txt"")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  "my file.txt"  
+
+
+
+Input: echo "The path is: $HOME"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Str ""The path is: $HOME"")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  "The path is: $HOME"  
+
+
+
+Input: mkdir "new folder"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "mkdir"), (Str ""new folder"")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+mkdir  "new folder"  
+
+
+
+Input: echo hello "world" $USER
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello"), (Str ""world""), (Var "$USER")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  hello  "world"  $USER  
+
+
+
+Input: cat file.txt "other file.txt" $MYFILE
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt"), (Str ""other file.txt""), (Var "$MYFILE")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file.txt  "other file.txt"  $MYFILE  
+
+
+
+Input: ls | cat
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "ls")]) (SnglCmd (CmdUnit [(Wrd "cat")]))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  | cat  
+
+
+
+Input: echo hello | cat | cat
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")]) (PipeCmd (CmdUnit [(Wrd "cat")]) (SnglCmd (CmdUnit [(Wrd "cat")])))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  hello  | cat  | cat  
+
+
+
+Input: cat file.txt | grep pattern | sort
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")]) (PipeCmd (CmdUnit [(Wrd "grep"), (Wrd "pattern")]) (SnglCmd (CmdUnit [(Wrd "sort")])))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file.txt  | grep  pattern  | sort  
+
+
+
+Input: ls -la | grep txt | wc
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "ls"), (Wrd "-la")]) (PipeCmd (CmdUnit [(Wrd "grep"), (Wrd "txt")]) (SnglCmd (CmdUnit [(Wrd "wc")])))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  -la  | grep  txt  | wc  
+
+
+
+Input: cat < input.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat")])) (InRedir (Wrd "input.txt")) NoOutRedir))])
+
+[Linearized Tree]
+cat  < input.txt 
+
+
+
+Input: sort < data.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "sort")])) (InRedir (Wrd "data.txt")) NoOutRedir))])
+
+[Linearized Tree]
+sort  < data.txt 
+
+
+
+Input: wc < file.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "wc")])) (InRedir (Wrd "file.txt")) NoOutRedir))])
+
+[Linearized Tree]
+wc  < file.txt 
+
+
+
+Input: ls > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+ls  > output.txt 
+
+
+
+Input: echo hello > file.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")])) NoInRedir (OutRedir (Wrd "file.txt"))))])
+
+[Linearized Tree]
+echo  hello  > file.txt 
+
+
+
+Input: cat input.txt > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "input.txt")])) NoInRedir (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+cat  input.txt  > output.txt 
+
+
+
+Input: cat < input.txt > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat")])) (InRedir (Wrd "input.txt")) (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+cat  < input.txt > output.txt 
+
+
+
+Input: sort < data.txt > sorted.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "sort")])) (InRedir (Wrd "data.txt")) (OutRedir (Wrd "sorted.txt"))))])
+
+[Linearized Tree]
+sort  < data.txt > sorted.txt 
+
+
+
+Input: sleep 100 &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "sleep"), (Wrd "100")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+sleep  100  & 
+
+
+
+Input: cat file.txt &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file.txt  & 
+
+
+
+Input: ls | grep txt &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "ls")]) (SnglCmd (CmdUnit [(Wrd "grep"), (Wrd "txt")]))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  | grep  txt  & 
+
+
+
+Input: VAR = echo hello
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "VAR" (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+VAR = echo  hello  
+
+
+
+Input: PATH = cat file.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "PATH" (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+PATH = cat  file.txt  
+
+
+
+Input: RESULT = ls | grep txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "RESULT" (CmdLine (PipeCmd (CmdUnit [(Wrd "ls")]) (SnglCmd (CmdUnit [(Wrd "grep"), (Wrd "txt")]))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+RESULT = ls  | grep  txt  
+
+
+
+Input: OUTPUT = cat < input.txt > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "OUTPUT" (CmdLine (SnglCmd (CmdUnit [(Wrd "cat")])) (InRedir (Wrd "input.txt")) (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+OUTPUT = cat  < input.txt > output.txt 
+
+
+
+Input: @ what is the weather
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "what"), (Wrd "is"), (Wrd "the"), (Wrd "weather")]))])
+
+[Linearized Tree]
+@ what  is  the  weather  
+
+
+
+Input: @ explain this code
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "explain"), (Wrd "this"), (Wrd "code")]))])
+
+[Linearized Tree]
+@ explain  this  code  
+
+
+
+Input: @ help me debug
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "help"), (Wrd "me"), (Wrd "debug")]))])
+
+[Linearized Tree]
+@ help  me  debug  
+
+
+
+Input: @! create a file
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob (FAIQ [(Wrd "create"), (Wrd "a"), (Wrd "file")]))])
+
+[Linearized Tree]
+@! create  a  file  
+
+
+
+Input: @! list all processes
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob (FAIQ [(Wrd "list"), (Wrd "all"), (Wrd "processes")]))])
+
+[Linearized Tree]
+@! list  all  processes  
+
+
+
+Input: @! find large files
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob (FAIQ [(Wrd "find"), (Wrd "large"), (Wrd "files")]))])
+
+[Linearized Tree]
+@! find  large  files  
+
+
+
+Input: ls; pwd
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "pwd")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls;
+pwd  
+
+
+
+Input: echo hello; cat file.txt; ls
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")])) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")])) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  hello;
+cat  file.txt;
+ls  
+
+
+
+Input: ls > out.txt; cat out.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir (OutRedir (Wrd "out.txt")))), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "out.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  > out.txt;
+cat  out.txt  
+
+
+
+Input: X = echo test; echo $X
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "X" (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Wrd "test")])) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Var "$X")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+X = echo  test;
+echo  $X  
+
+
+
+Input: cat file1.txt file2.txt | grep "pattern" | sort > results.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "cat"), (Wrd "file1.txt"), (Wrd "file2.txt")]) (PipeCmd (CmdUnit [(Wrd "grep"), (Str ""pattern"")]) (SnglCmd (CmdUnit [(Wrd "sort")])))) NoInRedir (OutRedir (Wrd "results.txt"))))])
+
+[Linearized Tree]
+cat  file1.txt  file2.txt  | grep  "pattern"  | sort  > results.txt 
+
+
+
+Input: DATA = cat | sort; echo $DATA < input.txt > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "DATA" (CmdLine (PipeCmd (CmdUnit [(Wrd "cat")]) (SnglCmd (CmdUnit [(Wrd "sort")]))) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Var "$DATA")])) (InRedir (Wrd "input.txt")) (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+DATA = cat  | sort;
+echo  $DATA  < input.txt > output.txt 
+
+
+
+Input: ls -la | grep "\.txt" | wc -l &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "ls"), (Wrd "-la")]) (PipeCmd (CmdUnit [(Wrd "grep"), (Str ""\.txt"")]) (SnglCmd (CmdUnit [(Wrd "wc"), (Wrd "-l")])))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  -la  | grep  "\.txt"  | wc  -l  & 
+
+
+
+Input: @ analyze this file; cat analysis.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "analyze"), (Wrd "this"), (Wrd "file")])), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat"), (Wrd "analysis.txt")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+@ analyze  this  file;
+cat  analysis.txt  
+
+
+
+Input: echo "Starting process"; sleep 10 &; echo "Done"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Str ""Starting process"")])) NoInRedir NoOutRedir)), (BGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "sleep"), (Wrd "10")])) NoInRedir NoOutRedir)), (FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Str ""Done"")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  "Starting process";
+sleep  10  &;
+echo  "Done"  
+
+
+
+Input: cat file.txt | grep pattern > results.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")]) (SnglCmd (CmdUnit [(Wrd "grep"), (Wrd "pattern")]))) NoInRedir (OutRedir (Wrd "results.txt"))))])
+
+[Linearized Tree]
+cat  file.txt  | grep  pattern  > results.txt 
+
+
+
+Input: sort | uniq | wc < input.txt > count.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "sort")]) (PipeCmd (CmdUnit [(Wrd "uniq")]) (SnglCmd (CmdUnit [(Wrd "wc")])))) (InRedir (Wrd "input.txt")) (OutRedir (Wrd "count.txt"))))])
+
+[Linearized Tree]
+sort  | uniq  | wc  < input.txt > count.txt 
+
+
+
+Input: echo hello | cat | cat > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "echo"), (Wrd "hello")]) (PipeCmd (CmdUnit [(Wrd "cat")]) (SnglCmd (CmdUnit [(Wrd "cat")])))) NoInRedir (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+echo  hello  | cat  | cat  > output.txt 
+
+
+
+Input: RESULT = cat file.txt | grep pattern
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "RESULT" (CmdLine (PipeCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")]) (SnglCmd (CmdUnit [(Wrd "grep"), (Wrd "pattern")]))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+RESULT = cat  file.txt  | grep  pattern  
+
+
+
+Input: SORTED = sort < data.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "SORTED" (CmdLine (SnglCmd (CmdUnit [(Wrd "sort")])) (InRedir (Wrd "data.txt")) NoOutRedir))])
+
+[Linearized Tree]
+SORTED = sort  < data.txt 
+
+
+
+Input: OUTPUT = ls | wc > count.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "OUTPUT" (CmdLine (PipeCmd (CmdUnit [(Wrd "ls")]) (SnglCmd (CmdUnit [(Wrd "wc")]))) NoInRedir (OutRedir (Wrd "count.txt"))))])
+
+[Linearized Tree]
+OUTPUT = ls  | wc  > count.txt 
+
+
+
+Input: cat file.txt | grep pattern &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "cat"), (Wrd "file.txt")]) (SnglCmd (CmdUnit [(Wrd "grep"), (Wrd "pattern")]))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+cat  file.txt  | grep  pattern  & 
+
+
+
+Input: ls | sort | uniq &
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(BGJob (CmdLine (PipeCmd (CmdUnit [(Wrd "ls")]) (PipeCmd (CmdUnit [(Wrd "sort")]) (SnglCmd (CmdUnit [(Wrd "uniq")])))) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+ls  | sort  | uniq  & 
+
+
+
+Input: @ explain the file main.c
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "explain"), (Wrd "the"), (Wrd "file"), (Wrd "main.c")]))])
+
+[Linearized Tree]
+@ explain  the  file  main.c  
+
+
+
+Input: @! generate a function to cat all of the files containing $VAR
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob (FAIQ [(Wrd "generate"), (Wrd "a"), (Wrd "function"), (Wrd "to"), (Wrd "cat"), (Wrd "all"), (Wrd "of"), (Wrd "the"), (Wrd "files"), (Wrd "containing"), (Var "$VAR")]))])
+
+[Linearized Tree]
+@! generate  a  function  to  cat  all  of  the  files  containing  $VAR  
+
+
+
+Input: @! generate a function to cat all of the files containing "meow"
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob (FAIQ [(Wrd "generate"), (Wrd "a"), (Wrd "function"), (Wrd "to"), (Wrd "cat"), (Wrd "all"), (Wrd "of"), (Wrd "the"), (Wrd "files"), (Wrd "containing"), (Str ""meow"")]))])
+
+[Linearized Tree]
+@! generate  a  function  to  cat  all  of  the  files  containing  "meow"  
+
+
+
+Input: @ what does this error mean: segfault
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob (FAIQ [(Wrd "what"), (Wrd "does"), (Wrd "this"), (Wrd "error"), (Wrd "mean:"), (Wrd "segfault")]))])
+
+[Linearized Tree]
+@ what  does  this  error  mean:  segfault  
+
+
+
+Input: echo
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  
+
+
+
+Input: cat < input.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "cat")])) (InRedir (Wrd "input.txt")) NoOutRedir))])
+
+[Linearized Tree]
+cat  < input.txt 
+
+
+
+Input: ls > output.txt
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "ls")])) NoInRedir (OutRedir (Wrd "output.txt"))))])
+
+[Linearized Tree]
+ls  > output.txt 
+
+
+
+Input: echo ""
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(FGJob (CmdLine (SnglCmd (CmdUnit [(Wrd "echo"), (Str """")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+echo  ""  
+
+
+
+Input: EMPTY = echo
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AssigJob "EMPTY" (CmdLine (SnglCmd (CmdUnit [(Wrd "echo")])) NoInRedir NoOutRedir))])
+
+[Linearized Tree]
+EMPTY = echo  
+
+
+
+Input: @
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIChatJob EAIQ)])
+
+[Linearized Tree]
+@ 
+
+
+
+Input: @!
+Output: 
+Parse Successful!
+
+[Abstract Syntax]
+(In [(AIExecJob EAIQ)])
+
+[Linearized Tree]
+@! 
+
+
+

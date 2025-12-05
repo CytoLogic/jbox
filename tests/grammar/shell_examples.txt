@@ -1,0 +1,71 @@
+ls
+echo hello
+cat file.txt
+pwd
+cp source.txt dest.txt
+mv old.txt new.txt
+echo hello world from shell
+cat file1.txt file2.txt file3.txt
+echo $HOME
+cat $FILE
+ls $DIR
+echo $USER $HOME $PATH
+echo "hello world"
+cat "my file.txt"
+echo "The path is: $HOME"
+mkdir "new folder"
+echo hello "world" $USER
+cat file.txt "other file.txt" $MYFILE
+ls | cat
+echo hello | cat | cat
+cat file.txt | grep pattern | sort
+ls -la | grep txt | wc
+cat < input.txt
+sort < data.txt
+wc < file.txt
+ls > output.txt
+echo hello > file.txt
+cat input.txt > output.txt
+cat < input.txt > output.txt
+sort < data.txt > sorted.txt
+sleep 100 &
+cat file.txt &
+ls | grep txt &
+VAR = echo hello
+PATH = cat file.txt
+RESULT = ls | grep txt
+OUTPUT = cat < input.txt > output.txt
+@ what is the weather
+@ explain this code
+@ help me debug
+@! create a file
+@! list all processes
+@! find large files
+ls; pwd
+echo hello; cat file.txt; ls
+ls > out.txt; cat out.txt
+X = echo test; echo $X
+cat file1.txt file2.txt | grep "pattern" | sort > results.txt
+DATA = cat | sort; echo $DATA < input.txt > output.txt
+ls -la | grep "\.txt" | wc -l &
+@ analyze this file; cat analysis.txt
+echo "Starting process"; sleep 10 &; echo "Done"
+cat file.txt | grep pattern > results.txt
+sort | uniq | wc < input.txt > count.txt
+echo hello | cat | cat > output.txt
+RESULT = cat file.txt | grep pattern
+SORTED = sort < data.txt
+OUTPUT = ls | wc > count.txt
+cat file.txt | grep pattern &
+ls | sort | uniq &
+@ explain the file main.c
+@! generate a function to cat all of the files containing $VAR
+@! generate a function to cat all of the files containing "meow"
+@ what does this error mean: segfault
+echo
+cat < input.txt
+ls > output.txt
+echo ""
+EMPTY = echo
+@
+@!
