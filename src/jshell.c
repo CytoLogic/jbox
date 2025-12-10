@@ -5,7 +5,7 @@
 #include "Printer.h"
 
 
-int jsh_main(void) {
+int jshell_main(void) {
   char line[1024];
   Input parse_tree;
 

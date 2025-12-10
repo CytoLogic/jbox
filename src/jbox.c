@@ -1,5 +1,5 @@
 #include <jbox.h>
-#include "jsh.h"
+#include "jshell.h"
 
 
 typedef int (*CmdFunc)(int, char *[]);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   if (strcmp(cmd, "jbox")==0) {
     printf("welcome to jbox!\n");
-    jsh_main();
+    jshell_main();
     exit(EXIT_SUCCESS);
   }
 

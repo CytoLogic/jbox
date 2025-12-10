@@ -32,7 +32,7 @@ all:
 
 jbox:
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c src/jsh.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/jbox.c src/jshell.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 	ln -s jbox bin/cat
 	ln -s jbox bin/cp
 	ln -s jbox bin/echo
