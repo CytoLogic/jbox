@@ -3,6 +3,7 @@
 #include "Parser.h"
 #include "Absyn.h"
 #include "Printer.h"
+#include "ast/ast_traverser.h"
 
 
 int jshell_main(void) {
@@ -16,6 +17,8 @@ int jshell_main(void) {
     parse_tree = psInput(line);
     
     printf("%s\n", showInput(parse_tree));
+
+    visitInput(parse_tree);
 
     free_Input(parse_tree);
   }
