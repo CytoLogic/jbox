@@ -1,8 +1,11 @@
--- jsh grammar
+-- jshell grammar
 
-token WordToken ( (char - ('$' | '=' | ';' | '"' | ' ' | '\t' | '\n' | '\r') )+ | ('\\' '"')+ | ('\\' '$')+ | ('\\' '=')+| ('\\' ';')+)+ ;
-token StringToken ('"' ( (char - '"') | ('\\' '"') )* '"') ; 
+token AIQueryToken ('@' ( char - ('!') ) (char)* ) ;
+token AIExecToken (('@' '!' ) ( char )* ) ;
+token ExpansionStringToken ('"' ( (char - '"') | ('\\' '"') )* '"') ; 
+token LiteralStringToken ('\'' ( (char - '\'') | ('\\' '\'') )* '\'') ; 
 token VariableToken ('$' (char - ('$' | '"' | ' ' | '\t' | '\n' | '\r' | '=') )+ ) ;   
+token WordToken ( (char - ('$' | '=' | ';' | '"' | ' ' | '\t' | '\n' | '\r') )+ | ('\\' '"')+ | ('\\' '$')+ | ('\\' '=')+| ('\\' ';')+)+ ;
 
 comment "/*" "*/" ;
 comment "//" "\n" ;
@@ -14,9 +17,9 @@ entrypoints Input ;
 
 In. Input ::= [Job] ;
 
-AssigJob. Job ::= WordToken "=" CommandLine ;
-AIChatJob. Job ::= "@" AIQuery ;
-AIExecJob. Job ::= "@!" AIQuery ;
+AssigJob. Job ::= ShellToken "=" CommandLine ;
+AIChatJob. Job ::= AIQueryToken ;
+AIExecJob. Job ::= AIExecToken ;
 FGJob. Job ::= CommandLine ;
 BGJob. Job ::= CommandLine "&" ;
 
@@ -32,10 +35,7 @@ InRedir. OptionalInputRedirection ::= "<" ShellToken ;
 NoOutRedir. OptionalOutputRedirection ::= ;
 OutRedir. OptionalOutputRedirection ::= ">" ShellToken ;
 
+ExpStr. ShellToken ::= ExpansionStringToken ;
+LitStr. ShellToken ::= LiteralStringToken ;
 Var. ShellToken ::= VariableToken ;
 Wrd. ShellToken ::= WordToken ;
-Str. ShellToken ::= StringToken ;
-
-FAIQ. AIQuery ::= [ShellToken] ;
-EAIQ. AIQuery ::= ;
-

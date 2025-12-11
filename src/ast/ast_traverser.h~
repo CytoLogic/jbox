@@ -18,7 +18,7 @@ void visitOptionalInputRedirection(OptionalInputRedirection p);
 void visitOptionalOutputRedirection(OptionalOutputRedirection p);
 void visitShellToken(ShellToken p);
 
-void visitAIQueryToken(AIQueryToken p);void visitAIExecToken(AIExecToken p);void visitExpansionStringToken(ExpansionStringToken p);void visitLiteralStringToken(LiteralStringToken p);void visitVariableToken(VariableToken p);void visitWordToken(WordToken p);
+void visitAIQueryToken(AIQueryToken p);void visitAIExecToken(AIExecToken p);void visitWordToken(WordToken p);void visitStringToken(StringToken p);void visitVariableToken(VariableToken p);
 void visitIdent(Ident i);
 void visitInteger(Integer i);
 void visitDouble(Double d);

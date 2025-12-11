@@ -58,7 +58,7 @@ void visitJob(Job p)
   case is_AssigJob:
     /* Code for AssigJob Goes Here */
     DPRINT("is AssigJob");
-    visitShellToken(p->u.assigJob_.shelltoken_);
+    visitWordToken(p->u.assigJob_.wordtoken_);
     visitCommandLine(p->u.assigJob_.commandline_);
     break;
   case is_AIChatJob:
@@ -195,14 +195,6 @@ char* visitShellToken(ShellToken p)
 
   switch(p->kind)
   {
-  case is_ExpStr:
-    /* Code for ExpStr Goes Here */
-    visitExpansionStringToken(p->u.expStr_.expansionstringtoken_);
-    break;
-  case is_LitStr:
-    /* Code for LitStr Goes Here */
-    visitLiteralStringToken(p->u.litStr_.literalstringtoken_);
-    break;
   case is_Var:
     /* Code for Var Goes Here */
     visitVariableToken(p->u.var_.variabletoken_);
@@ -210,6 +202,10 @@ char* visitShellToken(ShellToken p)
   case is_Wrd:
     /* Code for Wrd Goes Here */
     visitWordToken(p->u.wrd_.wordtoken_);
+    break;
+  case is_Str:
+    /* Code for Str Goes Here */
+    visitStringToken(p->u.str_.stringtoken_);
     break;
 
   default:
@@ -228,29 +224,32 @@ void visitAIExecToken(AIExecToken p)
   DPRINT("visiting AIExecToken");
   /* Code for AIExecToken Goes Here */
 }
-int visitExpansionStringToken(ExpansionStringToken p, wordexp_t* exp_result)
+int visitWordToken(WordToken p)
 {
-  DPRINT("visiting ExpansionStringToken");
-  
-  int result = wordexp(p, exp_result, WRDE_NOCMD);
-  
-  return result;
+  DPRINT("visiting WordToken");
+  // return the word
+  char* word = strdup(p->u.wrd_.wordtoken_);
+  DPRINT("word: %s", word);
+  return word;
 }
-int visitLiteralStringToken(LiteralStringToken p)
+int visitStringToken(StringToken p)
 {
-  DPRINT("visiting LiteralStringToken");
-  /* Code for LiteralStringToken Goes Here */
+  DPRINT("visiting StringToken");
+  // return the string with variable substitution
+  //TODO: add non-substitution strings ''
+  visitStringToken(p->u.str_.stringtoken_);
+  return strdup("");
 }
 int visitVariableToken(VariableToken p)
 {
   DPRINT("visiting VariableToken");
-  /* Code for VariableToken Goes Here */
+  DPRINT("var_name: %s", p);
+  char* env_value = getenv(p + 1); //skip '$'
+  DPRINT("env_value: %s", env_value);
+  return env_value ? strdup(env_value) : strdup("");
 }
-int visitWordToken(WordToken p)
-{
-  DPRINT("visiting WordToken");
-  /* Code for WordToken Goes Here */
-}
+
+// TODO: trim fat
 void visitIdent(Ident i)
 {
   /* Code for Ident Goes Here */
@@ -271,3 +270,4 @@ void visitString(String s)
 {
   /* Code for String Goes Here */
 }
+
