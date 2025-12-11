@@ -24,24 +24,31 @@ class TestShellGrammar(unittest.TestCase):
     """Test shell grammar parsing using TestGrammar executable."""
 
     @override
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         """Set up test fixtures."""
-        self.test_grammar_path = "gen/bnfc/TestGrammar"
-        self.examples_file = "tests/grammar/shell_examples.txt"
-        self.results_file = "tests/grammar/results.txt"
+        test_grammar_path = "gen/bnfc/TestGrammar"
+        examples_file = "tests/grammar/shell_examples.txt"
+        results_file = "tests/results/grammar/test_grammar_results.txt"
 
-    def test_all_examples(self):
-        """Run all shell examples through TestGrammar and save results."""
         # Check that TestGrammar executable exists
-        self.assertTrue(
-            os.path.exists(self.test_grammar_path),
-            f"TestGrammar executable not found at {self.test_grammar_path}",
+        cls.assertTrue(
+            os.path.exists(test_grammar_path),
+            f"TestGrammar executable not found at {test_grammar_path}",
         )
 
         # Check that examples file exists
-        self.assertTrue(
-            os.path.exists(self.examples_file), f"Examples file not found at {self.examples_file}"
+        cls.assertTrue(
+            os.path.exists(cls.examples_file), f"Examples file not found at {examples_file}"
         )
+
+
+    @override
+    def setUp(self):
+        """Set up test fixtures."""
+
+    def test_example(self):
+        """Run a shell examples through TestGrammar and save results."""
 
         # Read all example lines
         with open(self.examples_file, "r") as f:
