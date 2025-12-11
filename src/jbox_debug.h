@@ -4,8 +4,7 @@
 #define JBOX_DEBUG_H
 
 #ifdef DEBUG
-#else
-  #define DPRINT(fmt, ...) fprintf(sterr, "DEBUG: " fmt, ##__VAR_ARGS__)
+  #define DPRINT(fmt, ...) fprintf(stderr, "DEBUG: " fmt "\n", ##__VA_ARGS__)
 #else
   #define DPRINT(fmt, ...) do {} while (0)
 #endif
