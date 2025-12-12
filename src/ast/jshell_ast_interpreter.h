@@ -6,7 +6,43 @@
 #include "Absyn.h"
 
 
+typedef struct {
+  int argc;
+  char **argv;
+} JShellCmdParams;
+
+
+typedef struct {
+  size_t cmd_count;
+  JShellCmdParams* jshell_cmd_params_ptr;
+} JShellCmdVector;
+
+
+typedef enum {
+  FG_JOB,
+  BG_JOB
+} ExecJobType;
+
+
+typedef struct {
+  ExecJobType exec_job_type;
+  JShellCmdVector* jshell_cmd_vector_ptr;
+  void input;
+  void output;
+} JShellExecJob;
+
+typedef enum {
+  AI_QUERY_JOB,
+  AI_EXEC_JOB
+} AIJobType;
+
+
+typedef struct {
+  AIJobType ai_job_type;
+  char* ai_query;
+} JShellAIJob
+
+
 int interpretInput(Input p);
 
 #endif
-

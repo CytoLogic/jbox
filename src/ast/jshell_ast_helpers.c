@@ -12,3 +12,13 @@ int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
   }
   return wordexp(word, word_vector_ptr, flags);
 }
+
+
+void jshell_exec_cmdline(void) {
+  return NULL;
+}
+
+
+void jshell_exec_ai(void) {
+  return NULL;
+}

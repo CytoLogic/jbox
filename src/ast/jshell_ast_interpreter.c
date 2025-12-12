@@ -13,7 +13,7 @@ void visitListJob(ListJob p);
 void visitJob(Job p);
 void visitCommandLine(CommandLine p);
 void visitCommandPart(CommandPart p);
-void visitCommandUnit(CommandUnit p);
+JshellCmdParams visitCommandUnit(CommandUnit p);
 void visitOptionalInputRedirection(OptionalInputRedirection p);
 void visitOptionalOutputRedirection(OptionalOutputRedirection p);
 int visitListShellToken(ListShellToken p, wordexp_t* word_vector_ptr);
@@ -63,8 +63,9 @@ void visitListJob(ListJob listjob)
 void visitJob(Job p)
 {
   DPRINT("visiting Job");
+  //TODO build JShellJob and execute
   switch(p->kind)
-  {
+  }
   case is_AssigJob:
     DPRINT("is AssigJob");
 
@@ -102,10 +103,13 @@ void visitJob(Job p)
 void visitCommandLine(CommandLine p)
 {
   DPRINT("visiting CommandLine");
+
+  // TODO: Build and return cmd_vector
+  JShellCmdVector jshell_cmd_vector;
+
   switch(p->kind)
   {
   case is_CmdLine:
-    /* Code for CmdLine Goes Here */
     visitCommandPart(p->u.cmdLine_.commandpart_);
     visitOptionalInputRedirection(p->u.cmdLine_.optionalinputredirection_);
     visitOptionalOutputRedirection(p->u.cmdLine_.optionaloutputredirection_);
@@ -120,6 +124,8 @@ void visitCommandLine(CommandLine p)
 void visitCommandPart(CommandPart p)
 {
   DPRINT("visiting CommandPart");
+  int cmd_count = 0;
+
   switch(p->kind)
   {
   case is_SnglCmd:
@@ -190,9 +196,10 @@ void visitOptionalOutputRedirection(OptionalOutputRedirection p)
     fprintf(stderr, "Error: bad kind field when printing OptionalOutputRedirection!\n");
     exit(1);
   }
+
 }
 
-void visitCommandUnit(CommandUnit p)
+JshellCmdParams visitCommandUnit(CommandUnit p)
 {
   DPRINT("visiting CommandUnit");
 
@@ -206,7 +213,12 @@ void visitCommandUnit(CommandUnit p)
 
     DPRINT("wordexp result: %d", result);
     DPRINT_WORDEXP(word_vector);
-    break;
+
+    JshellCmdParams cmd_params = {
+      .argc = (int)word_vector.we_wordc,
+      .argv = word_vector.we_wordv
+    };
+    return cmd_params;
 
   default:
     fprintf(stderr, "Error: bad kind field when printing CommandUnit!\n");
