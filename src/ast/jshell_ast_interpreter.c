@@ -72,16 +72,6 @@ void visitJob(Job p)
     visitShellToken(p->u.assigJob_.shelltoken_);
     visitCommandLine(p->u.assigJob_.commandline_);
     break;
-  case is_AIChatJob:
-    /* Code for AIChatJob Goes Here */
-    DPRINT("is AIChatJob");
-    visitAIQueryToken(p->u.aIChatJob_.aiquerytoken_);
-    break;
-  case is_AIExecJob:
-    /* Code for AIExecJob Goes Here */
-    DPRINT("is AIExecJob");
-    visitAIExecToken(p->u.aIExecJob_.aiexectoken_);
-    break;
   case is_FGJob:
     /* Code for FGJob Goes Here */
     DPRINT("is FGJob");
@@ -91,6 +81,16 @@ void visitJob(Job p)
     /* Code for BGJob Goes Here */
     DPRINT("is BGJob");
     visitCommandLine(p->u.bGJob_.commandline_);
+    break;
+  case is_AIChatJob:
+    /* Code for AIChatJob Goes Here */
+    DPRINT("is AIChatJob");
+    visitAIQueryToken(p->u.aIChatJob_.aiquerytoken_);
+    break;
+  case is_AIExecJob:
+    /* Code for AIExecJob Goes Here */
+    DPRINT("is AIExecJob");
+    visitAIExecToken(p->u.aIExecJob_.aiexectoken_);
     break;
 
   default:
@@ -245,9 +245,6 @@ int visitListShellToken(ListShellToken listshelltoken, wordexp_t* word_vector_pt
 }
 
 
-
-// visit ShellTokens
-
 int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr)
 {
   DPRINT("visiting ShellToken");
@@ -256,12 +253,16 @@ int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr)
   {
   case is_ExpStr:
     return visitExpansionStringToken(p->u.expStr_.expansionstringtoken_, word_vector_ptr);
+    break;
   case is_LitStr:
     return visitLiteralStringToken(p->u.litStr_.literalstringtoken_, word_vector_ptr);
+    break;
   case is_Var:
     return visitVariableToken(p->u.var_.variabletoken_, word_vector_ptr);
+    break;
   case is_Wrd:
     return visitWordToken(p->u.wrd_.wordtoken_, word_vector_ptr);
+    break;
 
   default:
     fprintf(stderr, "Error: bad kind field when printing ShellToken!\n");
