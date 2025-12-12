@@ -27,8 +27,8 @@ typedef enum {
 typedef struct {
   ExecJobType exec_job_type;
   JShellCmdVector* jshell_cmd_vector_ptr;
-  void input;
-  void output;
+  int input_fd;
+  int output_fd;
 } JShellExecJob;
 
 typedef enum {
@@ -40,7 +40,7 @@ typedef enum {
 typedef struct {
   AIJobType ai_job_type;
   char* ai_query;
-} JShellAIJob
+} JShellAIJob;
 
 
 int interpretInput(Input p);
