@@ -1,8 +1,14 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <wordexp.h>
-#include "../jbox_debug.h"
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
+
 #include "jshell_ast_helpers.h"
+#include "../jbox_debug.h"
 
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
@@ -17,8 +23,262 @@ int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
 }
 
 
+static int jshell_setup_input_redir(int input_fd) {
+  if (input_fd == -1) {
+    return 0;
+  }
+  
+  if (dup2(input_fd, STDIN_FILENO) == -1) {
+    perror("dup2 input");
+    return -1;
+  }
+  
+  close(input_fd);
+  return 0;
+}
+
+
+static int jshell_setup_output_redir(int output_fd) {
+  if (output_fd == -1) {
+    return 0;
+  }
+  
+  if (dup2(output_fd, STDOUT_FILENO) == -1) {
+    perror("dup2 output");
+    return -1;
+  }
+  
+  close(output_fd);
+  return 0;
+}
+
+
+static int** jshell_create_pipes(size_t pipe_count) {
+  if (pipe_count == 0) {
+    return NULL;
+  }
+  
+  int** pipes = malloc(sizeof(int*) * pipe_count);
+  if (pipes == NULL) {
+    perror("malloc pipes");
+    return NULL;
+  }
+  
+  for (size_t i = 0; i < pipe_count; i++) {
+    pipes[i] = malloc(sizeof(int) * 2);
+    if (pipes[i] == NULL) {
+      perror("malloc pipe");
+      for (size_t j = 0; j < i; j++) {
+        free(pipes[j]);
+      }
+      free(pipes);
+      return NULL;
+    }
+    
+    if (pipe(pipes[i]) == -1) {
+      perror("pipe");
+      for (size_t j = 0; j <= i; j++) {
+        free(pipes[j]);
+      }
+      free(pipes);
+      return NULL;
+    }
+  }
+  
+  return pipes;
+}
+
+
+static void jshell_close_pipes(int** pipes, size_t pipe_count) {
+  if (pipes == NULL) {
+    return;
+  }
+  
+  for (size_t i = 0; i < pipe_count; i++) {
+    if (pipes[i] != NULL) {
+      close(pipes[i][0]);
+      close(pipes[i][1]);
+      free(pipes[i]);
+    }
+  }
+  free(pipes);
+}
+
+
+static int jshell_fork_and_exec(JShellCmdParams* cmd_params, 
+                                 int** pipes, 
+                                 size_t cmd_index, 
+                                 size_t total_cmds,
+                                 int input_fd,
+                                 int output_fd) {
+  pid_t pid = fork();
+  
+  if (pid == -1) {
+    perror("fork");
+    return -1;
+  }
+  
+  if (pid == 0) {
+    if (cmd_index == 0) {
+      if (jshell_setup_input_redir(input_fd) == -1) {
+        exit(EXIT_FAILURE);
+      }
+    } else {
+      if (dup2(pipes[cmd_index - 1][0], STDIN_FILENO) == -1) {
+        perror("dup2 pipe read");
+        exit(EXIT_FAILURE);
+      }
+    }
+    
+    if (cmd_index == total_cmds - 1) {
+      if (jshell_setup_output_redir(output_fd) == -1) {
+        exit(EXIT_FAILURE);
+      }
+    } else {
+      if (dup2(pipes[cmd_index][1], STDOUT_FILENO) == -1) {
+        perror("dup2 pipe write");
+        exit(EXIT_FAILURE);
+      }
+    }
+    
+    for (size_t i = 0; i < total_cmds - 1; i++) {
+      close(pipes[i][0]);
+      close(pipes[i][1]);
+    }
+    
+    execvp(cmd_params->argv[0], cmd_params->argv);
+    perror("execvp");
+    exit(EXIT_FAILURE);
+  }
+  
+  return pid;
+}
+
+
+static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count, 
+                                 ExecJobType job_type) {
+  if (job_type == BG_JOB) {
+    DPRINT("Background job, not waiting");
+    return 0;
+  }
+  
+  int status;
+  int last_status = 0;
+  
+  for (size_t i = 0; i < pid_count; i++) {
+    if (waitpid(pids[i], &status, 0) == -1) {
+      perror("waitpid");
+      return -1;
+    }
+    
+    if (WIFEXITED(status)) {
+      last_status = WEXITSTATUS(status);
+      DPRINT("Process %d exited with status %d", pids[i], last_status);
+    } else if (WIFSIGNALED(status)) {
+      DPRINT("Process %d killed by signal %d", pids[i], WTERMSIG(status));
+      last_status = 128 + WTERMSIG(status);
+    }
+  }
+  
+  return last_status;
+}
+
+
+static int jshell_exec_single_cmd(JShellExecJob* job) {
+  DPRINT("jshell_exec_single_cmd called");
+  
+  JShellCmdParams* cmd_params = 
+    &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[0];
+  
+  pid_t pid = fork();
+  
+  if (pid == -1) {
+    perror("fork");
+    return -1;
+  }
+  
+  if (pid == 0) {
+    if (jshell_setup_input_redir(job->input_fd) == -1) {
+      exit(EXIT_FAILURE);
+    }
+    
+    if (jshell_setup_output_redir(job->output_fd) == -1) {
+      exit(EXIT_FAILURE);
+    }
+    
+    execvp(cmd_params->argv[0], cmd_params->argv);
+    perror("execvp");
+    exit(EXIT_FAILURE);
+  }
+  
+  if (job->input_fd != -1) {
+    close(job->input_fd);
+  }
+  if (job->output_fd != -1) {
+    close(job->output_fd);
+  }
+  
+  return jshell_wait_for_jobs(&pid, 1, job->exec_job_type);
+}
+
+
+static int jshell_exec_pipeline(JShellExecJob* job) {
+  DPRINT("jshell_exec_pipeline called with %zu commands", 
+         job->jshell_cmd_vector_ptr->cmd_count);
+  
+  size_t cmd_count = job->jshell_cmd_vector_ptr->cmd_count;
+  size_t pipe_count = cmd_count - 1;
+  
+  int** pipes = jshell_create_pipes(pipe_count);
+  if (pipes == NULL) {
+    return -1;
+  }
+  
+  pid_t* pids = malloc(sizeof(pid_t) * cmd_count);
+  if (pids == NULL) {
+    perror("malloc pids");
+    jshell_close_pipes(pipes, pipe_count);
+    return -1;
+  }
+  
+  for (size_t i = 0; i < cmd_count; i++) {
+    JShellCmdParams* cmd_params = 
+      &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[i];
+    
+    int pid = jshell_fork_and_exec(cmd_params, pipes, i, cmd_count,
+                                    job->input_fd, job->output_fd);
+    
+    if (pid == -1) {
+      for (size_t j = 0; j < i; j++) {
+        kill(pids[j], SIGTERM);
+      }
+      jshell_close_pipes(pipes, pipe_count);
+      free(pids);
+      return -1;
+    }
+    
+    pids[i] = pid;
+  }
+  
+  if (job->input_fd != -1) {
+    close(job->input_fd);
+  }
+  if (job->output_fd != -1) {
+    close(job->output_fd);
+  }
+  
+  jshell_close_pipes(pipes, pipe_count);
+  
+  int result = jshell_wait_for_jobs(pids, cmd_count, job->exec_job_type);
+  
+  free(pids);
+  
+  return result;
+}
+
+
 void jshell_exec_job(JShellExecJob* job) {
-  DPRINT("jshell_exec_job called (stub)");
+  DPRINT("jshell_exec_job called");
   
   if (job == NULL || job->jshell_cmd_vector_ptr == NULL) {
     return;
@@ -27,6 +287,23 @@ void jshell_exec_job(JShellExecJob* job) {
   DPRINT("Job type: %d, cmd_count: %zu", 
          job->exec_job_type, 
          job->jshell_cmd_vector_ptr->cmd_count);
+  
+  if (job->jshell_cmd_vector_ptr->cmd_count == 0) {
+    DPRINT("No commands to execute");
+    return;
+  }
+  
+  int result;
+  
+  if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
+    result = jshell_exec_single_cmd(job);
+  } else {
+    result = jshell_exec_pipeline(job);
+  }
+  
+  if (result != 0) {
+    DPRINT("Command execution failed with status %d", result);
+  }
 }
 
 
