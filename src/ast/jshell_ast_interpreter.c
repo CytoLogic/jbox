@@ -71,8 +71,39 @@ void visitJob(Job p)
   {
   case is_AssigJob:
     DPRINT("is AssigJob");
-    visitShellToken(p->u.assigJob_.shelltoken_, NULL);
-    visitCommandLine(p->u.assigJob_.commandline_, FG_JOB);
+    {
+      wordexp_t var_name_expansion = {0};
+      int result = 
+        visitShellToken(p->u.assigJob_.shelltoken_, &var_name_expansion);
+      
+      if (result != 0 || var_name_expansion.we_wordc != 1) {
+        fprintf(stderr, "Error: invalid variable name in assignment\n");
+        wordfree(&var_name_expansion);
+        break;
+      }
+      
+      char* var_name = var_name_expansion.we_wordv[0];
+      DPRINT("Assignment variable name: %s", var_name);
+      
+      JShellExecJob* exec_job = 
+        visitCommandLine(p->u.assigJob_.commandline_, FG_JOB);
+      
+      if (exec_job != NULL) {
+        char* captured_output = jshell_capture_and_tee_output(exec_job);
+        
+        if (captured_output != NULL) {
+          jshell_set_env_var(var_name, captured_output);
+          free(captured_output);
+        } else {
+          fprintf(stderr, "Error: failed to capture command output\n");
+        }
+        
+        jshell_cleanup_job(exec_job);
+        free(exec_job);
+      }
+      
+      wordfree(&var_name_expansion);
+    }
     break;
     
   case is_FGJob:

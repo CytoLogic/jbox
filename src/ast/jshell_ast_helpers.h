@@ -13,5 +13,9 @@ void jshell_cleanup_job(JShellExecJob* job);
 
 void jshell_cleanup_cmd_vector(JShellCmdVector* cmd_vector);
 
+char* jshell_capture_and_tee_output(JShellExecJob* job);
+
+int jshell_set_env_var(const char* name, const char* value);
+
 
 #endif

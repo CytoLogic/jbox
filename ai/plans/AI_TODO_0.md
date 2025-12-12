@@ -35,10 +35,11 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - [x] 3.3: Handle builtin vs external command distinction in execution path
 
 ### Phase 4: Assignment Job Support
-- [ ] 4.1: Implement `jshell_capture_output()` - capture stdout to buffer
-- [ ] 4.2: Implement `jshell_set_env_var()` - set environment variable from captured output
-- [ ] 4.3: Modify `visitJob()` AssigJob case to extract variable name and call assignment logic
-- [ ] 4.4: Handle assignment job execution with output capture
+- [x] 4.1: Implement `jshell_capture_and_tee_output()` - capture stdout while teeing to original destination
+- [x] 4.2: Implement `jshell_set_env_var()` - set environment variable from captured output with whitespace trimming
+- [x] 4.3: Modify `visitJob()` AssigJob case to extract variable name and call assignment logic
+- [x] 4.4: Handle assignment job execution with output capture and tee functionality
+- [ ] 4.5: **BUG FIX NEEDED**: Current implementation has IPC issue - tee process cannot communicate buffer back to parent. Need to use shared memory (mmap) or additional pipe for buffer communication.
 
 ### Phase 5: Error Handling and Cleanup
 - [x] 5.1: Implement `jshell_cleanup_job()` - free JShellExecJob resources
@@ -51,7 +52,7 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 
 ### Phase 6: Background Job Support
 - [ ] 6.1: Implement job tracking structure for background jobs
-- [ ] 6.2: Modify execution to not wait for BG_JOB type
+- [ ] 6.2: Modify execution to not wait for BG_JOB type (already done in `jshell_wait_for_jobs()`)
 - [ ] 6.3: Implement background job status checking
 - [ ] 6.4: Handle SIGCHLD for background job completion
 
@@ -69,11 +70,20 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - Store PIDs for job control
 
 ### Assignment Jobs
-- Execute pipeline normally
-- Capture final stdout to buffer
+- Execute pipeline normally with stdout redirected to capture pipe
+- Fork a tee process that reads from capture pipe and:
+  - Writes to original output destination (stdout or redirected file)
+  - Accumulates data in buffer (up to MAX_VAR_SIZE)
+- After command completes, retrieve captured buffer from tee process
 - Trim whitespace from captured output
 - Set environment variable using setenv()
-- Also display output to user's terminal
+- Output is displayed to user's terminal as side effect of tee process
+
+### Known Issues
+- **CRITICAL BUG in `jshell_capture_and_tee_output()`**: The tee child process accumulates the buffer locally but has no mechanism to communicate it back to the parent process. The current code attempts to read from a pipe that was never written to. Need to implement one of:
+  1. Shared memory using mmap() with MAP_SHARED
+  2. Additional pipe for tee process to write buffer back to parent
+  3. Temporary file for buffer communication
 
 ### Builtin Commands
 - Check command registry first
@@ -94,7 +104,7 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - Test input redirection
 - Test output redirection
 - Test combined I/O redirection
-- Test assignment jobs
+- Test assignment jobs (BLOCKED by bug 4.5)
 - Test background jobs
 - Test builtin commands
 - Test error conditions

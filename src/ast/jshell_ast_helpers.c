@@ -8,11 +8,13 @@
 #include <fcntl.h>
 #include <wordexp.h>
 #include <signal.h>
+#include <ctype.h>
 
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
 #include "../jshell_cmd_registry.h"
 #include "../jbox_debug.h"
+#include "../jshell.h"
 
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
@@ -396,6 +398,170 @@ void jshell_exec_job(JShellExecJob* job) {
   if (result != 0) {
     DPRINT("Command execution failed with status %d", result);
   }
+}
+
+
+char* jshell_capture_and_tee_output(JShellExecJob* job) {
+  DPRINT("jshell_capture_and_t ee_output called");
+  
+  if (job == NULL || job->jshell_cmd_vector_ptr == NULL) {
+    return NULL;
+  }
+  
+  int capture_pipe[2];
+  if (pipe(capture_pipe) == -1) {
+    perror("pipe for capture");
+    return NULL;
+  }
+  
+  char* buffer = malloc(MAX_VAR_SIZE);
+  if (buffer == NULL) {
+    perror("malloc capture buffer");
+    close(capture_pipe[0]);
+    close(capture_pipe[1]);
+    return NULL;
+  }
+  memset(buffer, 0, MAX_VAR_SIZE);
+  
+  int original_output_fd = job->output_fd;
+  if (original_output_fd == -1) {
+    original_output_fd = dup(STDOUT_FILENO);
+    if (original_output_fd == -1) {
+      perror("dup stdout");
+      free(buffer);
+      close(capture_pipe[0]);
+      close(capture_pipe[1]);
+      return NULL;
+    }
+  }
+  
+  pid_t tee_pid = fork();
+  if (tee_pid == -1) {
+    perror("fork tee process");
+    free(buffer);
+    close(capture_pipe[0]);
+    close(capture_pipe[1]);
+    if (job->output_fd == -1) {
+      close(original_output_fd);
+    }
+    return NULL;
+  }
+  
+  if (tee_pid == 0) {
+    close(capture_pipe[1]);
+    
+    char tee_buffer[4096];
+    ssize_t bytes_read;
+    size_t total_captured = 0;
+    
+    while ((bytes_read = read(capture_pipe[0], tee_buffer, 
+                               sizeof(tee_buffer))) > 0) {
+      if (write(original_output_fd, tee_buffer, bytes_read) == -1) {
+        perror("write to output");
+      }
+      
+      size_t to_copy = (size_t)bytes_read;
+      if (total_captured + to_copy >= MAX_VAR_SIZE) {
+        to_copy = MAX_VAR_SIZE - total_captured - 1;
+      }
+      
+      if (to_copy > 0) {
+        memcpy(buffer + total_captured, tee_buffer, to_copy);
+        total_captured += to_copy;
+      }
+      
+      if (total_captured >= MAX_VAR_SIZE - 1) {
+        while (read(capture_pipe[0], tee_buffer, sizeof(tee_buffer)) > 0) {
+          if (write(original_output_fd, tee_buffer, bytes_read) == -1) {
+            perror("write to output");
+          }
+        }
+        break;
+      }
+    }
+    
+    buffer[total_captured] = '\0';
+    
+    close(capture_pipe[0]);
+    if (job->output_fd == -1) {
+      close(original_output_fd);
+    }
+    
+    exit(EXIT_SUCCESS);
+  }
+  
+  close(capture_pipe[0]);
+  
+  int saved_output_fd = job->output_fd;
+  job->output_fd = capture_pipe[1];
+  
+  int result;
+  if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
+    result = jshell_exec_single_cmd(job);
+  } else {
+    result = jshell_exec_pipeline(job);
+  }
+  
+  close(capture_pipe[1]);
+  
+  int tee_status;
+  if (waitpid(tee_pid, &tee_status, 0) == -1) {
+    perror("waitpid tee process");
+    free(buffer);
+    job->output_fd = saved_output_fd;
+    if (saved_output_fd == -1) {
+      close(original_output_fd);
+    }
+    return NULL;
+  }
+  
+  job->output_fd = saved_output_fd;
+  if (saved_output_fd == -1) {
+    close(original_output_fd);
+  }
+  
+  if (result != 0) {
+    DPRINT("Command execution failed with status %d", result);
+  }
+  
+  DPRINT("Captured output in buffer");
+  return buffer;
+}
+
+
+int jshell_set_env_var(const char* name, const char* value) {
+  DPRINT("jshell_set_env_var: %s = %s", name, value);
+  
+  if (name == NULL || value == NULL) {
+    return -1;
+  }
+  
+  char* trimmed_value = strdup(value);
+  if (trimmed_value == NULL) {
+    perror("strdup");
+    return -1;
+  }
+  
+  char* start = trimmed_value;
+  while (isspace((unsigned char)*start)) {
+    start++;
+  }
+  
+  char* end = start + strlen(start) - 1;
+  while (end > start && isspace((unsigned char)*end)) {
+    end--;
+  }
+  *(end + 1) = '\0';
+  
+  int result = setenv(name, start, 1);
+  if (result == -1) {
+    perror("setenv");
+  } else {
+    DPRINT("Set environment variable: %s=%s", name, start);
+  }
+  
+  free(trimmed_value);
+  return result;
 }
 
 
