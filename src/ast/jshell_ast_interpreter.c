@@ -203,6 +203,7 @@ void visitCommandUnit(CommandUnit p)
   case is_CmdUnit:
 
     int result = visitListShellToken(p->u.cmdUnit_.listshelltoken_, &word_vector);
+
     DPRINT("wordexp result: %d", result);
     DPRINT_WORDEXP(word_vector);
     break;
