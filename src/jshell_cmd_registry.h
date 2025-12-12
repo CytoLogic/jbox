@@ -1,5 +1,5 @@
-#ifndef JSHELL_CMD_SPEC_H
-#define JSHELL_CMD_SPEC_H
+#ifndef JSHELL_CMD_REGISTRY_H
+#define JSHELL_CMD_REGISTRY_H
 
 #include <stdio.h>
 
@@ -11,10 +11,9 @@ typedef struct jshell_cmd_spec {
     void (*print_usage)(FILE *out);
 } jshell_cmd_spec_t;
 
-void jshell_register_command(const cmd_spec_t *spec);
-const jshell_cmd_spec_t *find_command(const char *name);
-void jshell_for_each_command(void (*callback)(const cmd_spec_t *spec, void *userdata),
-                      void *userdata);
+void jshell_register_command(const jshell_cmd_spec_t *spec);
+const jshell_cmd_spec_t *jshell_find_command(const char *name);
+void jshell_for_each_command(void (*callback)(const jshell_cmd_spec_t *spec, void *userdata),
+                              void *userdata);
 
 #endif
-

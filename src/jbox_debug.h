@@ -4,7 +4,7 @@
 #define JBOX_DEBUG_H
 
 #ifdef DEBUG
-  #define DPRINT(fmt, ...) fprintf(stderr, "DEBUG: " fmt "\n", ##__VA_ARGS__)
+  #define DPRINT(fmt, ...) fprintf(stderr, "[DEBUG]: " fmt "\n", ##__VA_ARGS__)
   #define DPRINT_WORDEXP(we) \
     do { \
       DPRINT("wordexp_t: we_wordc=%zu, we_offs=%zu", (we).we_wordc, (we).we_offs); \

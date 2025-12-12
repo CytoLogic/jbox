@@ -1,14 +1,14 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "jshell_cmd_spec.h"
+#include "jshell_cmd_registry.h"
 
 #define MAX_COMMANDS 32
 
-static const cmd_spec_t *command_registry[MAX_COMMANDS];
+static const jshell_cmd_spec_t *command_registry[MAX_COMMANDS];
 static size_t command_count;
 
-void jshell_register_command(const cmd_spec_t *spec) {
+void jshell_register_command(const jshell_cmd_spec_t *spec) {
     if (spec == NULL) {
         return;
     }
@@ -17,12 +17,12 @@ void jshell_register_command(const cmd_spec_t *spec) {
     }
 }
 
-const cmd_spec_t *jshell_find_command(const char *name) {
+const jshell_cmd_spec_t *jshell_find_command(const char *name) {
     if (name == NULL) {
         return NULL;
     }
     for (size_t index = 0; index < command_count; ++index) {
-        const cmd_spec_t *spec = command_registry[index];
+        const jshell_cmd_spec_t *spec = command_registry[index];
         if (spec != NULL && spec->name != NULL &&
             strcmp(spec->name, name) == 0) {
             return spec;
@@ -31,16 +31,15 @@ const cmd_spec_t *jshell_find_command(const char *name) {
     return NULL;
 }
 
-void jshell_for_each_command(void (*callback)(const cmd_spec_t *spec, void *userdata),
+void jshell_for_each_command(void (*callback)(const jshell_cmd_spec_t *spec, void *userdata),
                       void *userdata) {
     if (callback == NULL) {
         return;
     }
     for (size_t index = 0; index < command_count; ++index) {
-        const cmd_spec_t *spec = command_registry[index];
+        const jshell_cmd_spec_t *spec = command_registry[index];
         if (spec != NULL) {
             callback(spec, userdata);
         }
     }
 }
-

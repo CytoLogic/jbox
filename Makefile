@@ -36,17 +36,7 @@ all:
 
 jbox:
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c src/jshell.c src/ast/*.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
-	ln -s jbox bin/cat
-	ln -s jbox bin/cp
-	ln -s jbox bin/echo
-	ln -s jbox bin/ls
-	ln -s jbox bin/mkdir
-	ln -s jbox bin/mv
-	ln -s jbox bin/pwd
-	ln -s jbox bin/rm
-	ln -s jbox bin/stat
-	ln -s jbox bin/touch
+	$(COMPILE) src/jbox.c src/jshell.c src/jshell_cmd_registry.c src/ast/*.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <string.h>
+#include <wordexp.h>
 #include <signal.h>
 
+#include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
+#include "../jshell_cmd_registry.h"
+#include "../jbox.h"
 #include "../jbox_debug.h"
 
 
@@ -69,6 +73,8 @@ static int** jshell_create_pipes(size_t pipe_count) {
     if (pipes[i] == NULL) {
       perror("malloc pipe");
       for (size_t j = 0; j < i; j++) {
+        close(pipes[j][0]);
+        close(pipes[j][1]);
         free(pipes[j]);
       }
       free(pipes);
@@ -77,7 +83,10 @@ static int** jshell_create_pipes(size_t pipe_count) {
     
     if (pipe(pipes[i]) == -1) {
       perror("pipe");
-      for (size_t j = 0; j <= i; j++) {
+      free(pipes[i]);
+      for (size_t j = 0; j < i; j++) {
+        close(pipes[j][0]);
+        close(pipes[j][1]);
         free(pipes[j]);
       }
       free(pipes);
@@ -105,12 +114,85 @@ static void jshell_close_pipes(int** pipes, size_t pipe_count) {
 }
 
 
+static const jshell_cmd_spec_t* jshell_find_builtin(const char* name) {
+  if (name == NULL) {
+    return NULL;
+  }
+  return jshell_find_command(name);
+}
+
+
+static int jshell_exec_builtin(const jshell_cmd_spec_t* spec, 
+                                JShellCmdParams* cmd_params,
+                                int input_fd,
+                                int output_fd) {
+  DPRINT("Executing builtin: %s", spec->name);
+  
+  int saved_stdin = -1;
+  int saved_stdout = -1;
+  int result = 0;
+  
+  if (input_fd != -1) {
+    saved_stdin = dup(STDIN_FILENO);
+    if (saved_stdin == -1) {
+      perror("dup stdin");
+      return -1;
+    }
+    if (dup2(input_fd, STDIN_FILENO) == -1) {
+      perror("dup2 stdin");
+      close(saved_stdin);
+      return -1;
+    }
+    close(input_fd);
+  }
+  
+  if (output_fd != -1) {
+    saved_stdout = dup(STDOUT_FILENO);
+    if (saved_stdout == -1) {
+      perror("dup stdout");
+      if (saved_stdin != -1) {
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
+      }
+      return -1;
+    }
+    if (dup2(output_fd, STDOUT_FILENO) == -1) {
+      perror("dup2 stdout");
+      close(saved_stdout);
+      if (saved_stdin != -1) {
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
+      }
+      return -1;
+    }
+    close(output_fd);
+  }
+  
+  result = spec->run(cmd_params->argc, cmd_params->argv);
+  
+  if (saved_stdout != -1) {
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
+  }
+  
+  if (saved_stdin != -1) {
+    dup2(saved_stdin, STDIN_FILENO);
+    close(saved_stdin);
+  }
+  
+  return result;
+}
+
+
 static int jshell_fork_and_exec(JShellCmdParams* cmd_params, 
                                  int** pipes, 
                                  size_t cmd_index, 
                                  size_t total_cmds,
                                  int input_fd,
                                  int output_fd) {
+  DPRINT("Forking for command %zu/%zu: %s", 
+         cmd_index + 1, total_cmds, cmd_params->argv[0]);
+  
   pid_t pid = fork();
   
   if (pid == -1) {
@@ -119,34 +201,39 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
   }
   
   if (pid == 0) {
-    if (cmd_index == 0) {
+    if (cmd_index == 0 && input_fd != -1) {
       if (jshell_setup_input_redir(input_fd) == -1) {
         exit(EXIT_FAILURE);
       }
-    } else {
+    }
+    
+    if (cmd_index == (total_cmds - 1) && output_fd != -1) {
+      if (jshell_setup_output_redir(output_fd) == -1) {
+        exit(EXIT_FAILURE);
+      }
+    }
+    
+    if (cmd_index > 0) {
       if (dup2(pipes[cmd_index - 1][0], STDIN_FILENO) == -1) {
         perror("dup2 pipe read");
         exit(EXIT_FAILURE);
       }
     }
     
-    if (cmd_index == total_cmds - 1) {
-      if (jshell_setup_output_redir(output_fd) == -1) {
-        exit(EXIT_FAILURE);
-      }
-    } else {
+    if (cmd_index < (total_cmds - 1)) {
       if (dup2(pipes[cmd_index][1], STDOUT_FILENO) == -1) {
         perror("dup2 pipe write");
         exit(EXIT_FAILURE);
       }
     }
     
-    for (size_t i = 0; i < total_cmds - 1; i++) {
+    for (size_t i = 0; i < (total_cmds - 1); i++) {
       close(pipes[i][0]);
       close(pipes[i][1]);
     }
     
     execvp(cmd_params->argv[0], cmd_params->argv);
+    
     perror("execvp");
     exit(EXIT_FAILURE);
   }
@@ -162,10 +249,11 @@ static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count,
     return 0;
   }
   
-  int status;
-  int last_status = 0;
+  DPRINT("Waiting for %zu foreground processes", pid_count);
   
+  int last_status = 0;
   for (size_t i = 0; i < pid_count; i++) {
+    int status;
     if (waitpid(pids[i], &status, 0) == -1) {
       perror("waitpid");
       return -1;
@@ -190,6 +278,13 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
   JShellCmdParams* cmd_params = 
     &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[0];
   
+  const jshell_cmd_spec_t* builtin = jshell_find_builtin(cmd_params->argv[0]);
+  if (builtin != NULL) {
+    DPRINT("Command is builtin: %s", builtin->name);
+    return jshell_exec_builtin(builtin, cmd_params, 
+                               job->input_fd, job->output_fd);
+  }
+  
   pid_t pid = fork();
   
   if (pid == -1) {
@@ -207,6 +302,7 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
     }
     
     execvp(cmd_params->argv[0], cmd_params->argv);
+    
     perror("execvp");
     exit(EXIT_FAILURE);
   }
@@ -245,15 +341,24 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
     JShellCmdParams* cmd_params = 
       &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[i];
     
-    int pid = jshell_fork_and_exec(cmd_params, pipes, i, cmd_count,
-                                    job->input_fd, job->output_fd);
+    const jshell_cmd_spec_t* builtin = jshell_find_builtin(cmd_params->argv[0]);
+    if (builtin != NULL && cmd_count == 1) {
+      DPRINT("Single builtin command in pipeline: %s", builtin->name);
+      int result = jshell_exec_builtin(builtin, cmd_params,
+                                       job->input_fd, job->output_fd);
+      free(pids);
+      jshell_close_pipes(pipes, pipe_count);
+      return result;
+    }
     
+    pid_t pid = jshell_fork_and_exec(cmd_params, pipes, i, cmd_count,
+                                     job->input_fd, job->output_fd);
     if (pid == -1) {
       for (size_t j = 0; j < i; j++) {
         kill(pids[j], SIGTERM);
       }
-      jshell_close_pipes(pipes, pipe_count);
       free(pids);
+      jshell_close_pipes(pipes, pipe_count);
       return -1;
     }
     
@@ -267,11 +372,15 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
     close(job->output_fd);
   }
   
-  jshell_close_pipes(pipes, pipe_count);
+  for (size_t i = 0; i < pipe_count; i++) {
+    close(pipes[i][0]);
+    close(pipes[i][1]);
+  }
   
   int result = jshell_wait_for_jobs(pids, cmd_count, job->exec_job_type);
   
   free(pids);
+  jshell_close_pipes(pipes, pipe_count);
   
   return result;
 }
@@ -288,14 +397,9 @@ void jshell_exec_job(JShellExecJob* job) {
          job->exec_job_type, 
          job->jshell_cmd_vector_ptr->cmd_count);
   
-  if (job->jshell_cmd_vector_ptr->cmd_count == 0) {
-    DPRINT("No commands to execute");
-    return;
-  }
-  
   int result;
   
-  if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
+  if (job->jshell_cmd_vector_ptr->cmd_count ==  1) {
     result = jshell_exec_single_cmd(job);
   } else {
     result = jshell_exec_pipeline(job);
