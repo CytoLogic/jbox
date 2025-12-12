@@ -4,6 +4,8 @@
 #include <wordexp.h>
 #include "jshell_ast_interpreter.h"
 
+#define MAX_VAR_SIZE 8192
+
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr);
 
