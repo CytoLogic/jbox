@@ -1,3 +1,3 @@
 git: true
-read: [llm/CONVENTIONS.md]
+read: [ai/CONVENTIONS.md]
 watch-files: true
