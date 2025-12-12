@@ -1,12 +1,15 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <wordexp.h>
 #include <signal.h>
 
+#include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
 #include "../jshell_cmd_registry.h"
 #include "../jbox_debug.h"
@@ -123,7 +126,7 @@ static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
                                 JShellCmdParams* cmd_params,
                                 int input_fd,
                                 int output_fd) {
-  DPRINT("jshell_exec_builtin: %s", spec->name);
+  DPRINT("Executing builtin: %s", spec->name);
   
   int saved_stdin = -1;
   int saved_stdout = -1;
@@ -183,8 +186,7 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
                                  size_t total_cmds,
                                  int input_fd,
                                  int output_fd) {
-  DPRINT("jshell_fork_and_exec: cmd_index=%zu, total_cmds=%zu", 
-         cmd_index, total_cmds);
+  DPRINT("Forking for command %zu: %s", cmd_index, cmd_params->argv[0]);
   
   pid_t pid = fork();
   
@@ -200,12 +202,6 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
       }
     }
     
-    if (cmd_index == (total_cmds - 1) && output_fd != -1) {
-      if (jshell_setup_output_redir(output_fd) == -1) {
-        exit(EXIT_FAILURE);
-      }
-    }
-    
     if (cmd_index > 0) {
       if (dup2(pipes[cmd_index - 1][0], STDIN_FILENO) == -1) {
         perror("dup2 pipe read");
@@ -213,14 +209,20 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
       }
     }
     
-    if (cmd_index < (total_cmds - 1)) {
+    if (cmd_index < total_cmds - 1) {
       if (dup2(pipes[cmd_index][1], STDOUT_FILENO) == -1) {
         perror("dup2 pipe write");
         exit(EXIT_FAILURE);
       }
     }
     
-    for (size_t i = 0; i < (total_cmds - 1); i++) {
+    if (cmd_index == total_cmds - 1 && output_fd != -1) {
+      if (jshell_setup_output_redir(output_fd) == -1) {
+        exit(EXIT_FAILURE);
+      }
+    }
+    
+    for (size_t i = 0; i < total_cmds - 1; i++) {
       close(pipes[i][0]);
       close(pipes[i][1]);
     }
@@ -236,19 +238,16 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
 
 static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count, 
                                  ExecJobType job_type) {
-  DPRINT("jshell_wait_for_jobs: pid_count=%zu, job_type=%d", 
-         pid_count, job_type);
-  
   if (job_type == BG_JOB) {
     DPRINT("Background job, not waiting");
     return 0;
   }
   
-  int status;
+  DPRINT("Waiting for %zu processes", pid_count);
   int last_status = 0;
   
   for (size_t i = 0; i < pid_count; i++) {
-    DPRINT("Waiting for pid %d", pids[i]);
+    int status;
     if (waitpid(pids[i], &status, 0) == -1) {
       perror("waitpid");
       return -1;
@@ -280,10 +279,7 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
                                 job->input_fd, job->output_fd);
   }
   
-  DPRINT("Command is external: %s", cmd_params->argv[0]);
-  
   pid_t pid = fork();
-  
   if (pid == -1) {
     perror("fork");
     return -1;
@@ -344,20 +340,19 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
       DPRINT("Single builtin command in pipeline: %s", builtin->name);
       int result = jshell_exec_builtin(builtin, cmd_params,
                                         job->input_fd, job->output_fd);
-      jshell_close_pipes(pipes, pipe_count);
       free(pids);
+      jshell_close_pipes(pipes, pipe_count);
       return result;
     }
     
     pid_t pid = jshell_fork_and_exec(cmd_params, pipes, i, cmd_count,
                                       job->input_fd, job->output_fd);
-    
     if (pid == -1) {
       for (size_t j = 0; j < i; j++) {
         kill(pids[j], SIGTERM);
       }
-      jshell_close_pipes(pipes, pipe_count);
       free(pids);
+      jshell_close_pipes(pipes, pipe_count);
       return -1;
     }
     
@@ -374,7 +369,6 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
   jshell_close_pipes(pipes, pipe_count);
   
   int result = jshell_wait_for_jobs(pids, cmd_count, job->exec_job_type);
-  
   free(pids);
   
   return result;
@@ -393,7 +387,6 @@ void jshell_exec_job(JShellExecJob* job) {
          job->jshell_cmd_vector_ptr->cmd_count);
   
   int result;
-  
   if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
     result = jshell_exec_single_cmd(job);
   } else {
@@ -432,16 +425,13 @@ void jshell_cleanup_job(JShellExecJob* job) {
   if (job->jshell_cmd_vector_ptr != NULL) {
     jshell_cleanup_cmd_vector(job->jshell_cmd_vector_ptr);
     free(job->jshell_cmd_vector_ptr);
-    job->jshell_cmd_vector_ptr = NULL;
   }
   
   if (job->input_fd != -1) {
     close(job->input_fd);
-    job->input_fd = -1;
   }
   
   if (job->output_fd != -1) {
     close(job->output_fd);
-    job->output_fd = -1;
   }
 }

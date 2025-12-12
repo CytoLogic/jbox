@@ -20,19 +20,19 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - [x] 1.7: Modify `visitJob()` to build JShellExecJob and call execution function from helpers
 
 ### Phase 2: Execution Logic in jshell_ast_helpers.c
-- [ ] 2.1: Implement `jshell_exec_job(JShellExecJob* job)` - main execution dispatcher
-- [ ] 2.2: Implement `jshell_exec_single_cmd()` - execute single command without pipes
-- [ ] 2.3: Implement `jshell_exec_pipeline()` - execute multiple commands with pipes
-- [ ] 2.4: Implement `jshell_setup_input_redir()` - handle input redirection for first command
-- [ ] 2.5: Implement `jshell_setup_output_redir()` - handle output redirection for last command
-- [ ] 2.6: Implement `jshell_create_pipes()` - create pipe array for pipeline
-- [ ] 2.7: Implement `jshell_fork_and_exec()` - fork process and exec command
-- [ ] 2.8: Implement `jshell_wait_for_jobs()` - wait for foreground/background jobs
+- [x] 2.1: Implement `jshell_exec_job(JShellExecJob* job)` - main execution dispatcher
+- [x] 2.2: Implement `jshell_exec_single_cmd()` - execute single command without pipes
+- [x] 2.3: Implement `jshell_exec_pipeline()` - execute multiple commands with pipes
+- [x] 2.4: Implement `jshell_setup_input_redir()` - handle input redirection for first command
+- [x] 2.5: Implement `jshell_setup_output_redir()` - handle output redirection for last command
+- [x] 2.6: Implement `jshell_create_pipes()` - create pipe array for pipeline
+- [x] 2.7: Implement `jshell_fork_and_exec()` - fork process and exec command
+- [x] 2.8: Implement `jshell_wait_for_jobs()` - wait for foreground/background jobs
 
 ### Phase 3: Command Registry Integration
-- [ ] 3.1: Implement `jshell_find_builtin()` - check if command is builtin using registry
-- [ ] 3.2: Implement `jshell_exec_builtin()` - execute builtin command directly
-- [ ] 3.3: Handle builtin vs external command distinction in execution path
+- [x] 3.1: Implement `jshell_find_builtin()` - check if command is builtin using registry
+- [x] 3.2: Implement `jshell_exec_builtin()` - execute builtin command directly
+- [x] 3.3: Handle builtin vs external command distinction in execution path
 
 ### Phase 4: Assignment Job Support
 - [ ] 4.1: Implement `jshell_capture_output()` - capture stdout to buffer
@@ -43,11 +43,11 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 ### Phase 5: Error Handling and Cleanup
 - [x] 5.1: Implement `jshell_cleanup_job()` - free JShellExecJob resources
 - [x] 5.2: Implement `jshell_cleanup_cmd_vector()` - free JShellCmdVector and wordexp results
-- [ ] 5.3: Add error handling for fork failures
-- [ ] 5.4: Add error handling for exec failures
-- [ ] 5.5: Add error handling for pipe creation failures
-- [ ] 5.6: Add error handling for file descriptor operations
-- [ ] 5.7: Ensure proper cleanup on all error paths
+- [x] 5.3: Add error handling for fork failures
+- [x] 5.4: Add error handling for exec failures
+- [x] 5.5: Add error handling for pipe creation failures
+- [x] 5.6: Add error handling for file descriptor operations
+- [x] 5.7: Ensure proper cleanup on all error paths
 
 ### Phase 6: Background Job Support
 - [ ] 6.1: Implement job tracking structure for background jobs
