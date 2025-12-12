@@ -1,14 +1,14 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "cmd_spec.h"
+#include "jshell_cmd_spec.h"
 
 #define MAX_COMMANDS 32
 
 static const cmd_spec_t *command_registry[MAX_COMMANDS];
 static size_t command_count;
 
-void register_command(const cmd_spec_t *spec) {
+void jshell_register_command(const cmd_spec_t *spec) {
     if (spec == NULL) {
         return;
     }
@@ -17,7 +17,7 @@ void register_command(const cmd_spec_t *spec) {
     }
 }
 
-const cmd_spec_t *find_command(const char *name) {
+const cmd_spec_t *jshell_find_command(const char *name) {
     if (name == NULL) {
         return NULL;
     }
@@ -31,7 +31,7 @@ const cmd_spec_t *find_command(const char *name) {
     return NULL;
 }
 
-void for_each_command(void (*callback)(const cmd_spec_t *spec, void *userdata),
+void jshell_for_each_command(void (*callback)(const cmd_spec_t *spec, void *userdata),
                       void *userdata) {
     if (callback == NULL) {
         return;
