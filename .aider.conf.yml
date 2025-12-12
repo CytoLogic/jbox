@@ -1,3 +1,4 @@
 git: true
-read: [ai/CONVENTIONS.md, ai/AI_TODO.md]
+read: [ai/CONVENTIONS.md]
+file: [ai/AI_TODO.md]
 watch-files: true
