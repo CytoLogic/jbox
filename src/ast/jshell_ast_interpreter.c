@@ -2,15 +2,16 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <wordexp.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "jbox_debug.h"
+#include "../jbox_debug.h"
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
 
-// forward declarations of private functions
+/* Forward declarations of private functions */
 void visitListJob(ListJob p);
 void visitJob(Job p);
 JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type);
@@ -20,8 +21,10 @@ int visitOptionalInputRedirection(OptionalInputRedirection p);
 int visitOptionalOutputRedirection(OptionalOutputRedirection p);
 int visitListShellToken(ListShellToken p, wordexp_t* word_vector_ptr);
 int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr);
-int visitExpansionStringToken(ExpansionStringToken p, wordexp_t* word_vector_ptr);
-int visitLiteralStringToken(LiteralStringToken p, wordexp_t* word_vector_ptr);
+int visitExpansionStringToken(ExpansionStringToken p, 
+                              wordexp_t* word_vector_ptr);
+int visitLiteralStringToken(LiteralStringToken p, 
+                            wordexp_t* word_vector_ptr);
 int visitVariableToken(VariableToken p, wordexp_t* word_vector_ptr);
 int visitWordToken(WordToken p, wordexp_t* word_vector_ptr);
 void visitAIQueryToken(AIQueryToken p);
@@ -39,7 +42,6 @@ int interpretInput(Input p)
   switch(p->kind)
   {
   case is_In:
-    /* Code for In Goes Here */
     visitListJob(p->u.in_.listjob_);
     return 0;
 
@@ -53,9 +55,8 @@ int interpretInput(Input p)
 void visitListJob(ListJob listjob)
 {
   DPRINT("visiting ListJob");
-  while(listjob  != 0)
+  while(listjob != 0)
   {
-    /* Code For ListJob Goes Here */
     visitJob(listjob->job_);
     listjob = listjob->listjob_;
   }
@@ -70,7 +71,6 @@ void visitJob(Job p)
   {
   case is_AssigJob:
     DPRINT("is AssigJob");
-    // TODO: Phase 4 - Handle assignment jobs
     visitShellToken(p->u.assigJob_.shelltoken_, NULL);
     visitCommandLine(p->u.assigJob_.commandline_, FG_JOB);
     break;
@@ -83,6 +83,7 @@ void visitJob(Job p)
       if (exec_job != NULL) {
         jshell_exec_job(exec_job);
         jshell_cleanup_job(exec_job);
+        free(exec_job);
       }
     }
     break;
@@ -95,6 +96,7 @@ void visitJob(Job p)
       if (exec_job != NULL) {
         jshell_exec_job(exec_job);
         jshell_cleanup_job(exec_job);
+        free(exec_job);
       }
     }
     break;
@@ -115,6 +117,7 @@ void visitJob(Job p)
   }
 }
 
+
 JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type)
 {
   DPRINT("visiting CommandLine");
@@ -123,26 +126,30 @@ JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type)
   {
   case is_CmdLine:
     {
-      // Build command vector
-      JShellCmdVector* cmd_vector = 
-        visitCommandPart(p->u.cmdLine_.commandpart_);
-      
-      // Get input/output file descriptors
       int input_fd = 
         visitOptionalInputRedirection(
           p->u.cmdLine_.optionalinputredirection_);
+      
+      JShellCmdVector* cmd_vector = 
+        visitCommandPart(p->u.cmdLine_.commandpart_);
+      
       int output_fd = 
         visitOptionalOutputRedirection(
           p->u.cmdLine_.optionaloutputredirection_);
       
-      // Allocate and populate JShellExecJob
+      if (cmd_vector == NULL) {
+        if (input_fd != -1) close(input_fd);
+        if (output_fd != -1) close(output_fd);
+        return NULL;
+      }
+      
       JShellExecJob* exec_job = malloc(sizeof(JShellExecJob));
       if (exec_job == NULL) {
         perror("malloc JShellExecJob");
-        // Clean up file descriptors
         if (input_fd != -1) close(input_fd);
         if (output_fd != -1) close(output_fd);
-        // TODO: Clean up cmd_vector
+        jshell_cleanup_cmd_vector(cmd_vector);
+        free(cmd_vector);
         return NULL;
       }
       
@@ -151,8 +158,8 @@ JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type)
       exec_job->input_fd = input_fd;
       exec_job->output_fd = output_fd;
       
-      DPRINT("Built JShellExecJob: type=%d, cmd_count=%zu, input_fd=%d, \
-output_fd=%d",
+      DPRINT("Built JShellExecJob: type=%d, cmd_count=%zu, input_fd=%d, "
+             "output_fd=%d",
              job_type, cmd_vector->cmd_count, input_fd, output_fd);
       
       return exec_job;
@@ -165,29 +172,32 @@ output_fd=%d",
   }
 }
 
+
 JShellCmdVector* visitCommandPart(CommandPart p)
 {
   DPRINT("visiting CommandPart");
   
-  // First pass: count commands
-  int cmd_count = 0;
+  size_t cmd_count = 0;
   CommandPart temp = p;
+  
   while (temp != NULL) {
     cmd_count++;
     if (temp->kind == is_SnglCmd) {
       break;
     } else if (temp->kind == is_PipeCmd) {
       temp = temp->u.pipeCmd_.commandpart_;
+    } else {
+      fprintf(stderr, "Error: unexpected CommandPart kind!\n");
+      return NULL;
     }
   }
   
-  DPRINT("cmd_count = %d", cmd_count);
+  DPRINT("cmd_count = %zu", cmd_count);
   
-  // Allocate JShellCmdVector
   JShellCmdVector* cmd_vector = malloc(sizeof(JShellCmdVector));
   if (cmd_vector == NULL) {
     perror("malloc JShellCmdVector");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
   
   cmd_vector->cmd_count = cmd_count;
@@ -196,29 +206,30 @@ JShellCmdVector* visitCommandPart(CommandPart p)
   if (cmd_vector->jshell_cmd_params_ptr == NULL) {
     perror("malloc JShellCmdParams array");
     free(cmd_vector);
-    exit(EXIT_FAILURE);
+    return NULL;
   }
   
-  // Second pass: populate commands (in reverse order due to grammar)
-  int index = cmd_count - 1;
+  size_t index = 0;
   temp = p;
-  while (temp != NULL) {
+  
+  while (temp != NULL && index < cmd_count) {
     if (temp->kind == is_SnglCmd) {
-      DPRINT("is SnglCmd at index %d", index);
+      DPRINT("is SnglCmd at index %zu", index);
       cmd_vector->jshell_cmd_params_ptr[index] = 
         visitCommandUnit(temp->u.snglCmd_.commandunit_);
       break;
     } else if (temp->kind == is_PipeCmd) {
-      DPRINT("is PipeCmd at index %d", index);
+      DPRINT("is PipeCmd at index %zu", index);
       cmd_vector->jshell_cmd_params_ptr[index] = 
         visitCommandUnit(temp->u.pipeCmd_.commandunit_);
-      index--;
+      index++;
       temp = temp->u.pipeCmd_.commandpart_;
     }
   }
   
   return cmd_vector;
 }
+
 
 int visitOptionalInputRedirection(OptionalInputRedirection p)
 {
@@ -234,31 +245,37 @@ int visitOptionalInputRedirection(OptionalInputRedirection p)
     
   case is_InRedir:
     DPRINT("is InRedir");
-    int result = visitShellToken(p->u.inRedir_.shelltoken_, &word_vector);
-    DPRINT("wordexp result: %d", result);
-    DPRINT_WORDEXP(word_vector);
-    
-    if (result != 0 || word_vector.we_wordc != 1) {
-      fprintf(stderr, "Error: invalid input redirection\n");
+    {
+      int result = 
+        visitShellToken(p->u.inRedir_.shelltoken_, &word_vector);
+      DPRINT("wordexp result: %d", result);
+      
+      if (result != 0 || word_vector.we_wordc != 1) {
+        fprintf(stderr, "Error: invalid input redirection\n");
+        wordfree(&word_vector);
+        return -1;
+      }
+      
+      DPRINT("Opening input file: %s", word_vector.we_wordv[0]);
+      int fd = open(word_vector.we_wordv[0], O_RDONLY);
+      if (fd == -1) {
+        perror("open input file");
+      } else {
+        DPRINT("Opened input file: fd=%d", fd);
+      }
+      
       wordfree(&word_vector);
-      return -1;
+      return fd;
     }
-    
-    int fd = open(word_vector.we_wordv[0], O_RDONLY);
-    if (fd == -1) {
-      perror("open input file");
-    }
-    
-    wordfree(&word_vector);
-    return fd;
 
   default:
     fprintf(stderr, 
-            "Error: bad kind field when printing \
-OptionalInputRedirection!\n");
+            "Error: bad kind field when printing "
+            "OptionalInputRedirection!\n");
     exit(1);
   }
 }
+
 
 int visitOptionalOutputRedirection(OptionalOutputRedirection p)
 {
@@ -274,61 +291,81 @@ int visitOptionalOutputRedirection(OptionalOutputRedirection p)
     
   case is_OutRedir:
     DPRINT("is OutRedir");
-    int result = visitShellToken(p->u.outRedir_.shelltoken_, &word_vector);
-    DPRINT("wordexp result: %d", result);
-    DPRINT_WORDEXP(word_vector);
-    
-    if (result != 0 || word_vector.we_wordc != 1) {
-      fprintf(stderr, "Error: invalid output redirection\n");
+    {
+      int result = 
+        visitShellToken(p->u.outRedir_.shelltoken_, &word_vector);
+      DPRINT("wordexp result: %d", result);
+      
+      if (result != 0 || word_vector.we_wordc != 1) {
+        fprintf(stderr, "Error: invalid output redirection\n");
+        wordfree(&word_vector);
+        return -1;
+      }
+      
+      DPRINT("Opening output file: %s", word_vector.we_wordv[0]);
+      int fd = open(word_vector.we_wordv[0], 
+                    O_WRONLY | O_CREAT | O_TRUNC, 
+                    0644);
+      if (fd == -1) {
+        perror("open output file");
+      } else {
+        DPRINT("Opened output file: fd=%d", fd);
+      }
+      
       wordfree(&word_vector);
-      return -1;
+      return fd;
     }
-    
-    int fd = open(word_vector.we_wordv[0], 
-                  O_WRONLY | O_CREAT | O_TRUNC, 
-                  0644);
-    if (fd == -1) {
-      perror("open output file");
-    }
-    
-    wordfree(&word_vector);
-    return fd;
 
   default:
     fprintf(stderr, 
-            "Error: bad kind field when printing \
-OptionalOutputRedirection!\n");
+            "Error: bad kind field when printing "
+            "OptionalOutputRedirection!\n");
     exit(1);
   }
 }
+
 
 JShellCmdParams visitCommandUnit(CommandUnit p)
 {
   DPRINT("visiting CommandUnit");
 
-  wordexp_t word_vector = {0};
+  JShellCmdParams cmd_params;
+  memset(&cmd_params, 0, sizeof(JShellCmdParams));
 
   switch(p->kind)
   {
   case is_CmdUnit:
+    {
+      int result = 
+        visitListShellToken(p->u.cmdUnit_.listshelltoken_, 
+                           &cmd_params.word_expansion);
 
-    int result = 
-      visitListShellToken(p->u.cmdUnit_.listshelltoken_, &word_vector);
+      DPRINT("wordexp result: %d", result);
 
-    DPRINT("wordexp result: %d", result);
-    DPRINT_WORDEXP(word_vector);
-
-    JShellCmdParams cmd_params = {
-      .argc = (int)word_vector.we_wordc,
-      .argv = word_vector.we_wordv
-    };
-    return cmd_params;
+      if (result == 0) {
+        cmd_params.argc = (int)cmd_params.word_expansion.we_wordc;
+        cmd_params.argv = cmd_params.word_expansion.we_wordv;
+        
+        DPRINT("Built JShellCmdParams: argc=%d", cmd_params.argc);
+        for (int i = 0; i < cmd_params.argc; i++) {
+          DPRINT("  argv[%d]=%s", i, cmd_params.argv[i]);
+        }
+      } else {
+        fprintf(stderr, "Error: word expansion failed with code %d\n", 
+                result);
+        cmd_params.argc = 0;
+        cmd_params.argv = NULL;
+      }
+      
+      return cmd_params;
+    }
 
   default:
     fprintf(stderr, "Error: bad kind field when printing CommandUnit!\n");
     exit(1);
   }
 }
+
 
 int visitListShellToken(ListShellToken listshelltoken, 
                         wordexp_t* word_vector_ptr)
@@ -337,11 +374,10 @@ int visitListShellToken(ListShellToken listshelltoken,
 
   int wordexp_result = 0;
 
-  while(listshelltoken  != 0)
+  while(listshelltoken != 0)
   {
     wordexp_result = 
       visitShellToken(listshelltoken->shelltoken_, word_vector_ptr);
-    // return wordexp_result if it is nonzero
     if (wordexp_result != 0) {
       return wordexp_result;
     }
@@ -361,17 +397,13 @@ int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr)
   case is_ExpStr:
     return visitExpansionStringToken(p->u.expStr_.expansionstringtoken_, 
                                      word_vector_ptr);
-    break;
   case is_LitStr:
     return visitLiteralStringToken(p->u.litStr_.literalstringtoken_, 
                                    word_vector_ptr);
-    break;
   case is_Var:
     return visitVariableToken(p->u.var_.variabletoken_, word_vector_ptr);
-    break;
   case is_Wrd:
     return visitWordToken(p->u.wrd_.wordtoken_, word_vector_ptr);
-    break;
 
   default:
     fprintf(stderr, "Error: bad kind field when printing ShellToken!\n");
@@ -379,68 +411,76 @@ int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr)
   }
 }
 
+
 int visitExpansionStringToken(ExpansionStringToken p, 
                               wordexp_t* word_vector_ptr)
 {
-  DPRINT("visiting ExpansionStringToken");
+  DPRINT("visiting ExpansionStringToken: %s", p);
   return jshell_expand_word(p, word_vector_ptr);
 }
+
 
 int visitLiteralStringToken(LiteralStringToken p, 
                             wordexp_t* word_vector_ptr)
 {
-  DPRINT("visiting LiteralStringToken");
+  DPRINT("visiting LiteralStringToken: %s", p);
   return jshell_expand_word(p, word_vector_ptr);
 }
+
 
 int visitVariableToken(VariableToken p, wordexp_t* word_vector_ptr)
 {
-  DPRINT("visiting VariableToken");
+  DPRINT("visiting VariableToken: %s", p);
   return jshell_expand_word(p, word_vector_ptr);
 }
 
+
 int visitWordToken(WordToken p, wordexp_t* word_vector_ptr)
 {
-  DPRINT("visiting WordToken");
+  DPRINT("visiting WordToken: %s", p);
   return jshell_expand_word(p, word_vector_ptr);
 }
 
 
 void visitAIQueryToken(AIQueryToken p)
 {
-  DPRINT("visiting AIQueryToken");
-  /* Code for AIQueryToken Goes Here */
+  DPRINT("visiting AIQueryToken: %s", p);
+  printf("AI Query: %s\n", p);
 }
+
 
 void visitAIExecToken(AIExecToken p)
 {
-  DPRINT("visiting AIExecToken");
-  /* Code for AIExecToken Goes Here */
+  DPRINT("visiting AIExecToken: %s", p);
+  printf("AI Exec: %s\n", p);
 }
 
 
-// TODO: Trim Fat
 void visitIdent(Ident i)
 {
-  /* Code for Ident Goes Here */
+  DPRINT("visiting Ident: %s", i);
 }
+
 
 void visitInteger(Integer i)
 {
-  /* Code for Integer Goes Here */
+  DPRINT("visiting Integer: %d", i);
 }
+
 
 void visitDouble(Double d)
 {
-  /* Code for Double Goes Here */
+  DPRINT("visiting Double: %f", d);
 }
+
 
 void visitChar(Char c)
 {
-  /* Code for Char Goes Here */
+  DPRINT("visiting Char: %c", c);
 }
+
 
 void visitString(String s)
 {
-  /* Code for String Goes Here */
+  DPRINT("visiting String: %s", s);
 }

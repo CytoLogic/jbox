@@ -11,13 +11,13 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 ## Tasks
 
 ### Phase 1: Data Structure Building in jshell_ast_interpreter.c
-- [ ] 1.1: Modify `visitCommandPart()` to count commands and allocate JShellCmdParams array
-- [ ] 1.2: Modify `visitCommandPart()` to populate JShellCmdParams array by calling `visitCommandUnit()`
-- [ ] 1.3: Modify `visitCommandPart()` to return populated JShellCmdVector
-- [ ] 1.4: Modify `visitOptionalInputRedirection()` to return file descriptor (or -1 for none)
-- [ ] 1.5: Modify `visitOptionalOutputRedirection()` to return file descriptor (or -1 for none)
-- [ ] 1.6: Modify `visitCommandLine()` to build and return complete JShellExecJob structure
-- [ ] 1.7: Modify `visitJob()` to build JShellExecJob and call execution function from helpers
+- [x] 1.1: Modify `visitCommandPart()` to count commands and allocate JShellCmdParams array
+- [x] 1.2: Modify `visitCommandPart()` to populate JShellCmdParams array by calling `visitCommandUnit()`
+- [x] 1.3: Modify `visitCommandPart()` to return populated JShellCmdVector
+- [x] 1.4: Modify `visitOptionalInputRedirection()` to return file descriptor (or -1 for none)
+- [x] 1.5: Modify `visitOptionalOutputRedirection()` to return file descriptor (or -1 for none)
+- [x] 1.6: Modify `visitCommandLine()` to build and return complete JShellExecJob structure
+- [x] 1.7: Modify `visitJob()` to build JShellExecJob and call execution function from helpers
 
 ### Phase 2: Execution Logic in jshell_ast_helpers.c
 - [ ] 2.1: Implement `jshell_exec_job(JShellExecJob* job)` - main execution dispatcher
@@ -41,8 +41,8 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - [ ] 4.4: Handle assignment job execution with output capture
 
 ### Phase 5: Error Handling and Cleanup
-- [ ] 5.1: Implement `jshell_cleanup_job()` - free JShellExecJob resources
-- [ ] 5.2: Implement `jshell_cleanup_cmd_vector()` - free JShellCmdVector and wordexp results
+- [x] 5.1: Implement `jshell_cleanup_job()` - free JShellExecJob resources
+- [x] 5.2: Implement `jshell_cleanup_cmd_vector()` - free JShellCmdVector and wordexp results
 - [ ] 5.3: Add error handling for fork failures
 - [ ] 5.4: Add error handling for exec failures
 - [ ] 5.5: Add error handling for pipe creation failures

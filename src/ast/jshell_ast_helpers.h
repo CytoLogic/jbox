@@ -11,5 +11,7 @@ void jshell_exec_job(JShellExecJob* job);
 
 void jshell_cleanup_job(JShellExecJob* job);
 
+void jshell_cleanup_cmd_vector(JShellCmdVector* cmd_vector);
+
 
 #endif

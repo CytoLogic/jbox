@@ -3,12 +3,14 @@
 #ifndef JSHELL_AST_INTERPRETER_H
 #define JSHELL_AST_INTERPRETER_H
 
+#include <wordexp.h>
 #include "Absyn.h"
 
 
 typedef struct {
   int argc;
   char **argv;
+  wordexp_t word_expansion;
 } JShellCmdParams;
 
 
