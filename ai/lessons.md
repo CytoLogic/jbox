@@ -1,0 +1,2 @@
+- Aider works best if files to edit are added ahead of generating edits in code mode.
+- Sometimes the agent fails to edit its implementation plan file.
