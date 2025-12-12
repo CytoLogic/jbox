@@ -2,7 +2,7 @@
 CC = gcc
 CFLAGS = -Isrc -Igen/bnfc -std=gnu23 -Wall -Werror -ggdb3 -fsanitize=address,undefined
 ifdef DEBUG
-	CFLAGS += -DDEBUG
+	CFLAGS += -DDEBUG -Wno-error=unused-variable -Wno-error=unused-function
 endif
 #LDFLAGS = 
 COMPILE = $(CC) $(CFLAGS)
@@ -36,7 +36,7 @@ all:
 
 jbox:
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c src/jshell.c src/ast/ast_traverser.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/jbox.c src/jshell.c src/ast/*.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 	ln -s jbox bin/cat
 	ln -s jbox bin/cp
 	ln -s jbox bin/echo
@@ -60,10 +60,10 @@ bnfc:
 	cd $(BNFC_GEN) && make
 
 ast-traverser:
-	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/ast_traverser.c
-	cp -b $(BNFC_GEN)/Skeleton.h $(AST_DIR)/ast_traverser.h
-	sed -i 's/Skeleton.h/ast_traverser.h/g' $(AST_DIR)/ast_traverser.c
-	sed -i 's/SKELETON_HEADER/AST_TRAVERSER/g' $(AST_DIR)/ast_traverser.h
+	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/jshell_ast_interpreter.c
+	cp -b $(BNFC_GEN)/Skeleton.h $(AST_DIR)/jshell_ast_interpreter.h
+	sed -i 's/Skeleton.h/jshell_ast_traverser.h/g' $(AST_DIR)/jshell_ast_traverser.c
+	sed -i 's/SKELETON_HEADER/JSHELL_AST_INTERPRETER_H/g' $(AST_DIR)/jshell_ast_traverser.h
 
 standalone:
 	find src/utils-standalone -name "*.c"

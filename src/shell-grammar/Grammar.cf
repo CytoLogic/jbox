@@ -5,7 +5,9 @@ token AIExecToken (('@' '!' ) ( char )* ) ;
 token ExpansionStringToken ('"' ( (char - '"') | ('\\' '"') )* '"') ; 
 token LiteralStringToken ('\'' ( (char - '\'') | ('\\' '\'') )* '\'') ; 
 token VariableToken ('$' (char - ('$' | '"' | ' ' | '\t' | '\n' | '\r' | '=') )+ ) ;   
-token WordToken ( (char - ('$' | '=' | ';' | '"' | ' ' | '\t' | '\n' | '\r') )+ | ('\\' '"')+ | ('\\' '$')+ | ('\\' '=')+| ('\\' ';')+)+ ;
+-- wordexp() does not allow |,&,<,>, or \n unless it is in quotes
+token WordToken ( (char - ('|' | '&' | '<' | '>' | '$' | '=' | ';' | '"' | ' ' | '\t' | '\n' | '\r') )+ 
+    | ('\\' ( '$' | '=' | ';' | '"' | ' ' ) )+ )+ ;
 
 comment "/*" "*/" ;
 comment "//" "\n" ;
@@ -17,7 +19,7 @@ entrypoints Input ;
 
 In. Input ::= [Job] ;
 
-AssigJob. Job ::= ShellToken "=" CommandLine ;
+AssigJob. Job ::= WordToken "=" CommandLine ;
 AIChatJob. Job ::= AIQueryToken ;
 AIExecJob. Job ::= AIExecToken ;
 FGJob. Job ::= CommandLine ;
@@ -28,12 +30,12 @@ CmdLine. CommandLine ::= CommandPart OptionalInputRedirection OptionalOutputRedi
 SnglCmd. CommandPart ::= CommandUnit ;
 PipeCmd. CommandPart ::= CommandUnit "|" CommandPart ;
 
-CmdUnit. CommandUnit ::= [ShellToken] ;
-
 NoInRedir. OptionalInputRedirection ::= ;
 InRedir. OptionalInputRedirection ::= "<" ShellToken ;
 NoOutRedir. OptionalOutputRedirection ::= ;
 OutRedir. OptionalOutputRedirection ::= ">" ShellToken ;
+
+CmdUnit. CommandUnit ::= [ShellToken] ;
 
 ExpStr. ShellToken ::= ExpansionStringToken ;
 LitStr. ShellToken ::= LiteralStringToken ;
