@@ -15,6 +15,7 @@
 #include "../jshell_cmd_registry.h"
 #include "../jbox_debug.h"
 #include "../jshell.h"
+#include "../jshell_job_control.h"
 
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
@@ -268,6 +269,48 @@ static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count,
 }
 
 
+static char* jshell_build_cmd_string(JShellCmdVector* cmd_vector) {
+  if (cmd_vector == NULL || cmd_vector->cmd_count == 0) {
+    return NULL;
+  }
+  
+  char* cmd_string = malloc(1024);
+  if (cmd_string == NULL) {
+    return NULL;
+  }
+  
+  cmd_string[0] = '\0';
+  size_t offset = 0;
+  
+  for (size_t i = 0; i < cmd_vector->cmd_count; i++) {
+    JShellCmdParams* params = &cmd_vector->jshell_cmd_params_ptr[i];
+    
+    for (int j = 0; j < params->argc; j++) {
+      if (offset + strlen(params->argv[j]) + 2 >= 1024) {
+        break;
+      }
+      
+      if (j > 0 || i > 0) {
+        strcat(cmd_string + offset, " ");
+        offset++;
+      }
+      
+      strcat(cmd_string + offset, params->argv[j]);
+      offset += strlen(params->argv[j]);
+    }
+    
+    if (i < cmd_vector->cmd_count - 1) {
+      if (offset + 3 < 1024) {
+        strcat(cmd_string + offset, " | ");
+        offset += 3;
+      }
+    }
+  }
+  
+  return cmd_string;
+}
+
+
 static int jshell_exec_single_cmd(JShellExecJob* job) {
   DPRINT("jshell_exec_single_cmd called");
   
@@ -306,6 +349,14 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
   }
   if (job->output_fd != -1) {
     close(job->output_fd);
+  }
+  
+  if (job->exec_job_type == BG_JOB) {
+    char* cmd_string = jshell_build_cmd_string(job->jshell_cmd_vector_ptr);
+    jshell_add_background_job(&pid, 1, cmd_string);
+    if (cmd_string != NULL) {
+      free(cmd_string);
+    }
   }
   
   return jshell_wait_for_jobs(&pid, 1, job->exec_job_type);
@@ -370,7 +421,15 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
   
   jshell_close_pipes(pipes, pipe_count);
   
-  int result = jshell_wait_for_jobs(pids, cmd_count, job->exec_job_type);
+  if (job->exec_job_type == BG_JOB) {
+    char* cmd_string = jshell_build_cmd_string(job->jshell_cmd_vector_ptr);
+    jshell_add_background_job(pids, cmd_count, cmd_string);
+    if (cmd_string != NULL) {
+      free(cmd_string);
+    }
+  }
+  
+  int result = jshell_wait_for_jobs(pids,cmd_count, job->exec_job_type);
   free(pids);
   
   return result;
@@ -402,7 +461,7 @@ void jshell_exec_job(JShellExecJob* job) {
 
 
 char* jshell_capture_and_tee_output(JShellExecJob* job) {
-  DPRINT("jshell_capture_and_t ee_output called");
+  DPRINT("jshell_capture_and_tee_output called");
   
   if (job == NULL || job->jshell_cmd_vector_ptr == NULL) {
     return NULL;
@@ -414,23 +473,23 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
     return NULL;
   }
   
-  char* buffer = malloc(MAX_VAR_SIZE);
-  if (buffer == NULL) {
-    perror("malloc capture buffer");
+  int buffer_pipe[2];
+  if (pipe(buffer_pipe) == -1) {
+    perror("pipe for buffer");
     close(capture_pipe[0]);
     close(capture_pipe[1]);
     return NULL;
   }
-  memset(buffer, 0, MAX_VAR_SIZE);
   
   int original_output_fd = job->output_fd;
   if (original_output_fd == -1) {
     original_output_fd = dup(STDOUT_FILENO);
     if (original_output_fd == -1) {
       perror("dup stdout");
-      free(buffer);
       close(capture_pipe[0]);
       close(capture_pipe[1]);
+      close(buffer_pipe[0]);
+      close(buffer_pipe[1]);
       return NULL;
     }
   }
@@ -438,9 +497,10 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
   pid_t tee_pid = fork();
   if (tee_pid == -1) {
     perror("fork tee process");
-    free(buffer);
     close(capture_pipe[0]);
     close(capture_pipe[1]);
+    close(buffer_pipe[0]);
+    close(buffer_pipe[1]);
     if (job->output_fd == -1) {
       close(original_output_fd);
     }
@@ -449,6 +509,14 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
   
   if (tee_pid == 0) {
     close(capture_pipe[1]);
+    close(buffer_pipe[0]);
+    
+    char* buffer = malloc(MAX_VAR_SIZE);
+    if (buffer == NULL) {
+      perror("malloc capture buffer in tee");
+      exit(EXIT_FAILURE);
+    }
+    memset(buffer, 0, MAX_VAR_SIZE);
     
     char tee_buffer[4096];
     ssize_t bytes_read;
@@ -471,7 +539,8 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
       }
       
       if (total_captured >= MAX_VAR_SIZE - 1) {
-        while (read(capture_pipe[0], tee_buffer, sizeof(tee_buffer)) > 0) {
+        while ((bytes_read = read(capture_pipe[0], tee_buffer, 
+                                   sizeof(tee_buffer))) > 0) {
           if (write(original_output_fd, tee_buffer, bytes_read) == -1) {
             perror("write to output");
           }
@@ -482,7 +551,18 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
     
     buffer[total_captured] = '\0';
     
+    size_t buffer_len = strlen(buffer) + 1;
+    if (write(buffer_pipe[1], &buffer_len, sizeof(size_t)) == -1) {
+      perror("write buffer length");
+    }
+    
+    if (write(buffer_pipe[1], buffer, buffer_len) == -1) {
+      perror("write buffer content");
+    }
+    
+    free(buffer);
     close(capture_pipe[0]);
+    close(buffer_pipe[1]);
     if (job->output_fd == -1) {
       close(original_output_fd);
     }
@@ -491,6 +571,7 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
   }
   
   close(capture_pipe[0]);
+  close(buffer_pipe[1]);
   
   int saved_output_fd = job->output_fd;
   job->output_fd = capture_pipe[1];
@@ -507,13 +588,65 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
   int tee_status;
   if (waitpid(tee_pid, &tee_status, 0) == -1) {
     perror("waitpid tee process");
-    free(buffer);
+    close(buffer_pipe[0]);
     job->output_fd = saved_output_fd;
     if (saved_output_fd == -1) {
       close(original_output_fd);
     }
     return NULL;
   }
+  
+  size_t buffer_len = 0;
+  ssize_t read_result = read(buffer_pipe[0], &buffer_len, sizeof(size_t));
+  if (read_result != sizeof(size_t)) {
+    perror("read buffer length");
+    close(buffer_pipe[0]);
+    job->output_fd = saved_output_fd;
+    if (saved_output_fd == -1) {
+      close(original_output_fd);
+    }
+    return NULL;
+  }
+  
+  if (buffer_len == 0 || buffer_len > MAX_VAR_SIZE) {
+    DPRINT("Invalid buffer length: %zu", buffer_len);
+    close(buffer_pipe[0]);
+    job->output_fd = saved_output_fd;
+    if (saved_output_fd == -1) {
+      close(original_output_fd);
+    }
+    return NULL;
+  }
+  
+  char* buffer = malloc(buffer_len);
+  if (buffer == NULL) {
+    perror("malloc buffer in parent");
+    close(buffer_pipe[0]);
+    job->output_fd = saved_output_fd;
+    if (saved_output_fd == -1) {
+      close(original_output_fd);
+    }
+    return NULL;
+  }
+  
+  size_t total_read = 0;
+  while (total_read < buffer_len) {
+    read_result = read(buffer_pipe[0], buffer + total_read, 
+                       buffer_len - total_read);
+    if (read_result <= 0) {
+      perror("read buffer content");
+      free(buffer);
+      close(buffer_pipe[0]);
+      job->output_fd = saved_output_fd;
+      if (saved_output_fd == -1) {
+        close(original_output_fd);
+      }
+      return NULL;
+    }
+    total_read += read_result;
+  }
+  
+  close(buffer_pipe[0]);
   
   job->output_fd = saved_output_fd;
   if (saved_output_fd == -1) {
@@ -524,7 +657,7 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
     DPRINT("Command execution failed with status %d", result);
   }
   
-  DPRINT("Captured output in buffer");
+  DPRINT("Captured output: %s", buffer);
   return buffer;
 }
 

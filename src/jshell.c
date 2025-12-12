@@ -4,6 +4,7 @@
 #include "Absyn.h"
 #include "Printer.h"
 #include "ast/jshell_ast_interpreter.h"
+#include "jshell_job_control.h"
 
 
 int jshell_main(void) {
@@ -12,7 +13,11 @@ int jshell_main(void) {
 
   Input parse_tree;
 
+  jshell_init_job_control();
+
   while (true) {
+    jshell_check_background_jobs();
+    
     printf("(jsh)>");
 
     if (fgets(line, sizeof(line), stdin) == NULL) break;
@@ -47,4 +52,3 @@ int jshell_main(void) {
 
   return 0;
 }
-

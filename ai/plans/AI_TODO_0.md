@@ -39,7 +39,7 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - [x] 4.2: Implement `jshell_set_env_var()` - set environment variable from captured output with whitespace trimming
 - [x] 4.3: Modify `visitJob()` AssigJob case to extract variable name and call assignment logic
 - [x] 4.4: Handle assignment job execution with output capture and tee functionality
-- [ ] 4.5: **BUG FIX NEEDED**: Current implementation has IPC issue - tee process cannot communicate buffer back to parent. Need to use shared memory (mmap) or additional pipe for buffer communication.
+- [x] 4.5: Fixed IPC bug - implemented additional pipe for tee process to send buffer back to parent
 
 ### Phase 5: Error Handling and Cleanup
 - [x] 5.1: Implement `jshell_cleanup_job()` - free JShellExecJob resources
@@ -51,10 +51,10 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - [x] 5.7: Ensure proper cleanup on all error paths
 
 ### Phase 6: Background Job Support
-- [ ] 6.1: Implement job tracking structure for background jobs
-- [ ] 6.2: Modify execution to not wait for BG_JOB type (already done in `jshell_wait_for_jobs()`)
-- [ ] 6.3: Implement background job status checking
-- [ ] 6.4: Handle SIGCHLD for background job completion
+- [x] 6.1: Implement job tracking structure for background jobs
+- [x] 6.2: Modify execution to not wait for BG_JOB type (already done in `jshell_wait_for_jobs()`)
+- [x] 6.3: Implement background job status checking
+- [x] 6.4: Handle SIGCHLD for background job completion
 
 ## Implementation Notes
 
@@ -74,16 +74,18 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - Fork a tee process that reads from capture pipe and:
   - Writes to original output destination (stdout or redirected file)
   - Accumulates data in buffer (up to MAX_VAR_SIZE)
-- After command completes, retrieve captured buffer from tee process
+  - Sends accumulated buffer back to parent via buffer pipe
+- After command completes, retrieve captured buffer from buffer pipe
 - Trim whitespace from captured output
 - Set environment variable using setenv()
 - Output is displayed to user's terminal as side effect of tee process
 
-### Known Issues
-- **CRITICAL BUG in `jshell_capture_and_tee_output()`**: The tee child process accumulates the buffer locally but has no mechanism to communicate it back to the parent process. The current code attempts to read from a pipe that was never written to. Need to implement one of:
-  1. Shared memory using mmap() with MAP_SHARED
-  2. Additional pipe for tee process to write buffer back to parent
-  3. Temporary file for buffer communication
+### Background Jobs
+- Background jobs are tracked in a global job list
+- Each job has: job_id, pid array, command string, status
+- SIGCHLD handler updates job status when processes complete
+- User can check job status with `jobs` builtin command
+- Jobs are automatically reaped when completed
 
 ### Builtin Commands
 - Check command registry first
@@ -96,6 +98,7 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - File descriptor operations (open, close, dup2, pipe)
 - Process operations (fork, execvp, wait, waitpid)
 - Environment operations (setenv, getenv)
+- Signal handling (signal, sigaction for SIGCHLD)
 
 ## Testing Strategy
 - Test single command execution
@@ -104,7 +107,16 @@ Implement command execution logic for the JShell interpreter. Commands are parse
 - Test input redirection
 - Test output redirection
 - Test combined I/O redirection
-- Test assignment jobs (BLOCKED by bug 4.5)
-- Test background jobs
+- Test assignment jobs with output capture
+- Test background jobs with &
+- Test job status checking
 - Test builtin commands
 - Test error conditions
+
+## Status
+All phases complete! The implementation includes:
+- Full command execution with pipes and I/O redirection
+- Builtin command support
+- Assignment jobs with output capture (bug fixed)
+- Background job tracking and management
+- Comprehensive error handling and cleanup
