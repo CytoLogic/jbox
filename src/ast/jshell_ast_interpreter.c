@@ -69,8 +69,7 @@ void visitJob(Job p)
   case is_AssigJob:
     DPRINT("is AssigJob");
 
-    // word token is char*
-    char* var_name = p->u.assigJob_.wordtoken_;
+    visitShellToken(p->u.assigJob_.shelltoken_);
     visitCommandLine(p->u.assigJob_.commandline_);
     break;
   case is_AIChatJob:

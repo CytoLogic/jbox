@@ -19,7 +19,7 @@ entrypoints Input ;
 
 In. Input ::= [Job] ;
 
-AssigJob. Job ::= WordToken "=" CommandLine ;
+AssigJob. Job ::= ShellToken "=" CommandLine ;
 AIChatJob. Job ::= AIQueryToken ;
 AIExecJob. Job ::= AIExecToken ;
 FGJob. Job ::= CommandLine ;

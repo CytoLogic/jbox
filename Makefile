@@ -59,11 +59,11 @@ bnfc:
 	bnfc -m --c -o $(BNFC_GEN) $(BNFC_GRAMMAR)
 	cd $(BNFC_GEN) && make
 
-ast-traverser:
-	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/jshell_ast_interpreter.c
-	cp -b $(BNFC_GEN)/Skeleton.h $(AST_DIR)/jshell_ast_interpreter.h
-	sed -i 's/Skeleton.h/jshell_ast_traverser.h/g' $(AST_DIR)/jshell_ast_traverser.c
-	sed -i 's/SKELETON_HEADER/JSHELL_AST_INTERPRETER_H/g' $(AST_DIR)/jshell_ast_traverser.h
+new-ast-interpreter:
+	cp -b $(BNFC_GEN)/Skeleton.c $(AST_DIR)/~jshell_ast_interpreter.c
+	cp -b $(BNFC_GEN)/Skeleton.h $(AST_DIR)/~jshell_ast_interpreter.h
+	sed -i 's/Skeleton.h/jshell_ast_interpreter.h/g' $(AST_DIR)/~jshell_ast_interpreter.c
+	sed -i 's/SKELETON_HEADER/JSHELL_AST_INTERPRETER_H/g' $(AST_DIR)/~jshell_ast_interpreter.h
 
 standalone:
 	find src/utils-standalone -name "*.c"
