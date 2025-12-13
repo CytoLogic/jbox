@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <getopt.h>
 
-#include "jbox.h"
 #include "jshell/jshell_cmd_registry.h"
 #include "jshell/jshell_job_control.h"
 
@@ -36,11 +35,12 @@ static const jshell_cmd_spec_t jobs_spec = {
   .summary = "List background jobs",
   .long_help = "Display status of jobs in the current shell session.\n"
                "Shows job number, status, and command for each background job.",
+  .type = CMD_BUILTIN,
   .run = jobs_run,
   .print_usage = print_usage
 };
 
 
-static void jshell_register_jobs_cmd(void) {
+void jshell_register_jobs_command(void) {
   jshell_register_command(&jobs_spec);
 }

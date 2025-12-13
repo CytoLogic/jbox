@@ -3,10 +3,16 @@
 
 #include <stdio.h>
 
+typedef enum {
+  CMD_BUILTIN,
+  CMD_EXTERNAL
+} jshell_cmd_type_t;
+
 typedef struct jshell_cmd_spec {
     const char *name;
     const char *summary;
     const char *long_help;
+    jshell_cmd_type_t type;
     int (*run)(int argc, char **argv);
     void (*print_usage)(FILE *out);
 } jshell_cmd_spec_t;

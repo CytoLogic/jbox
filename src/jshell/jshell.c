@@ -6,6 +6,7 @@
 
 #include "ast/jshell_ast_interpreter.h"
 #include "jshell_job_control.h"
+#include "jshell_register_builtins.h"
 #include "utils/jbox_utils.h"
 
 
@@ -16,6 +17,7 @@ int jshell_main(void) {
   Input parse_tree;
 
   jshell_init_job_control();
+  jshell_register_all_builtin_commands();
 
   while (true) {
     jshell_check_background_jobs();

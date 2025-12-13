@@ -31,12 +31,23 @@ BNFC_OBJS := $(BNFC_GEN)/Absyn.o \
 			 $(BNFC_GEN)/Parser.o \
 			 $(BNFC_GEN)/Lexer.o \
 			 $(BNFC_GEN)/Printer.o
+
+JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
+			   $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+			   $(SRC_DIR)/jshell/jshell_register_builtins.c \
+			   $(SRC_DIR)/jshell/jshell_job_control.c
+
+BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c
+
+AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
+			$(SRC_DIR)/ast/jshell_ast_helpers.c
+
 all:
 	$(COMPILE)
 
-jbox:
+jbox: $(BNFC_OBJS)
 	mkdir -p bin/
-	$(COMPILE) src/*.c src/jshell/*.c src/ast/*.c $(BNFC_OBJS) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(AST_SRCS) $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
