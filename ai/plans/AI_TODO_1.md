@@ -25,8 +25,8 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
 
 ### 1.2 Create Builtin Registration System
 - [ ] Create `src/jshell/jshell_register_builtins.h`:
-  - [ ] Declare `void jshell_register_all_builtin_commands(void);`
-  - [ ] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
+- [ ] Declare `void jshell_register_all_builtin_commands(void);`
+- [ ] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
 - [ ] Create `src/jshell/jshell_register_builtins.c`:
   - [ ] Implement `jshell_register_all_builtin_commands()` that calls all individual registration functions
 - [ ] Update `src/jshell/jshell.c`:
