@@ -1,8 +1,9 @@
-#include "../jbox.h"
-#include "../jshell_cmd_registry.h"
-#include "../jshell_job_control.h"
 #include <stdio.h>
 #include <getopt.h>
+
+#include "jbox.h"
+#include "jshell/jshell_cmd_registry.h"
+#include "jshell/jshell_job_control.h"
 
 
 static void print_usage(FILE* out) {
@@ -40,7 +41,6 @@ static const jshell_cmd_spec_t jobs_spec = {
 };
 
 
-__attribute__((constructor))
-static void register_jobs_cmd(void) {
+static void jshell_register_jobs_cmd(void) {
   jshell_register_command(&jobs_spec);
 }

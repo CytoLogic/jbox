@@ -2,6 +2,7 @@
 #define JSHELL_AST_HELPERS_H
 
 #include <wordexp.h>
+
 #include "jshell_ast_interpreter.h"
 
 #define MAX_VAR_SIZE 8192

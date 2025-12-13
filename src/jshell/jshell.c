@@ -3,8 +3,10 @@
 #include "Parser.h"
 #include "Absyn.h"
 #include "Printer.h"
+
 #include "ast/jshell_ast_interpreter.h"
 #include "jshell_job_control.h"
+#include "utils/jbox_utils.h"
 
 
 int jshell_main(void) {
@@ -41,7 +43,7 @@ int jshell_main(void) {
 
     parse_tree = psInput(full_line);
     
-    printf("%s\n", showInput(parse_tree));
+    DPRINT("%s", showInput(parse_tree));
 
     interpretInput(parse_tree);
 

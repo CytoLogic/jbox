@@ -5,17 +5,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <wordexp.h>
 #include <signal.h>
 #include <ctype.h>
 
+#include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_utils.h"
+#include "jshell/jshell.h"
+#include "jshell/jshell_job_control.h"
+
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
-#include "../jshell_cmd_registry.h"
-#include "../jbox_debug.h"
-#include "../jshell.h"
-#include "../jshell_job_control.h"
 
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {

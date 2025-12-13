@@ -3,10 +3,10 @@
 
 #include "jshell_cmd_registry.h"
 
-#define MAX_COMMANDS 32
+#define MAX_COMMANDS 64
 
 static const jshell_cmd_spec_t *command_registry[MAX_COMMANDS];
-static size_t command_count;
+static size_t jshell_command_count;
 
 void jshell_register_command(const jshell_cmd_spec_t *spec) {
     if (spec == NULL) {

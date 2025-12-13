@@ -36,7 +36,7 @@ all:
 
 jbox:
 	mkdir -p bin/
-	$(COMPILE) src/*c src/ast/*.c src/utils/* $(BNFC_OBJS) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/*.c src/jshell/*.c src/ast/*.c $(BNFC_OBJS) -o $(BIN_DIR)/jbox
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

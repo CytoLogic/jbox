@@ -21,7 +21,7 @@ An AI agent using this file should follow these rules when refactoring existing 
 
 Each command is implemented as a **module** with:
 
-1. A command specification struct `cmd_spec_t`.
+1. A command specification struct `jshell_cmd_spec_t`.
 2. A `run` function that implements the command.
 3. A `print_usage` function that prints help based on `argtable3`.
 4. (Optional) A tiny `main()` wrapper so the same logic can be built as a standalone binary.
@@ -29,29 +29,37 @@ Each command is implemented as a **module** with:
 The basic types are:
 
 ```c
-typedef struct cmd_spec {
+typedef enum {
+  CMD_BUILTIN,    // Run in shell process (no fork)
+  CMD_EXTERNAL    // Fork and exec
+} jshell_cmd_type_t
+```
+
+```c
+typedef struct jshell_cmd_spec {
     const char *name;        // command name, e.g. "ls"
     const char *summary;     // one‑line description
     const char *long_help;   // longer description / Markdown (may be NULL)
+    jhell_cmd_type_t type;
 
     // Main entrypoint: parses args with argtable3 and runs the command.
     int (*run)(int argc, char **argv);
 
     // Prints usage and option help (using argtable3) to the given stream.
     void (*print_usage)(FILE *out);
-} cmd_spec_t;
+} jshell_cmd_spec_t;
 ```
 
 Each command module must define **exactly one** instance of this struct, e.g.:
 
 ```c
-extern cmd_spec_t cmd_ls_spec;
+extern jshell_cmd_spec_t cmd_ls_spec;
 ```
 
 and in its `.c` file:
 
 ```c
-cmd_spec_t cmd_ls_spec = {
+jshell_cmd_spec_t cmd_ls_spec = {
     .name        = "ls",
     .summary     = "list directory contents",
     .long_help   = "List information about the FILEs (the current directory by default).",
@@ -67,28 +75,28 @@ cmd_spec_t cmd_ls_spec = {
 The shell exposes a simple command registry:
 
 ```c
-void register_command(const cmd_spec_t *spec);
-const cmd_spec_t *find_command(const char *name);
-void for_each_command(void (*cb)(const cmd_spec_t *spec, void *userdata), void *userdata);
+void jshell_register_command(const cmd_spec_t *spec);
+const jshell_cmd_spec_t *find_command(const char *name);
+void jshell_for_each_command(void (*cb)(const cmd_spec_t *spec, void *userdata), void *userdata);
 ```
 
 There is a helper function per command:
 
 ```c
 // Implemented in each command module
-void register_ls_command(void) {
-    register_command(&cmd_ls_spec);
+void jshell_register_ls_command(void) {
+    jshell_register_command(&cmd_ls_spec);
 }
 ```
 
 The shell initialization calls:
 
 ```c
-void register_all_builtin_commands(void) {
-    register_ls_command();
-    register_wc_command();
-    register_cat_command();
-    register_pkg_command();
+void jshell_register_all_builtin_commands(void) {
+    jshell_register_ls_command();
+    jshell_register_wc_command();
+    jshell_register_cat_command();
+    jshell_register_pkg_command();
     // ...
 }
 ```
@@ -288,6 +296,7 @@ cmd_spec_t cmd_pkg_spec = {
     .name        = "pkg",
     .summary     = "manage mysh packages",
     .long_help   = "Build, install, list, remove, and upgrade packages for the mysh shell.",
+    .type        = CMD_BUILTIN
     .run         = pkg_run,
     .print_usage = pkg_print_usage,
 };
@@ -300,4 +309,3 @@ cmd_spec_t cmd_pkg_spec = {
 - Use the command registry and `print_usage` to generate documentation for packages.
 
 When refactoring or extending `pkg`, follow the same anatomy and keep subcommand parsing clear and modular.
-

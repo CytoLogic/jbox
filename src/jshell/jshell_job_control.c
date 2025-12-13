@@ -1,10 +1,11 @@
-#include "jshell_job_control.h"
-#include "jbox_debug.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+
+#include "jshell_job_control.h"
+#include "utils/jbox_utils.h"
 
 
 static BackgroundJob job_list[MAX_JOBS];

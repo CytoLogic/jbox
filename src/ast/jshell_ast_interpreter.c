@@ -7,7 +7,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "../jbox_debug.h"
+#include "utils/jbox_utils.h"
+
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
 
