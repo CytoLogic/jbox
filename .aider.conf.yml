@@ -1,4 +1,4 @@
 git: true
-read: [ai/CONVENTIONS.md, ai/APPANATOMY.md, src/jbox_debug.h]
+read: [ai/CONVENTIONS.md, ai/APPANATOMY.md, ai/CLItools.md, src/jbox_debug.h]
 file: [ai/plans/AI_TODO_1.md]
 watch-files: true
