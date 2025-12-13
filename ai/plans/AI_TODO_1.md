@@ -15,27 +15,27 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
 
 ---
 
-## Phase 1: Core Infrastructure
+## Phase 1: Core Infrastructure ✅ COMPLETED
 
-### 1.1 Update Command Registry
-- [ ] Update `src/jshell/jshell_cmd_registry.h`:
-  - [ ] Add `typedef enum { CMD_BUILTIN, CMD_EXTERNAL } jshell_cmd_type_t;`
-  - [ ] Add `jshell_cmd_type_t type;` field to `jshell_cmd_spec_t`
-- [ ] Update existing command specs to include `.type = CMD_BUILTIN`
+### 1.1 Update Command Registry ✅ COMPLETED
+- [x] Update `src/jshell/jshell_cmd_registry.h`:
+  - [x] Add `typedef enum { CMD_BUILTIN, CMD_EXTERNAL } jshell_cmd_type_t;`
+  - [x] Add `jshell_cmd_type_t type;` field to `jshell_cmd_spec_t`
+- [x] Update existing command specs to include `.type = CMD_BUILTIN`
 
-### 1.2 Create Builtin Registration System
-- [ ] Create `src/jshell/jshell_register_builtins.h`:
-- [ ] Declare `void jshell_register_all_builtin_commands(void);`
-- [ ] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
-- [ ] Create `src/jshell/jshell_register_builtins.c`:
-  - [ ] Implement `jshell_register_all_builtin_commands()` that calls all individual registration functions
-- [ ] Update `src/jshell/jshell.c`:
-  - [ ] Call `jshell_register_all_builtin_commands()` in `jshell_main()` initialization
+### 1.2 Create Builtin Registration System ✅ COMPLETED
+- [x] Create `src/jshell/jshell_register_builtins.h`:
+- [x] Declare `void jshell_register_all_builtin_commands(void);`
+- [x] Declare individual registration functions (e.g., `void jshell_register_jobs_command(void);`)
+- [x] Create `src/jshell/jshell_register_builtins.c`:
+  - [x] Implement `jshell_register_all_builtin_commands()` that calls all individual registration functions
+- [x] Update `src/jshell/jshell.c`:
+  - [x] Call `jshell_register_all_builtin_commands()` in `jshell_main()` initialization
 
-### 1.3 Update AST Helpers for Builtin Dispatch
-- [ ] Update `src/ast/jshell_ast_helpers.c`:
-  - [ ] Ensure `jshell_find_builtin()` uses `jshell_find_command()`
-  - [ ] Ensure `jshell_exec_builtin()` respects `spec->type`
+### 1.3 Update AST Helpers for Builtin Dispatch ✅ COMPLETED
+- [x] Update `src/ast/jshell_ast_helpers.c`:
+  - [x] Ensure `jshell_find_builtin()` uses `jshell_find_command()`
+  - [x] Ensure `jshell_exec_builtin()` respects `spec->type`
 
 ---
 

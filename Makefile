@@ -1,6 +1,6 @@
 # Compiler Settings
 CC = gcc
-CFLAGS = -Isrc -Igen/bnfc -std=gnu23 -Wall -Werror -ggdb3 -fsanitize=address,undefined
+CFLAGS = -Isrc -Igen/bnfc -Iextern/argtable3/dist -std=gnu23 -Wall -Werror -ggdb3 -fsanitize=address,undefined
 ifdef DEBUG
 	CFLAGS += -DDEBUG -Wno-error=unused-variable -Wno-error=unused-function
 endif
@@ -20,6 +20,7 @@ ARGTABLE3_DIR := $(EXTERN_DIR)/argtable3
 ARGTABLE3_DIST := $(ARGTABLE3_DIR)/dist
 ARGTABLE3_SRC := $(ARGTABLE3_DIST)/argtable3.c
 ARGTABLE3_HDR := $(ARGTABLE3_DIST)/argtable3.h
+ARGTABLE3_OBJ := $(ARGTABLE3_DIST)/argtable3.o
 
 BNFC_GEN := $(PROJECT_ROOT)/gen/bnfc
 BNFC_GRAMMAR := $(SRC_DIR)/shell-grammar/Grammar.cf
@@ -42,12 +43,14 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
 
-all:
-	$(COMPILE)
+all: jbox
 
-jbox: $(BNFC_OBJS)
+$(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
+	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
+
+jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ)
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(AST_SRCS) $(BNFC_OBJS) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) -o $(BIN_DIR)/jbox
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
