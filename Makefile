@@ -27,7 +27,7 @@ CURL_BUILD := $(CURL_DIR)/build
 CURL_LIB := $(CURL_BUILD)/lib/libcurl.a
 CURL_INCLUDE := $(CURL_DIR)/include
 CURL_CFLAGS := -I$(CURL_INCLUDE) -I$(CURL_BUILD)/include/curl
-CURL_LDFLAGS := $(CURL_LIB) -lssl -lcrypto -lz -lpthread
+CURL_LDFLAGS := $(CURL_LIB) -lssl -lcrypto -lz -lpthread -lidn2
 
 BNFC_GEN := $(PROJECT_ROOT)/gen/bnfc
 BNFC_GRAMMAR := $(SRC_DIR)/shell-grammar/Grammar.cf
@@ -62,7 +62,8 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_unset.c \
 				$(SRC_DIR)/jshell/builtins/cmd_type.c \
 				$(SRC_DIR)/jshell/builtins/cmd_help.c \
-				$(SRC_DIR)/jshell/builtins/cmd_history.c
+				$(SRC_DIR)/jshell/builtins/cmd_history.c \
+				$(SRC_DIR)/jshell/builtins/cmd_http_get.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \
@@ -101,9 +102,9 @@ apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app r
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
 
-jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ)
+jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LIB)
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(EXTERNAL_CMD_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/jbox
+	$(COMPILE) $(CURL_CFLAGS) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(EXTERNAL_CMD_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LDFLAGS) $(LDFLAGS) -o $(BIN_DIR)/jbox
 
 ls-app: $(ARGTABLE3_OBJ)
 	mkdir -p bin/
@@ -224,7 +225,18 @@ curl-build:
 		         -DBUILD_CURL_EXE=OFF \
 		         -DBUILD_TESTING=OFF \
 		         -DCURL_USE_OPENSSL=ON \
-		         -DHTTP_ONLY=ON && \
+		         -DHTTP_ONLY=ON \
+		         -DCURL_DISABLE_LDAP=ON \
+		         -DCURL_DISABLE_LDAPS=ON \
+		         -DCURL_USE_LIBSSH2=OFF \
+		         -DCURL_USE_LIBSSH=OFF \
+		         -DUSE_NGHTTP2=OFF \
+		         -DCURL_USE_LIBPSL=OFF \
+		         -DCURL_DISABLE_ALTSVC=ON \
+		         -DCURL_DISABLE_HSTS=ON \
+		         -DCURL_ZSTD=OFF \
+		         -DCURL_BROTLI=OFF \
+		         -DCURL_USE_LIBIDN2=OFF && \
 		make -j$$(nproc); \
 	fi
 

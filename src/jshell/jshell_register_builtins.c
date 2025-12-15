@@ -18,4 +18,5 @@ void jshell_register_all_builtin_commands(void) {
   jshell_register_type_command();
   jshell_register_help_command();
   jshell_register_history_command();
+  jshell_register_http_get_command();
 }
