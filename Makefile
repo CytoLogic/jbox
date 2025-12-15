@@ -4,7 +4,7 @@ CFLAGS = -Isrc -Igen/bnfc -Iextern/argtable3/dist -std=gnu23 -Wall -Werror -ggdb
 ifdef DEBUG
 	CFLAGS += -DDEBUG -Wno-error=unused-variable -Wno-error=unused-function
 endif
-#LDFLAGS = 
+LDFLAGS = -lm
 COMPILE = $(CC) $(CFLAGS)
 
 
@@ -38,19 +38,27 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_register_builtins.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c
 
-BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c
+BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c \
+               $(SRC_DIR)/jshell/builtins/cmd_ls.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
 
-all: jbox
+all: jbox apps
+
+apps: ls-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
 
 jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ)
 	mkdir -p bin/
-	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) -o $(BIN_DIR)/jbox
+	$(COMPILE) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/jbox
+
+ls-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) $(SRC_DIR)/apps/ls/ls_main.c $(SRC_DIR)/jshell/builtins/cmd_ls.c \
+	           $(SRC_DIR)/jshell/jshell_cmd_registry.c $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/ls
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

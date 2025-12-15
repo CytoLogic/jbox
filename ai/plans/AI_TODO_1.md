@@ -41,35 +41,37 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
 
 ## Phase 2: Filesystem Tools (Agent-Facing, HIGH PRIORITY)
 
-### 2.1 ls - List Directory Contents
+### 2.1 ls - List Directory Contents ✅ COMPLETED
 **Builtin + Standalone**
 
-- [ ] Create `src/jshell/builtins/cmd_ls.h`:
-  - [ ] Declare `extern jshell_cmd_spec_t cmd_ls_spec;`
-  - [ ] Declare `void jshell_register_ls_command(void);`
-- [ ] Create `src/jshell/builtins/cmd_ls.c`:
-  - [ ] Implement `build_ls_argtable()` with:
-    - [ ] `-h, --help` (help)
-    - [ ] `-a` (include hidden files)
-    - [ ] `-l` (long format)
-    - [ ] `--json` (JSON output)
-    - [ ] `[PATH...]` (positional file/directory arguments)
-  - [ ] Implement `ls_run(int argc, char **argv)`:
-    - [ ] Parse args with `argtable3`
-    - [ ] Handle `--help`
-    - [ ] Handle errors
-    - [ ] Implement directory listing logic
-    - [ ] Support `-a` flag
-    - [ ] Support `-l` flag (permissions, owner, size, timestamps)
-    - [ ] Support `--json` output format
-    - [ ] Default to current directory if no paths given
-  - [ ] Implement `ls_print_usage(FILE *out)` using `argtable3`
-  - [ ] Define `cmd_ls_spec` with name, summary, long_help, type, run, print_usage
-  - [ ] Implement `jshell_register_ls_command()`
-- [ ] Create `src/apps/ls/`:
-  - [ ] Create `src/apps/ls/ls_main.c`:
-    - [ ] Implement `main()` that calls `cmd_ls_spec.run(argc, argv)`
-  - [ ] Update Makefile to build standalone `ls` binary
+- [x] Create `src/jshell/builtins/cmd_ls.h`:
+  - [x] Declare `extern jshell_cmd_spec_t cmd_ls_spec;`
+  - [x] Declare `void jshell_register_ls_command(void);`
+- [x] Create `src/jshell/builtins/cmd_ls.c`:
+  - [x] Implement `build_ls_argtable()` with:
+    - [x] `-h, --help` (help)
+    - [x] `-a` (include hidden files)
+    - [x] `-l` (long format)
+    - [x] `--json` (JSON output)
+    - [x] `[PATH...]` (positional file/directory arguments)
+  - [x] Implement `ls_run(int argc, char **argv)`:
+    - [x] Parse args with `argtable3`
+    - [x] Handle `--help`
+    - [x] Handle errors
+    - [x] Implement directory listing logic
+    - [x] Support `-a` flag
+    - [x] Support `-l` flag (permissions, owner, size, timestamps)
+    - [x] Support `--json` output format
+    - [x] Default to current directory if no paths given
+  - [x] Implement `ls_print_usage(FILE *out)` using `argtable3`
+  - [x] Define `cmd_ls_spec` with name, summary, long_help, type, run, print_usage
+  - [x] Implement `jshell_register_ls_command()`
+- [x] Create `src/apps/ls/`:
+  - [x] Create `src/apps/ls/ls_main.c`:
+    - [x] Implement `main()` that calls `cmd_ls_spec.run(argc, argv)`
+  - [x] Update Makefile to build standalone `ls` binary
+- [x] Create `tests/apps/ls/test_ls.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 2.2 stat - File Metadata
 **Builtin + Standalone**
