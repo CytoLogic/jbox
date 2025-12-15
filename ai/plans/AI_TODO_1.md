@@ -1,17 +1,41 @@
 # CLI Tools and Shell Builtins Implementation Plan
 
 ## Overview
+
 Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/APPANATOMY.md`.
 
-**Directory Structure:**
-- Builtins: `src/jshell/builtins/`
-- Standalone apps: `src/apps/<command_name>/`
+### Directory Structure
 
-**Standards:**
+- **Builtins:** `src/jshell/builtins/`
+  - Compiled into jbox shell binary
+  - Executed directly by `jshell_exec_builtin()` in `jshell_ast_helpers.c`
+  - Registered via `jshell_register_<cmd>_command()` in `jshell_register_builtins.c`
+  - Required for commands that modify shell state (cd, export, jobs, etc.)
+
+- **External Apps:** `src/apps/<command_name>/`
+  - Built as standalone binaries in `bin/`
+  - Executed by shell via fork/exec (PATH lookup)
+  - Each app has: `cmd_<name>.h`, `cmd_<name>.c`, `<name>_main.c`
+  - Registered via `jshell_register_<cmd>_command()` in `jshell_register_externals.c`
+  - Registration allows shell to provide help, tab completion, and `type` command support
+  - Tests in `tests/apps/<command_name>/test_<name>.py`
+
+### Standards
+
 - All commands use `argtable3` for CLI parsing
 - All commands follow `cmd_spec_t` anatomy
 - Agent-facing commands support `--json` output
 - All commands support `-h` / `--help`
+- External apps include Python unittest test suite
+
+### Test Convention
+
+For each external app, create `tests/apps/<cmd>/test_<cmd>.py`:
+- Test `-h` and `--help` flags
+- Test `--json` output format (if applicable)
+- Test normal operation with various inputs
+- Test error handling (missing args, invalid files, etc.)
+- Test edge cases (empty files, special characters, etc.)
 
 ---
 
@@ -37,125 +61,128 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
   - [x] Ensure `jshell_find_builtin()` uses `jshell_find_command()`
   - [x] Ensure `jshell_exec_builtin()` respects `spec->type`
 
+### 1.4 Create External Command Registration System
+- [ ] Create `src/jshell/jshell_register_externals.h`:
+  - [ ] Declare `void jshell_register_all_external_commands(void);`
+  - [ ] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
+- [ ] Create `src/jshell/jshell_register_externals.c`:
+  - [ ] Include headers from `src/apps/<cmd>/cmd_<cmd>.h` for each external command
+  - [ ] Implement `jshell_register_all_external_commands()` that calls all individual registration functions
+- [ ] Update `src/jshell/jshell.c`:
+  - [ ] Call `jshell_register_all_external_commands()` in `jshell_main()` initialization (after builtins)
+- [ ] Update Makefile:
+  - [ ] Add `jshell_register_externals.c` to `JSHELL_SRCS`
+  - [ ] Add all `cmd_<name>.c` files from `src/apps/` to jbox build (for registration only)
+
 ---
 
 ## Phase 2: Filesystem Tools (Agent-Facing, HIGH PRIORITY)
 
-### 2.1 ls - List Directory Contents ✅ COMPLETED
-**Builtin + Standalone**
+All filesystem tools are **External Apps** - built as standalone binaries and executed via fork/exec.
 
-- [x] Create `src/jshell/builtins/cmd_ls.h`:
+### 2.1 ls - List Directory Contents ✅ COMPLETED
+**External App** (`src/apps/ls/`)
+
+- [x] Create `src/apps/ls/cmd_ls.h`:
   - [x] Declare `extern jshell_cmd_spec_t cmd_ls_spec;`
   - [x] Declare `void jshell_register_ls_command(void);`
-- [x] Create `src/jshell/builtins/cmd_ls.c`:
+- [x] Create `src/apps/ls/cmd_ls.c`:
   - [x] Implement `build_ls_argtable()` with:
     - [x] `-h, --help` (help)
     - [x] `-a` (include hidden files)
     - [x] `-l` (long format)
     - [x] `--json` (JSON output)
     - [x] `[PATH...]` (positional file/directory arguments)
-  - [x] Implement `ls_run(int argc, char **argv)`:
-    - [x] Parse args with `argtable3`
-    - [x] Handle `--help`
-    - [x] Handle errors
-    - [x] Implement directory listing logic
-    - [x] Support `-a` flag
-    - [x] Support `-l` flag (permissions, owner, size, timestamps)
-    - [x] Support `--json` output format
-    - [x] Default to current directory if no paths given
+  - [x] Implement `ls_run(int argc, char **argv)`
   - [x] Implement `ls_print_usage(FILE *out)` using `argtable3`
-  - [x] Define `cmd_ls_spec` with name, summary, long_help, type, run, print_usage
+  - [x] Define `cmd_ls_spec` with `.type = CMD_EXTERNAL`
   - [x] Implement `jshell_register_ls_command()`
-- [x] Create `src/apps/ls/`:
-  - [x] Create `src/apps/ls/ls_main.c`:
-    - [x] Implement `main()` that calls `cmd_ls_spec.run(argc, argv)`
-  - [x] Update Makefile to build standalone `ls` binary
+- [x] Create `src/apps/ls/ls_main.c`:
+  - [x] Implement `main()` that calls `cmd_ls_spec.run(argc, argv)`
+- [x] Update Makefile to build standalone `ls` binary
+- [ ] Register in `jshell_register_externals.c`
 - [x] Create `tests/apps/ls/test_ls.py`:
   - [x] Implement unit tests using Python unittest framework
 
 ### 2.2 stat - File Metadata ✅ COMPLETED
-**Builtin + Standalone**
+**External App** (`src/apps/stat/`)
 
-- [x] Create `src/jshell/builtins/cmd_stat.h`
-- [x] Create `src/jshell/builtins/cmd_stat.c`:
+- [x] Create `src/apps/stat/cmd_stat.h`:
+  - [x] Declare `extern jshell_cmd_spec_t cmd_stat_spec;`
+  - [x] Declare `void jshell_register_stat_command(void);`
+- [x] Create `src/apps/stat/cmd_stat.c`:
   - [x] Implement `build_stat_argtable()` with:
     - [x] `-h, --help`
     - [x] `--json`
     - [x] `<FILE>` (required positional argument)
-  - [x] Implement `stat_run()`:
-    - [x] Use `stat()` system call
-    - [x] Display: path, type, size, mode, mtime, atime, ctime
-    - [x] Support `--json` output
+  - [x] Implement `stat_run()`
   - [x] Implement `stat_print_usage()`
-  - [x] Define `cmd_stat_spec`
+  - [x] Define `cmd_stat_spec` with `.type = CMD_EXTERNAL`
   - [x] Implement `jshell_register_stat_command()`
 - [x] Create `src/apps/stat/stat_main.c`
 - [x] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [x] Create `tests/apps/stat/test_stat.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 2.3 cat - Print File Contents
-**Builtin + Standalone**
+### 2.3 cat - Print File Contents ✅ COMPLETED
+**External App** (`src/apps/cat/`)
 
-- [ ] Create `src/jshell/builtins/cmd_cat.h`
-- [ ] Create `src/jshell/builtins/cmd_cat.c`:
-  - [ ] Implement `build_cat_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json` (optional, wraps output)
-    - [ ] `<FILE...>` (one or more files)
-  - [ ] Implement `cat_run()`:
-    - [ ] Read and print file contents
-    - [ ] Handle multiple files
-    - [ ] Support `--json` output (wrap as `{"path": "...", "content": "..."}`)
-  - [ ] Implement `cat_print_usage()`
-  - [ ] Define `cmd_cat_spec`
-  - [ ] Implement `jshell_register_cat_command()`
-- [ ] Create `src/apps/cat/cat_main.c`
-- [ ] Update Makefile
+- [x] Create `src/apps/cat/cmd_cat.h`
+- [x] Create `src/apps/cat/cmd_cat.c`:
+  - [x] Implement `build_cat_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json` (optional, wraps output)
+    - [x] `<FILE...>` (one or more files)
+  - [x] Implement `cat_run()`
+  - [x] Implement `cat_print_usage()`
+  - [x] Define `cmd_cat_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/cat/cat_main.c`
+- [x] Update Makefile
+- [x] Create `tests/apps/cat/test_cat.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 2.4 head - View Start of File
-**Builtin + Standalone**
+**External App** (`src/apps/head/`)
 
-- [ ] Create `src/jshell/builtins/cmd_head.h`
-- [ ] Create `src/jshell/builtins/cmd_head.c`:
+- [ ] Create `src/apps/head/cmd_head.h`
+- [ ] Create `src/apps/head/cmd_head.c`:
   - [ ] Implement `build_head_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-n N` (number of lines, default 10)
     - [ ] `--json`
     - [ ] `<FILE>`
-  - [ ] Implement `head_run()`:
-    - [ ] Read first N lines
-    - [ ] Support `--json` output: `{"path": "...", "lines": [...]}`
+  - [ ] Implement `head_run()`
   - [ ] Implement `head_print_usage()`
-  - [ ] Define `cmd_head_spec`
-  - [ ] Implement `jshell_register_head_command()`
+  - [ ] Define `cmd_head_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/head/head_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/head/test_head.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.5 tail - View End of File
-**Builtin + Standalone**
+**External App** (`src/apps/tail/`)
 
-- [ ] Create `src/jshell/builtins/cmd_tail.h`
-- [ ] Create `src/jshell/builtins/cmd_tail.c`:
+- [ ] Create `src/apps/tail/cmd_tail.h`
+- [ ] Create `src/apps/tail/cmd_tail.c`:
   - [ ] Implement `build_tail_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-n N` (number of lines, default 10)
     - [ ] `--json`
     - [ ] `<FILE>`
-  - [ ] Implement `tail_run()`:
-    - [ ] Read last N lines
-    - [ ] Support `--json` output
+  - [ ] Implement `tail_run()`
   - [ ] Implement `tail_print_usage()`
-  - [ ] Define `cmd_tail_spec`
-  - [ ] Implement `jshell_register_tail_command()`
+  - [ ] Define `cmd_tail_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/tail/tail_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/tail/test_tail.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.6 cp - Copy Files/Directories
-**Builtin + Standalone**
+**External App** (`src/apps/cp/`)
 
-- [ ] Create `src/jshell/builtins/cmd_cp.h`
-- [ ] Create `src/jshell/builtins/cmd_cp.c`:
+- [ ] Create `src/apps/cp/cmd_cp.h`
+- [ ] Create `src/apps/cp/cmd_cp.c`:
   - [ ] Implement `build_cp_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-r` (recursive)
@@ -163,126 +190,113 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `--json`
     - [ ] `<SOURCE>` (required)
     - [ ] `<DEST>` (required)
-  - [ ] Implement `cp_run()`:
-    - [ ] Copy file logic
-    - [ ] Recursive directory copy with `-r`
-    - [ ] Force overwrite with `-f`
-    - [ ] Support `--json` output (success/error summary)
+  - [ ] Implement `cp_run()`
   - [ ] Implement `cp_print_usage()`
-  - [ ] Define `cmd_cp_spec`
-  - [ ] Implement `jshell_register_cp_command()`
+  - [ ] Define `cmd_cp_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/cp/cp_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/cp/test_cp.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.7 mv - Move/Rename Files
-**Builtin + Standalone**
+**External App** (`src/apps/mv/`)
 
-- [ ] Create `src/jshell/builtins/cmd_mv.h`
-- [ ] Create `src/jshell/builtins/cmd_mv.c`:
+- [ ] Create `src/apps/mv/cmd_mv.h`
+- [ ] Create `src/apps/mv/cmd_mv.c`:
   - [ ] Implement `build_mv_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-f` (force)
     - [ ] `--json`
     - [ ] `<SOURCE>`
     - [ ] `<DEST>`
-  - [ ] Implement `mv_run()`:
-    - [ ] Use `rename()` system call
-    - [ ] Handle cross-filesystem moves
-    - [ ] Support `--json` output
+  - [ ] Implement `mv_run()`
   - [ ] Implement `mv_print_usage()`
-  - [ ] Define `cmd_mv_spec`
-  - [ ] Implement `jshell_register_mv_command()`
+  - [ ] Define `cmd_mv_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/mv/mv_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/mv/test_mv.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.8 rm - Remove Files/Directories
-**Builtin + Standalone**
+**External App** (`src/apps/rm/`)
 
-- [ ] Create `src/jshell/builtins/cmd_rm.h`
-- [ ] Create `src/jshell/builtins/cmd_rm.c`:
+- [ ] Create `src/apps/rm/cmd_rm.h`
+- [ ] Create `src/apps/rm/cmd_rm.c`:
   - [ ] Implement `build_rm_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-r` (recursive)
     - [ ] `-f` (force, no prompt)
     - [ ] `--json`
     - [ ] `<FILE...>` (one or more files)
-  - [ ] Implement `rm_run()`:
-    - [ ] Remove files with `unlink()`
-    - [ ] Recursive directory removal with `-r`
-    - [ ] Support `--json` output
+  - [ ] Implement `rm_run()`
   - [ ] Implement `rm_print_usage()`
-  - [ ] Define `cmd_rm_spec`
-  - [ ] Implement `jshell_register_rm_command()`
+  - [ ] Define `cmd_rm_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/rm/rm_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/rm/test_rm.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.9 mkdir - Create Directories
-**Builtin + Standalone**
+**External App** (`src/apps/mkdir/`)
 
-- [ ] Create `src/jshell/builtins/cmd_mkdir.h`
-- [ ] Create `src/jshell/builtins/cmd_mkdir.c`:
+- [ ] Create `src/apps/mkdir/cmd_mkdir.h`
+- [ ] Create `src/apps/mkdir/cmd_mkdir.c`:
   - [ ] Implement `build_mkdir_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-p` (create parents)
     - [ ] `--json`
     - [ ] `<DIR...>` (one or more directories)
-  - [ ] Implement `mkdir_run()`:
-    - [ ] Use `mkdir()` system call
-    - [ ] Create parent directories with `-p`
-    - [ ] Support `--json` output
+  - [ ] Implement `mkdir_run()`
   - [ ] Implement `mkdir_print_usage()`
-  - [ ] Define `cmd_mkdir_spec`
-  - [ ] Implement `jshell_register_mkdir_command()`
+  - [ ] Define `cmd_mkdir_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/mkdir/mkdir_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/mkdir/test_mkdir.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.10 rmdir - Remove Empty Directories
-**Builtin + Standalone**
+**External App** (`src/apps/rmdir/`)
 
-- [ ] Create `src/jshell/builtins/cmd_rmdir.h`
-- [ ] Create `src/jshell/builtins/cmd_rmdir.c`:
+- [ ] Create `src/apps/rmdir/cmd_rmdir.h`
+- [ ] Create `src/apps/rmdir/cmd_rmdir.c`:
   - [ ] Implement `build_rmdir_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<DIR...>`
-  - [ ] Implement `rmdir_run()`:
-    - [ ] Use `rmdir()` system call
-    - [ ] Only remove empty directories
-    - [ ] Support `--json` output
+  - [ ] Implement `rmdir_run()`
   - [ ] Implement `rmdir_print_usage()`
-  - [ ] Define `cmd_rmdir_spec`
-  - [ ] Implement `jshell_register_rmdir_command()`
+  - [ ] Define `cmd_rmdir_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/rmdir/rmdir_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/rmdir/test_rmdir.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 2.11 touch - Create Empty File or Update Timestamps
-**Builtin + Standalone**
+**External App** (`src/apps/touch/`)
 
-- [ ] Create `src/jshell/builtins/cmd_touch.h`
-- [ ] Create `src/jshell/builtins/cmd_touch.c`:
+- [ ] Create `src/apps/touch/cmd_touch.h`
+- [ ] Create `src/apps/touch/cmd_touch.c`:
   - [ ] Implement `build_touch_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<FILE...>`
-  - [ ] Implement `touch_run()`:
-    - [ ] Create file if it doesn't exist
-    - [ ] Update timestamps with `utime()` if it exists
-    - [ ] Support `--json` output
+  - [ ] Implement `touch_run()`
   - [ ] Implement `touch_print_usage()`
-  - [ ] Define `cmd_touch_spec`
-  - [ ] Implement `jshell_register_touch_command()`
+  - [ ] Define `cmd_touch_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/touch/touch_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/touch/test_touch.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ---
 
 ## Phase 3: Search and Text Tools (Agent-Facing, HIGH PRIORITY)
 
 ### 3.1 rg - Regex Search
-**Builtin + Standalone**
+**External App** (`src/apps/rg/`)
 
-- [ ] Create `src/jshell/builtins/cmd_rg.h`
-- [ ] Create `src/jshell/builtins/cmd_rg.c`:
+- [ ] Create `src/apps/rg/cmd_rg.h`
+- [ ] Create `src/apps/rg/cmd_rg.c`:
   - [ ] Implement `build_rg_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-n` (show line numbers)
@@ -299,85 +313,77 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] Support all flags
     - [ ] Support `--json` output: `{"file": "...", "line": N, "column": N, "text": "..."}`
   - [ ] Implement `rg_print_usage()`
-  - [ ] Define `cmd_rg_spec`
-  - [ ] Implement `jshell_register_rg_command()`
+  - [ ] Define `cmd_rg_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/rg/rg_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/rg/test_rg.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ---
 
 ## Phase 4: Structured Editing Commands (Agent-Facing, HIGH PRIORITY)
 
 ### 4.1 edit-replace-line - Replace Single Line
-**Builtin + Standalone**
+**External App** (`src/apps/edit-replace-line/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.h`
-- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.c`:
+- [ ] Create `src/apps/edit-replace-line/cmd_edit_replace_line.h`
+- [ ] Create `src/apps/edit-replace-line/cmd_edit_replace_line.c`:
   - [ ] Implement `build_edit_replace_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<FILE>` (required)
     - [ ] `<LINE_NUM>` (required, integer)
     - [ ] `<TEXT>` (required, replacement text)
-  - [ ] Implement `edit_replace_line_run()`:
-    - [ ] Read entire file into memory
-    - [ ] Replace line at LINE_NUM with TEXT
-    - [ ] Write file back
-    - [ ] Support `--json` output: `{"path": "...", "line": N, "status": "ok"|"error", "message": "..."}`
+  - [ ] Implement `edit_replace_line_run()`
   - [ ] Implement `edit_replace_line_print_usage()`
-  - [ ] Define `cmd_edit_replace_line_spec`
-  - [ ] Implement `jshell_register_edit_replace_line_command()`
+  - [ ] Define `cmd_edit_replace_line_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/edit-replace-line/edit_replace_line_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/edit-replace-line/test_edit_replace_line.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 4.2 edit-insert-line - Insert Line Before Given Line
-**Builtin + Standalone**
+**External App** (`src/apps/edit-insert-line/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.h`
-- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.c`:
+- [ ] Create `src/apps/edit-insert-line/cmd_edit_insert_line.h`
+- [ ] Create `src/apps/edit-insert-line/cmd_edit_insert_line.c`:
   - [ ] Implement `build_edit_insert_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<FILE>`
     - [ ] `<LINE_NUM>`
     - [ ] `<TEXT>`
-  - [ ] Implement `edit_insert_line_run()`:
-    - [ ] Read file
-    - [ ] Insert TEXT before line LINE_NUM
-    - [ ] Write file back
-    - [ ] Support `--json` output
+  - [ ] Implement `edit_insert_line_run()`
   - [ ] Implement `edit_insert_line_print_usage()`
-  - [ ] Define `cmd_edit_insert_line_spec`
-  - [ ] Implement `jshell_register_edit_insert_line_command()`
+  - [ ] Define `cmd_edit_insert_line_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/edit-insert-line/edit_insert_line_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/edit-insert-line/test_edit_insert_line.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 4.3 edit-delete-line - Delete Single Line
-**Builtin + Standalone**
+**External App** (`src/apps/edit-delete-line/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.h`
-- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.c`:
+- [ ] Create `src/apps/edit-delete-line/cmd_edit_delete_line.h`
+- [ ] Create `src/apps/edit-delete-line/cmd_edit_delete_line.c`:
   - [ ] Implement `build_edit_delete_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<FILE>`
     - [ ] `<LINE_NUM>`
-  - [ ] Implement `edit_delete_line_run()`:
-    - [ ] Read file
-    - [ ] Delete line at LINE_NUM
-    - [ ] Write file back
-    - [ ] Support `--json` output
+  - [ ] Implement `edit_delete_line_run()`
   - [ ] Implement `edit_delete_line_print_usage()`
-  - [ ] Define `cmd_edit_delete_line_spec`
-  - [ ] Implement `jshell_register_edit_delete_line_command()`
+  - [ ] Define `cmd_edit_delete_line_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/edit-delete-line/edit_delete_line_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/edit-delete-line/test_edit_delete_line.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 4.4 edit-replace - Global Find/Replace with Regex
-**Builtin + Standalone**
+**External App** (`src/apps/edit-replace/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_replace.h`
-- [ ] Create `src/jshell/builtins/cmd_edit_replace.c`:
+- [ ] Create `src/apps/edit-replace/cmd_edit_replace.h`
+- [ ] Create `src/apps/edit-replace/cmd_edit_replace.c`:
   - [ ] Implement `build_edit_replace_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-i` (case-insensitive)
@@ -386,23 +392,22 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `<FILE>`
     - [ ] `<PATTERN>` (regex or literal)
     - [ ] `<REPLACEMENT>`
-  - [ ] Implement `edit_replace_run()`:
-    - [ ] Read file
-    - [ ] Use POSIX regex to find/replace all matches
-    - [ ] Write file back
-    - [ ] Support `--json` output: `{"path": "...", "matches": M, "replacements": R}`
+  - [ ] Implement `edit_replace_run()`
   - [ ] Implement `edit_replace_print_usage()`
-  - [ ] Define `cmd_edit_replace_spec`
-  - [ ] Implement `jshell_register_edit_replace_command()`
+  - [ ] Define `cmd_edit_replace_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/edit-replace/edit_replace_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/edit-replace/test_edit_replace.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ---
 
 ## Phase 5: Process and Job Control (MEDIUM PRIORITY)
 
+These commands are **Builtins** because they need access to shell internal state (job table, process groups).
+
 ### 5.1 jobs - List Background Jobs (Refactor Existing)
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`)
 
 - [ ] Refactor `src/jshell/builtins/jobs.c`:
   - [ ] Rename to `cmd_jobs.c`
@@ -412,27 +417,27 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
   - [ ] Refactor `jobs_run()` to use `argtable3`
   - [ ] Add `--json` output support
   - [ ] Implement `jobs_print_usage()` using `argtable3`
-  - [ ] Define `cmd_jobs_spec`
+  - [ ] Define `cmd_jobs_spec` with `.type = CMD_BUILTIN`
   - [ ] Rename `jshell_register_jobs_cmd()` to `jshell_register_jobs_command()`
 - [ ] Update `src/jshell/builtins/cmd_jobs.h` (create if needed)
+- [ ] Update `jshell_register_builtins.c` to call registration
 
 ### 5.2 ps - List Processes/Threads
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`)
 
 - [ ] Create `src/jshell/builtins/cmd_ps.h`
 - [ ] Create `src/jshell/builtins/cmd_ps.c`:
   - [ ] Implement `build_ps_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
-  - [ ] Implement `ps_run()`:
-    - [ ] List processes/threads known to shell
-    - [ ] Support `--json` output
+  - [ ] Implement `ps_run()`
   - [ ] Implement `ps_print_usage()`
-  - [ ] Define `cmd_ps_spec`
+  - [ ] Define `cmd_ps_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_ps_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 5.3 kill - Send Signal to Job/Process
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`)
 
 - [ ] Create `src/jshell/builtins/cmd_kill.h`
 - [ ] Create `src/jshell/builtins/cmd_kill.c`:
@@ -441,16 +446,14 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `-s SIGNAL` (signal name or number)
     - [ ] `--json`
     - [ ] `<PID>` (required)
-  - [ ] Implement `kill_run()`:
-    - [ ] Use `kill()` system call
-    - [ ] Support signal names (TERM, KILL, etc.)
-    - [ ] Support `--json` output
+  - [ ] Implement `kill_run()`
   - [ ] Implement `kill_print_usage()`
-  - [ ] Define `cmd_kill_spec`
+  - [ ] Define `cmd_kill_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_kill_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 5.4 wait - Wait for Job to Finish
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`)
 
 - [ ] Create `src/jshell/builtins/cmd_wait.h`
 - [ ] Create `src/jshell/builtins/cmd_wait.c`:
@@ -458,69 +461,66 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<JOB_ID>` (optional)
-  - [ ] Implement `wait_run()`:
-    - [ ] Wait for specific job or all jobs
-    - [ ] Support `--json` output: `{"job": ID, "status": "exited", "code": N}`
+  - [ ] Implement `wait_run()`
   - [ ] Implement `wait_print_usage()`
-  - [ ] Define `cmd_wait_spec`
+  - [ ] Define `cmd_wait_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_wait_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ---
 
 ## Phase 6: Shell and Environment (MEDIUM PRIORITY)
 
+Commands that modify shell state are **Builtins**. Others can be **External Apps**.
+
 ### 6.1 cd - Change Directory
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Must be builtin to change shell's working directory
 
 - [ ] Create `src/jshell/builtins/cmd_cd.h`
 - [ ] Create `src/jshell/builtins/cmd_cd.c`:
   - [ ] Implement `build_cd_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `[DIR]` (optional, defaults to HOME)
-  - [ ] Implement `cd_run()`:
-    - [ ] Use `chdir()` system call
-    - [ ] Handle `~` expansion
-    - [ ] Update PWD environment variable
+  - [ ] Implement `cd_run()`
   - [ ] Implement `cd_print_usage()`
-  - [ ] Define `cmd_cd_spec`
+  - [ ] Define `cmd_cd_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_cd_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 6.2 pwd - Print Working Directory
-**Builtin + Standalone**
+**External App** (`src/apps/pwd/`)
 
-- [ ] Create `src/jshell/builtins/cmd_pwd.h`
-- [ ] Create `src/jshell/builtins/cmd_pwd.c`:
+- [ ] Create `src/apps/pwd/cmd_pwd.h`
+- [ ] Create `src/apps/pwd/cmd_pwd.c`:
   - [ ] Implement `build_pwd_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
-  - [ ] Implement `pwd_run()`:
-    - [ ] Use `getcwd()`
-    - [ ] Support `--json` output: `{"cwd": "/path"}`
+  - [ ] Implement `pwd_run()`
   - [ ] Implement `pwd_print_usage()`
-  - [ ] Define `cmd_pwd_spec`
-  - [ ] Implement `jshell_register_pwd_command()`
+  - [ ] Define `cmd_pwd_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/pwd/pwd_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/pwd/test_pwd.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 6.3 env - List Environment Variables
-**Builtin + Standalone**
+**External App** (`src/apps/env/`)
 
-- [ ] Create `src/jshell/builtins/cmd_env.h`
-- [ ] Create `src/jshell/builtins/cmd_env.c`:
+- [ ] Create `src/apps/env/cmd_env.h`
+- [ ] Create `src/apps/env/cmd_env.c`:
   - [ ] Implement `build_env_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
-  - [ ] Implement `env_run()`:
-    - [ ] List all environment variables
-    - [ ] Support `--json` output: `{"env": {"KEY": "VALUE", ...}}`
+  - [ ] Implement `env_run()`
   - [ ] Implement `env_print_usage()`
-  - [ ] Define `cmd_env_spec`
-  - [ ] Implement `jshell_register_env_command()`
+  - [ ] Define `cmd_env_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/env/env_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/env/test_env.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 6.4 export - Set Environment Variable
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Must be builtin to modify shell's environment
 
 - [ ] Create `src/jshell/builtins/cmd_export.h`
 - [ ] Create `src/jshell/builtins/cmd_export.c`:
@@ -528,16 +528,14 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<KEY=VALUE>` (one or more)
-  - [ ] Implement `export_run()`:
-    - [ ] Parse KEY=VALUE
-    - [ ] Use `setenv()` or update `environ`
-    - [ ] Support `--json` output
+  - [ ] Implement `export_run()`
   - [ ] Implement `export_print_usage()`
-  - [ ] Define `cmd_export_spec`
+  - [ ] Define `cmd_export_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_export_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 6.5 unset - Unset Environment Variable
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Must be builtin to modify shell's environment
 
 - [ ] Create `src/jshell/builtins/cmd_unset.h`
 - [ ] Create `src/jshell/builtins/cmd_unset.c`:
@@ -545,15 +543,14 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<KEY>` (one or more)
-  - [ ] Implement `unset_run()`:
-    - [ ] Use `unsetenv()`
-    - [ ] Support `--json` output
+  - [ ] Implement `unset_run()`
   - [ ] Implement `unset_print_usage()`
-  - [ ] Define `cmd_unset_spec`
+  - [ ] Define `cmd_unset_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_unset_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 6.6 type - Show How Name is Resolved
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Needs access to shell's command registry
 
 - [ ] Create `src/jshell/builtins/cmd_type.h`
 - [ ] Create `src/jshell/builtins/cmd_type.c`:
@@ -561,184 +558,179 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `-h, --help`
     - [ ] `--json`
     - [ ] `<NAME>` (required)
-  - [ ] Implement `type_run()`:
-    - [ ] Check if builtin via `jshell_find_command()`
-    - [ ] Check if external via PATH search
-    - [ ] Check if alias
-    - [ ] Support `--json` output: `{"name": "ls", "kind": "builtin"|"external"|"alias", "path": "/bin/ls"}`
+  - [ ] Implement `type_run()`
   - [ ] Implement `type_print_usage()`
-  - [ ] Define `cmd_type_spec`
+  - [ ] Define `cmd_type_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_type_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ---
 
 ## Phase 7: Human-Facing Tools (LOW PRIORITY)
 
 ### 7.1 echo - Print Text
-**Builtin + Standalone**
+**External App** (`src/apps/echo/`)
 
-- [ ] Create `src/jshell/builtins/cmd_echo.h`
-- [ ] Create `src/jshell/builtins/cmd_echo.c`:
+- [ ] Create `src/apps/echo/cmd_echo.h`
+- [ ] Create `src/apps/echo/cmd_echo.c`:
   - [ ] Implement `build_echo_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-n` (no trailing newline)
     - [ ] `<TEXT...>` (arguments to print)
   - [ ] Implement `echo_run()`
   - [ ] Implement `echo_print_usage()`
-  - [ ] Define `cmd_echo_spec`
-  - [ ] Implement `jshell_register_echo_command()`
+  - [ ] Define `cmd_echo_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/echo/echo_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/echo/test_echo.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.2 printf - Formatted Output
-**Builtin + Standalone**
+**External App** (`src/apps/printf/`)
 
-- [ ] Create `src/jshell/builtins/cmd_printf.h`
-- [ ] Create `src/jshell/builtins/cmd_printf.c`:
+- [ ] Create `src/apps/printf/cmd_printf.h`
+- [ ] Create `src/apps/printf/cmd_printf.c`:
   - [ ] Implement `build_printf_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `<FORMAT>` (required)
     - [ ] `<ARGS...>` (optional)
-  - [ ] Implement `printf_run()`:
-    - [ ] Parse format string
-    - [ ] Apply arguments
-    - [ ] Print formatted output
+  - [ ] Implement `printf_run()`
   - [ ] Implement `printf_print_usage()`
-  - [ ] Define `cmd_printf_spec`
-  - [ ] Implement `jshell_register_printf_command()`
+  - [ ] Define `cmd_printf_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/printf/printf_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/printf/test_printf.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.3 sleep - Delay
-**Builtin + Standalone**
+**External App** (`src/apps/sleep/`)
 
-- [ ] Create `src/jshell/builtins/cmd_sleep.h`
-- [ ] Create `src/jshell/builtins/cmd_sleep.c`:
+- [ ] Create `src/apps/sleep/cmd_sleep.h`
+- [ ] Create `src/apps/sleep/cmd_sleep.c`:
   - [ ] Implement `build_sleep_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `<SECONDS>` (required, can be float)
-  - [ ] Implement `sleep_run()`:
-    - [ ] Use `nanosleep()` or `usleep()`
+  - [ ] Implement `sleep_run()`
   - [ ] Implement `sleep_print_usage()`
-  - [ ] Define `cmd_sleep_spec`
-  - [ ] Implement `jshell_register_sleep_command()`
+  - [ ] Define `cmd_sleep_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/sleep/sleep_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/sleep/test_sleep.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.4 date - Show System Time
-**Builtin + Standalone**
+**External App** (`src/apps/date/`)
 
-- [ ] Create `src/jshell/builtins/cmd_date.h`
-- [ ] Create `src/jshell/builtins/cmd_date.c`:
+- [ ] Create `src/apps/date/cmd_date.h`
+- [ ] Create `src/apps/date/cmd_date.c`:
   - [ ] Implement `build_date_argtable()` with:
     - [ ] `-h, --help`
-  - [ ] Implement `date_run()`:
-    - [ ] Use `time()` and `strftime()`
-    - [ ] Print current date/time
+  - [ ] Implement `date_run()`
   - [ ] Implement `date_print_usage()`
-  - [ ] Define `cmd_date_spec`
-  - [ ] Implement `jshell_register_date_command()`
+  - [ ] Define `cmd_date_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/date/date_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/date/test_date.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.5 true - Do Nothing, Succeed
-**Builtin + Standalone**
+**External App** (`src/apps/true/`)
 
-- [ ] Create `src/jshell/builtins/cmd_true.h`
-- [ ] Create `src/jshell/builtins/cmd_true.c`:
+- [ ] Create `src/apps/true/cmd_true.h`
+- [ ] Create `src/apps/true/cmd_true.c`:
   - [ ] Implement `build_true_argtable()` with:
     - [ ] `-h, --help`
-  - [ ] Implement `true_run()`:
-    - [ ] Return 0
+  - [ ] Implement `true_run()`
   - [ ] Implement `true_print_usage()`
-  - [ ] Define `cmd_true_spec`
-  - [ ] Implement `jshell_register_true_command()`
+  - [ ] Define `cmd_true_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/true/true_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/true/test_true.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.6 false - Do Nothing, Fail
-**Builtin + Standalone**
+**External App** (`src/apps/false/`)
 
-- [ ] Create `src/jshell/builtins/cmd_false.h`
-- [ ] Create `src/jshell/builtins/cmd_false.c`:
+- [ ] Create `src/apps/false/cmd_false.h`
+- [ ] Create `src/apps/false/cmd_false.c`:
   - [ ] Implement `build_false_argtable()` with:
     - [ ] `-h, --help`
-  - [ ] Implement `false_run()`:
-    - [ ] Return 1
+  - [ ] Implement `false_run()`
   - [ ] Implement `false_print_usage()`
-  - [ ] Define `cmd_false_spec`
-  - [ ] Implement `jshell_register_false_command()`
+  - [ ] Define `cmd_false_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/false/false_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/false/test_false.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.7 help - Shell Built-in Help
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Needs access to command registry
 
 - [ ] Create `src/jshell/builtins/cmd_help.h`
 - [ ] Create `src/jshell/builtins/cmd_help.c`:
   - [ ] Implement `build_help_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `[COMMAND]` (optional)
-  - [ ] Implement `help_run()`:
-    - [ ] If no argument: list all commands via `jshell_for_each_command()`
-    - [ ] If argument: show detailed help for that command via `spec->print_usage()`
+  - [ ] Implement `help_run()`
   - [ ] Implement `help_print_usage()`
-  - [ ] Define `cmd_help_spec`
+  - [ ] Define `cmd_help_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_help_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 7.8 history - Show Command History
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Needs access to shell's history
 
 - [ ] Create `src/jshell/builtins/cmd_history.h`
 - [ ] Create `src/jshell/builtins/cmd_history.c`:
   - [ ] Implement `build_history_argtable()` with:
     - [ ] `-h, --help`
-  - [ ] Implement `history_run()`:
-    - [ ] Display command history (if implemented)
+  - [ ] Implement `history_run()`
   - [ ] Implement `history_print_usage()`
-  - [ ] Define `cmd_history_spec`
+  - [ ] Define `cmd_history_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_history_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 7.9 alias - Manage Aliases
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Needs access to shell's alias table
 
 - [ ] Create `src/jshell/builtins/cmd_alias.h`
 - [ ] Create `src/jshell/builtins/cmd_alias.c`:
   - [ ] Implement `build_alias_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `[NAME=VALUE]` (optional)
-  - [ ] Implement `alias_run()`:
-    - [ ] If no argument: list all aliases
-    - [ ] If argument: create/update alias
+  - [ ] Implement `alias_run()`
   - [ ] Implement `alias_print_usage()`
-  - [ ] Define `cmd_alias_spec`
+  - [ ] Define `cmd_alias_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_alias_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 7.10 unalias - Remove Alias
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`) - Needs access to shell's alias table
 
 - [ ] Create `src/jshell/builtins/cmd_unalias.h`
 - [ ] Create `src/jshell/builtins/cmd_unalias.c`:
   - [ ] Implement `build_unalias_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `<NAME>` (required)
-  - [ ] Implement `unalias_run()`:
-    - [ ] Remove alias
+  - [ ] Implement `unalias_run()`
   - [ ] Implement `unalias_print_usage()`
-  - [ ] Define `cmd_unalias_spec`
+  - [ ] Define `cmd_unalias_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_unalias_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 7.11 less - Pager (Optional, Complex)
-**Standalone Only**
+**External App** (`src/apps/less/`)
 
 - [ ] Create `src/apps/less/less.c`:
   - [ ] Implement basic pager functionality
   - [ ] Support `-N` (line numbers)
   - [ ] Support `-h, --help`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/less/test_less.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 7.12 vi - Text Editor (Optional, Very Complex)
-**Standalone Only**
+**External App** (`src/apps/vi/`)
 
 - [ ] Consider using existing minimal vi implementation or deferring
 - [ ] If implementing:
@@ -752,51 +744,48 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
 ## Phase 8: Networking (FUTURE)
 
 ### 8.1 http-get - Fetch URL
-**Builtin + Standalone**
+**External App** (`src/apps/http-get/`)
 
-- [ ] Create `src/jshell/builtins/cmd_http_get.h`
-- [ ] Create `src/jshell/builtins/cmd_http_get.c`:
+- [ ] Create `src/apps/http-get/cmd_http_get.h`
+- [ ] Create `src/apps/http-get/cmd_http_get.c`:
   - [ ] Implement `build_http_get_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-H KEY:VALUE` (headers, repeatable)
     - [ ] `--json`
     - [ ] `<URL>` (required)
-  - [ ] Implement `http_get_run()`:
-    - [ ] Use sockets or libcurl (if allowed)
-    - [ ] Fetch URL
-    - [ ] Support `--json` output: `{"status": 200, "headers": {...}, "body": "..."}`
+  - [ ] Implement `http_get_run()`
   - [ ] Implement `http_get_print_usage()`
-  - [ ] Define `cmd_http_get_spec`
-  - [ ] Implement `jshell_register_http_get_command()`
+  - [ ] Define `cmd_http_get_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/http-get/http_get_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/http-get/test_http_get.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ### 8.2 http-post - POST to URL
-**Builtin + Standalone**
+**External App** (`src/apps/http-post/`)
 
-- [ ] Create `src/jshell/builtins/cmd_http_post.h`
-- [ ] Create `src/jshell/builtins/cmd_http_post.c`:
+- [ ] Create `src/apps/http-post/cmd_http_post.h`
+- [ ] Create `src/apps/http-post/cmd_http_post.c`:
   - [ ] Implement `build_http_post_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-H KEY:VALUE` (headers)
     - [ ] `-d DATA` (body data)
     - [ ] `--json`
     - [ ] `<URL>` (required)
-  - [ ] Implement `http_post_run()`:
-    - [ ] POST data to URL
-    - [ ] Support `--json` output
+  - [ ] Implement `http_post_run()`
   - [ ] Implement `http_post_print_usage()`
-  - [ ] Define `cmd_http_post_spec`
-  - [ ] Implement `jshell_register_http_post_command()`
+  - [ ] Define `cmd_http_post_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/http-post/http_post_main.c`
 - [ ] Update Makefile
+- [ ] Create `tests/apps/http-post/test_http_post.py`:
+  - [ ] Implement unit tests using Python unittest framework
 
 ---
 
 ## Phase 9: Package Manager Integration (FUTURE)
 
 ### 9.1 Refactor pkg Command
-**Builtin Only**
+**Builtin** (`src/jshell/builtins/`)
 
 - [ ] Refactor existing `pkg` implementation:
   - [ ] Move to `src/jshell/builtins/cmd_pkg.c`
@@ -812,56 +801,59 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
     - [ ] `compile`
   - [ ] Implement `pkg_run()` with subcommand dispatch
   - [ ] Implement `pkg_print_usage()`
-  - [ ] Define `cmd_pkg_spec`
+  - [ ] Define `cmd_pkg_spec` with `.type = CMD_BUILTIN`
   - [ ] Implement `jshell_register_pkg_command()`
-
----
-
-## Phase 10: Testing and Documentation
-
-### 10.1 Unit Tests
-- [ ] Create test suite for each command
-- [ ] Test `--help` output
-- [ ] Test `--json` output format
-- [ ] Test error handling
-- [ ] Test edge cases
-
-### 10.2 Integration Tests
-- [ ] Test commands in shell context
-- [ ] Test pipelines with new commands
-- [ ] Test redirection with new commands
-- [ ] Test background jobs with new commands
-
-### 10.3 Documentation
-- [ ] Generate documentation from `--help` output
-- [ ] Create man pages or markdown docs for each command
-- [ ] Update main README with command list
-- [ ] Document JSON output schemas
-
-### 10.4 Makefile Updates
-- [ ] Ensure all standalone binaries build correctly
-- [ ] Ensure all builtins link into shell
-- [ ] Add install targets
-- [ ] Add clean targets
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ---
 
 ## Notes
 
+### Command Type Summary
+
+**Builtins** (run by `jshell_exec_builtin()`, modify shell state):
+- jobs, ps, kill, wait (job control)
+- cd, export, unset (environment)
+- type, help, history, alias, unalias (shell introspection)
+- pkg (package manager)
+
+**External Apps** (fork/exec, standalone binaries):
+- ls, stat, cat, head, tail (file viewing)
+- cp, mv, rm, mkdir, rmdir, touch (file manipulation)
+- rg, edit-* (search and editing)
+- pwd, env (read-only environment)
+- echo, printf, sleep, date, true, false (utilities)
+- less, vi (interactive tools)
+- http-get, http-post (networking)
+
 ### Command Anatomy Checklist
-For each command, ensure:
+
+For each **Builtin**, ensure:
+- [ ] Source in `src/jshell/builtins/cmd_<name>.c`
+- [ ] Header in `src/jshell/builtins/cmd_<name>.h`
 - [ ] Uses `argtable3` for CLI parsing
 - [ ] Implements `build_<cmd>_argtable()` function
 - [ ] Implements `<cmd>_run(int argc, char **argv)` function
 - [ ] Implements `<cmd>_print_usage(FILE *out)` function
-- [ ] Defines `cmd_<cmd>_spec` with all fields
+- [ ] Defines `cmd_<cmd>_spec` with `.type = CMD_BUILTIN`
 - [ ] Implements `jshell_register_<cmd>_command()` function
+- [ ] Registered in `jshell_register_builtins.c`
 - [ ] Supports `-h, --help`
 - [ ] Agent-facing commands support `--json`
-- [ ] Follows naming conventions (snake_case)
-- [ ] Follows code style (2-space indent, 80-char lines)
-- [ ] Includes proper error handling
-- [ ] Cleans up resources properly
+
+For each **External App**, ensure:
+- [ ] Source in `src/apps/<name>/cmd_<name>.c`
+- [ ] Header in `src/apps/<name>/cmd_<name>.h`
+- [ ] Main wrapper in `src/apps/<name>/<name>_main.c`
+- [ ] Uses `argtable3` for CLI parsing
+- [ ] Implements `build_<cmd>_argtable()` function
+- [ ] Implements `<cmd>_run(int argc, char **argv)` function
+- [ ] Implements `<cmd>_print_usage(FILE *out)` function
+- [ ] Defines `cmd_<cmd>_spec` with `.type = CMD_EXTERNAL`
+- [ ] Makefile target to build standalone binary
+- [ ] Tests in `tests/apps/<name>/test_<name>.py`
+- [ ] Supports `-h, --help`
+- [ ] Agent-facing commands support `--json`
 
 ### JSON Output Standards
 - [ ] All JSON output is valid, parseable JSON
