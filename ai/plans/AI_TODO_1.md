@@ -339,89 +339,93 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
 
 ---
 
-## Phase 4: Structured Editing Commands (Agent-Facing, HIGH PRIORITY)
+## Phase 4: Structured Editing Commands (Agent-Facing, HIGH PRIORITY) ✅ COMPLETED
 
 These commands are **Builtins** because they provide core file editing functionality that should be built into the shell.
 
-### 4.1 edit-replace-line - Replace Single Line
+### 4.1 edit-replace-line - Replace Single Line ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.h`:
-  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_line_spec;`
-  - [ ] Declare `void jshell_register_edit_replace_line_command(void);`
-- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.c`:
-  - [ ] Implement `build_edit_replace_line_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<FILE>` (required)
-    - [ ] `<LINE_NUM>` (required, integer)
-    - [ ] `<TEXT>` (required, replacement text)
-  - [ ] Implement `edit_replace_line_run()`
-  - [ ] Implement `edit_replace_line_print_usage()`
-  - [ ] Define `cmd_edit_replace_line_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_edit_replace_line_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_edit_replace_line.h`:
+  - [x] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_line_spec;`
+  - [x] Declare `void jshell_register_edit_replace_line_command(void);`
+- [x] Create `src/jshell/builtins/cmd_edit_replace_line.c`:
+  - [x] Implement `build_edit_replace_line_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<FILE>` (required)
+    - [x] `<LINE_NUM>` (required, integer)
+    - [x] `<TEXT>` (required, replacement text)
+  - [x] Implement `edit_replace_line_run()`
+  - [x] Implement `edit_replace_line_print_usage()`
+  - [x] Define `cmd_edit_replace_line_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_edit_replace_line_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_edit_replace_line.py`
 
-### 4.2 edit-insert-line - Insert Line Before Given Line
+### 4.2 edit-insert-line - Insert Line Before Given Line ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.h`:
-  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_insert_line_spec;`
-  - [ ] Declare `void jshell_register_edit_insert_line_command(void);`
-- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.c`:
-  - [ ] Implement `build_edit_insert_line_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<FILE>`
-    - [ ] `<LINE_NUM>`
-    - [ ] `<TEXT>`
-  - [ ] Implement `edit_insert_line_run()`
-  - [ ] Implement `edit_insert_line_print_usage()`
-  - [ ] Define `cmd_edit_insert_line_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_edit_insert_line_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_edit_insert_line.h`:
+  - [x] Declare `extern const jshell_cmd_spec_t cmd_edit_insert_line_spec;`
+  - [x] Declare `void jshell_register_edit_insert_line_command(void);`
+- [x] Create `src/jshell/builtins/cmd_edit_insert_line.c`:
+  - [x] Implement `build_edit_insert_line_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<FILE>`
+    - [x] `<LINE_NUM>`
+    - [x] `<TEXT>`
+  - [x] Implement `edit_insert_line_run()`
+  - [x] Implement `edit_insert_line_print_usage()`
+  - [x] Define `cmd_edit_insert_line_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_edit_insert_line_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_edit_insert_line.py`
 
-### 4.3 edit-delete-line - Delete Single Line
+### 4.3 edit-delete-line - Delete Single Line ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.h`:
-  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_delete_line_spec;`
-  - [ ] Declare `void jshell_register_edit_delete_line_command(void);`
-- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.c`:
-  - [ ] Implement `build_edit_delete_line_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<FILE>`
-    - [ ] `<LINE_NUM>`
-  - [ ] Implement `edit_delete_line_run()`
-  - [ ] Implement `edit_delete_line_print_usage()`
-  - [ ] Define `cmd_edit_delete_line_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_edit_delete_line_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_edit_delete_line.h`:
+  - [x] Declare `extern const jshell_cmd_spec_t cmd_edit_delete_line_spec;`
+  - [x] Declare `void jshell_register_edit_delete_line_command(void);`
+- [x] Create `src/jshell/builtins/cmd_edit_delete_line.c`:
+  - [x] Implement `build_edit_delete_line_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<FILE>`
+    - [x] `<LINE_NUM>`
+  - [x] Implement `edit_delete_line_run()`
+  - [x] Implement `edit_delete_line_print_usage()`
+  - [x] Define `cmd_edit_delete_line_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_edit_delete_line_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_edit_delete_line.py`
 
-### 4.4 edit-replace - Global Find/Replace with Regex
+### 4.4 edit-replace - Global Find/Replace with Regex ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_edit_replace.h`:
-  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_spec;`
-  - [ ] Declare `void jshell_register_edit_replace_command(void);`
-- [ ] Create `src/jshell/builtins/cmd_edit_replace.c`:
-  - [ ] Implement `build_edit_replace_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-i` (case-insensitive)
-    - [ ] `--fixed-strings` (literal, not regex)
-    - [ ] `--json`
-    - [ ] `<FILE>`
-    - [ ] `<PATTERN>` (regex or literal)
-    - [ ] `<REPLACEMENT>`
-  - [ ] Implement `edit_replace_run()`:
-    - [ ] Use POSIX regex (`regcomp`, `regexec`)
-    - [ ] Support `--fixed-strings` for literal matches
-    - [ ] Support `-i` for case-insensitive regex
-  - [ ] Implement `edit_replace_print_usage()`
-  - [ ] Define `cmd_edit_replace_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_edit_replace_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_edit_replace.h`:
+  - [x] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_spec;`
+  - [x] Declare `void jshell_register_edit_replace_command(void);`
+- [x] Create `src/jshell/builtins/cmd_edit_replace.c`:
+  - [x] Implement `build_edit_replace_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-i` (case-insensitive)
+    - [x] `--fixed-strings` (literal, not regex)
+    - [x] `--json`
+    - [x] `<FILE>`
+    - [x] `<PATTERN>` (regex or literal)
+    - [x] `<REPLACEMENT>`
+  - [x] Implement `edit_replace_run()`:
+    - [x] Use POSIX regex (`regcomp`, `regexec`)
+    - [x] Support `--fixed-strings` for literal matches
+    - [x] Support `-i` for case-insensitive regex
+  - [x] Implement `edit_replace_print_usage()`
+  - [x] Define `cmd_edit_replace_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_edit_replace_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_edit_replace.py`
 
 ---
 

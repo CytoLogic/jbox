@@ -4,13 +4,13 @@ PYTHON ?= python
 PROJECT_ROOT := ..
 
 .PHONY: all apps builtins grammar ls stat cat head tail rg \
-        edit-replace-line edit-insert-line clean
+        edit-replace-line edit-insert-line edit-delete-line edit-replace clean
 
 all: apps builtins
 
 apps: ls stat cat head tail rg
 
-builtins: edit-replace-line edit-insert-line
+builtins: edit-replace-line edit-insert-line edit-delete-line edit-replace
 
 grammar:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.grammar.test_grammar -v
@@ -38,6 +38,12 @@ edit-replace-line:
 
 edit-insert-line:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.builtins.test_edit_insert_line -v
+
+edit-delete-line:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.builtins.test_edit_delete_line -v
+
+edit-replace:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.builtins.test_edit_replace -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
