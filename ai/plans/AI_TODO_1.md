@@ -645,20 +645,20 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [x] Create `tests/apps/date/test_date.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 7.4 help - Shell Built-in Help
+### 7.4 help - Shell Built-in Help ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Needs access to command registry
 Help should print all registered commands.
 
-- [ ] Create `src/jshell/builtins/cmd_help.h`
-- [ ] Create `src/jshell/builtins/cmd_help.c`:
-  - [ ] Implement `build_help_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `[COMMAND]` (optional)
-  - [ ] Implement `help_run()`
-  - [ ] Implement `help_print_usage()`
-  - [ ] Define `cmd_help_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_help_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_help.h`
+- [x] Create `src/jshell/builtins/cmd_help.c`:
+  - [x] Implement `build_help_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `[COMMAND]` (optional)
+  - [x] Implement `help_run()`
+  - [x] Implement `help_print_usage()`
+  - [x] Define `cmd_help_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_help_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
 
 ### 7.8 history - Show Command History
 **Builtin** (`src/jshell/builtins/`) - Needs access to shell's history

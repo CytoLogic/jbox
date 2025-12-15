@@ -19,6 +19,7 @@ void jshell_register_env_command(void);
 void jshell_register_export_command(void);
 void jshell_register_unset_command(void);
 void jshell_register_type_command(void);
+void jshell_register_help_command(void);
 
 
 #endif
