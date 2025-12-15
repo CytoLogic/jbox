@@ -16,37 +16,24 @@ from urllib.error import URLError, HTTPError
 class TestPackageRegistryServer(unittest.TestCase):
     """Test cases for the package registry server."""
 
-    SERVER_DIR = Path(__file__).parent.parent.parent / "src" / "pkg_srv"
+    PROJECT_ROOT = Path(__file__).parent.parent.parent
+    START_SCRIPT = PROJECT_ROOT / "scripts" / "start-pkg-server.sh"
     BASE_URL = "http://localhost:3000"
     server_process = None
 
     @classmethod
     def setUpClass(cls):
         """Start the server before running tests."""
-        # Check if server.js exists
-        server_js = cls.SERVER_DIR / "server.js"
-        if not server_js.exists():
-            raise unittest.SkipTest(f"server.js not found at {server_js}")
-
-        # Check if node_modules exists, install if not
-        node_modules = cls.SERVER_DIR / "node_modules"
-        if not node_modules.exists():
-            print("Installing npm dependencies...")
-            result = subprocess.run(
-                ["npm", "install"],
-                cwd=cls.SERVER_DIR,
-                capture_output=True,
-                text=True
+        # Check if start script exists
+        if not cls.START_SCRIPT.exists():
+            raise unittest.SkipTest(
+                f"start script not found at {cls.START_SCRIPT}"
             )
-            if result.returncode != 0:
-                raise unittest.SkipTest(
-                    f"Failed to install npm dependencies: {result.stderr}"
-                )
 
-        # Start the server
+        # Start the server using the script
         cls.server_process = subprocess.Popen(
-            ["node", "server.js"],
-            cwd=cls.SERVER_DIR,
+            ["bash", str(cls.START_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env={**os.environ, "PORT": "3000"}
@@ -276,7 +263,7 @@ class TestPackageRegistryServer(unittest.TestCase):
 class TestServerHealth(unittest.TestCase):
     """Test server health and basic connectivity."""
 
-    SERVER_DIR = Path(__file__).parent.parent.parent / "src" / "pkg_srv"
+    PROJECT_ROOT = Path(__file__).parent.parent.parent
     BASE_URL = "http://localhost:3000"
 
     def test_server_responds(self):
