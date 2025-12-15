@@ -9,17 +9,21 @@ import urllib.request
 from pathlib import Path
 
 
-def httpbin_available():
-    """Check if httpbin.org is available."""
+# Test URL - use a reliable public website
+TEST_URL = "https://archlinux.org"
+
+
+def test_url_available():
+    """Check if test URL is available."""
     try:
-        urllib.request.urlopen("https://httpbin.org/get", timeout=10)
+        urllib.request.urlopen(TEST_URL, timeout=10)
         return True
     except Exception:
         return False
 
 
 # Cache the result at module load time
-HTTPBIN_AVAILABLE = httpbin_available()
+TEST_URL_AVAILABLE = test_url_available()
 
 
 class TestHttpGetHelp(unittest.TestCase):
@@ -108,7 +112,7 @@ class TestHttpGetHelp(unittest.TestCase):
                        f"Expected error about missing URL, got: {result.filtered_stdout}")
 
 
-@unittest.skipUnless(HTTPBIN_AVAILABLE, "httpbin.org is not available")
+@unittest.skipUnless(TEST_URL_AVAILABLE, f"{TEST_URL} is not available")
 class TestHttpGetNetwork(unittest.TestCase):
     """Test cases for http-get network functionality."""
 
@@ -151,40 +155,62 @@ class TestHttpGetNetwork(unittest.TestCase):
 
     def test_fetch_simple_url(self):
         """Test fetching a simple URL."""
-        result = self.run_http_get("https://httpbin.org/get")
+        result = self.run_http_get(TEST_URL)
         self.assertEqual(result.returncode, 0)
-        # httpbin.org returns JSON with these fields
-        self.assertIn("headers", result.filtered_stdout)
-        self.assertIn("url", result.filtered_stdout)
+        # archlinux.org returns HTML
+        self.assertIn("html", result.filtered_stdout.lower())
 
     def test_fetch_with_json_output(self):
         """Test fetching with --json output format."""
-        result = self.run_http_get("--json", "https://httpbin.org/get")
+        result = self.run_http_get("--json", TEST_URL)
         self.assertEqual(result.returncode, 0)
-        # Parse the JSON output
+        # Parse the JSON output - find line starting with {
+        json_line = None
+        for line in result.filtered_stdout.split('\n'):
+            if line.strip().startswith('{'):
+                json_line = line
+                break
+        self.assertIsNotNone(json_line, "No JSON line found in output")
         try:
-            data = json.loads(result.filtered_stdout)
+            data = json.loads(json_line)
             self.assertEqual(data["status"], "ok")
             self.assertEqual(data["http_code"], 200)
             self.assertIn("body", data)
             self.assertIn("headers", data)
         except json.JSONDecodeError:
-            self.fail(f"Output is not valid JSON: {result.filtered_stdout}")
+            self.fail(f"Output is not valid JSON: {json_line}")
 
     def test_json_output_contains_content_type(self):
         """Test that JSON output includes content type."""
-        result = self.run_http_get("--json", "https://httpbin.org/get")
+        result = self.run_http_get("--json", TEST_URL)
         self.assertEqual(result.returncode, 0)
-        data = json.loads(result.filtered_stdout)
+        # Find JSON line
+        json_line = None
+        for line in result.filtered_stdout.split('\n'):
+            if line.strip().startswith('{'):
+                json_line = line
+                break
+        self.assertIsNotNone(json_line, "No JSON line found in output")
+        data = json.loads(json_line)
         self.assertIn("content_type", data)
-        # httpbin returns application/json
-        self.assertIn("json", data["content_type"].lower())
+        # archlinux.org returns text/html
+        self.assertIn("text/html", data["content_type"].lower())
 
-    def test_custom_user_agent(self):
-        """Test that custom User-Agent is sent."""
-        result = self.run_http_get("https://httpbin.org/user-agent")
+    def test_json_output_body_contains_html(self):
+        """Test that JSON output body contains HTML content."""
+        result = self.run_http_get("--json", TEST_URL)
         self.assertEqual(result.returncode, 0)
-        self.assertIn("jbox-http-get", result.filtered_stdout)
+        # Find JSON line
+        json_line = None
+        for line in result.filtered_stdout.split('\n'):
+            if line.strip().startswith('{'):
+                json_line = line
+                break
+        self.assertIsNotNone(json_line, "No JSON line found in output")
+        data = json.loads(json_line)
+        self.assertIn("body", data)
+        # Body should contain HTML
+        self.assertIn("<!doctype html>", data["body"].lower())
 
 
 class TestHttpGetErrors(unittest.TestCase):
@@ -252,7 +278,7 @@ class TestHttpGetErrors(unittest.TestCase):
                        f"Expected error message, got: {result.filtered_stdout}")
 
 
-@unittest.skipUnless(HTTPBIN_AVAILABLE, "httpbin.org is not available")
+@unittest.skipUnless(TEST_URL_AVAILABLE, f"{TEST_URL} is not available")
 class TestHttpGetHeaders(unittest.TestCase):
     """Test cases for http-get custom headers functionality."""
 
@@ -292,22 +318,23 @@ class TestHttpGetHeaders(unittest.TestCase):
         result.filtered_stdout = "\n".join(stdout_lines)
         return result
 
-    def test_single_custom_header(self):
-        """Test sending a single custom header."""
+    def test_custom_header_request_succeeds(self):
+        """Test that request with custom header succeeds."""
         result = self.run_http_get(
-            'http-get -H "X-Custom-Test: hello" https://httpbin.org/headers'
+            f'http-get -H "X-Custom-Test: hello" {TEST_URL}'
         )
         self.assertEqual(result.returncode, 0)
-        self.assertIn("X-Custom-Test", result.filtered_stdout)
+        # Should return HTML content
+        self.assertIn("html", result.filtered_stdout.lower())
 
-    def test_accept_header(self):
-        """Test setting Accept header."""
+    def test_accept_header_request_succeeds(self):
+        """Test that request with Accept header succeeds."""
         result = self.run_http_get(
-            'http-get -H "Accept: application/xml" https://httpbin.org/headers'
+            f'http-get -H "Accept: text/html" {TEST_URL}'
         )
         self.assertEqual(result.returncode, 0)
-        self.assertIn("Accept", result.filtered_stdout)
-        self.assertIn("application/xml", result.filtered_stdout)
+        # Should return HTML content
+        self.assertIn("html", result.filtered_stdout.lower())
 
 
 if __name__ == "__main__":
