@@ -308,32 +308,34 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
 
 ## Phase 3: Search and Text Tools (Agent-Facing, HIGH PRIORITY)
 
-### 3.1 rg - Regex Search
+### 3.1 rg - Regex Search ✅ COMPLETED
 **External App** (`src/apps/rg/`)
 
-- [ ] Create `src/apps/rg/cmd_rg.h`
-- [ ] Create `src/apps/rg/cmd_rg.c`:
-  - [ ] Implement `build_rg_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-n` (show line numbers)
-    - [ ] `-i` (case-insensitive)
-    - [ ] `-w` (match whole words)
-    - [ ] `-C N` (context lines)
-    - [ ] `--fixed-strings` (literal, not regex)
-    - [ ] `--json` (emit JSON per match)
-    - [ ] `<PATTERN>` (required)
-    - [ ] `<FILE...>` (files to search)
-  - [ ] Implement `rg_run()`:
-    - [ ] Use POSIX regex (`regcomp`, `regexec`)
-    - [ ] Search files for pattern
-    - [ ] Support all flags
-    - [ ] Support `--json` output: `{"file": "...", "line": N, "column": N, "text": "..."}`
-  - [ ] Implement `rg_print_usage()`
-  - [ ] Define `cmd_rg_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/rg/rg_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/rg/test_rg.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/rg/cmd_rg.h`
+- [x] Create `src/apps/rg/cmd_rg.c`:
+  - [x] Implement `build_rg_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-n` (show line numbers)
+    - [x] `-i` (case-insensitive)
+    - [x] `-w` (match whole words)
+    - [x] `-C N` (context lines)
+    - [x] `--fixed-strings` (literal, not regex)
+    - [x] `--json` (emit JSON per match)
+    - [x] `<PATTERN>` (required)
+    - [x] `<FILE...>` (files to search)
+  - [x] Implement `rg_run()`:
+    - [x] Use POSIX regex (`regcomp`, `regexec`)
+    - [x] Search files for pattern
+    - [x] Support all flags
+    - [x] Support `--json` output: `{"file": "...", "line": N, "column": N, "text": "..."}`
+  - [x] Implement `rg_print_usage()`
+  - [x] Define `cmd_rg_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/rg/rg_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/rg/test_rg.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add rg test target
 
 ---
 

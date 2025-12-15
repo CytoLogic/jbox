@@ -11,6 +11,7 @@
 #include "apps/mkdir/cmd_mkdir.h"
 #include "apps/rmdir/cmd_rmdir.h"
 #include "apps/touch/cmd_touch.h"
+#include "apps/rg/cmd_rg.h"
 
 
 void jshell_register_all_external_commands(void) {
@@ -25,4 +26,5 @@ void jshell_register_all_external_commands(void) {
   jshell_register_mkdir_command();
   jshell_register_rmdir_command();
   jshell_register_touch_command();
+  jshell_register_rg_command();
 }

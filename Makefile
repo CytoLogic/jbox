@@ -51,7 +51,8 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/rm/cmd_rm.c \
 					 $(SRC_DIR)/apps/mkdir/cmd_mkdir.c \
 					 $(SRC_DIR)/apps/rmdir/cmd_rmdir.c \
-					 $(SRC_DIR)/apps/touch/cmd_touch.c
+					 $(SRC_DIR)/apps/touch/cmd_touch.c \
+					 $(SRC_DIR)/apps/rg/cmd_rg.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -67,7 +68,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app
+apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -141,6 +142,12 @@ touch-app: $(ARGTABLE3_OBJ)
 	$(COMPILE) -I$(SRC_DIR)/apps/touch $(SRC_DIR)/apps/touch/touch_main.c \
 	           $(SRC_DIR)/apps/touch/cmd_touch.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/touch
+
+rg-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/rg $(SRC_DIR)/apps/rg/rg_main.c \
+	           $(SRC_DIR)/apps/rg/cmd_rg.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rg
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
