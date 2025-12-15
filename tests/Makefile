@@ -6,7 +6,8 @@ PROJECT_ROOT := ..
 .PHONY: all apps builtins jshell signals grammar ls stat cat head tail rg less vi \
         edit-replace-line edit-insert-line edit-delete-line edit-replace \
         jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec jshell-session \
-        jshell-signals app-signals vi-signals less-signals pkg-srv clean
+        jshell-signals app-signals vi-signals less-signals pkg-srv \
+        pkg pkg-db pkg-lifecycle pkg-errors pkg-shell pkg-integration clean
 
 all: apps builtins jshell
 
@@ -86,6 +87,28 @@ vi-signals:
 
 less-signals:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.less.test_less_signals -v
+
+# Package manager tests
+pkg: pkg-db pkg-lifecycle pkg-errors pkg-shell
+
+pkg-db:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg.test_pkg_db -v
+
+pkg-lifecycle:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg.test_pkg_lifecycle -v
+
+pkg-errors:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg.test_pkg_errors -v
+
+pkg-shell:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg.test_pkg_shell -v
+
+pkg-integration:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest \
+		tests.pkg.test_pkg_db \
+		tests.pkg.test_pkg_lifecycle \
+		tests.pkg.test_pkg_errors \
+		tests.pkg.test_pkg_shell -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
