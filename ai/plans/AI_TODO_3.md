@@ -76,7 +76,7 @@ The shell has:
 
 - [x] Add `#include "jshell_path.h"`
 - [x] Call `jshell_init_path()` early in `jshell_main()` (before command registration)
-- [ ] Call `jshell_cleanup_path()` in shell cleanup/exit (not needed - shell exits)
+- [x] ~~Call `jshell_cleanup_path()` in shell cleanup/exit~~ (N/A - OS cleans up on exit)
 
 ### 1.3 Update External Command Execution ✅
 **File**: `src/ast/jshell_ast_helpers.c`
@@ -219,14 +219,12 @@ The shell has:
 ### 3.2 Update Pipeline Execution
 **File**: `src/ast/jshell_ast_helpers.c`
 
-- [ ] Refactor `jshell_exec_pipeline()` to use `JShellPipe` (optional optimization)
-  - Note: Current implementation works correctly with existing pipe mechanism
+- [x] ~~Refactor `jshell_exec_pipeline()` to use `JShellPipe`~~ (deferred - current impl works)
 
 ### 3.3 Pipeline Command Type Detection
 **File**: `src/ast/jshell_ast_helpers.c`
 
-- [ ] Add helper functions for socketpair optimization (optional)
-  - Note: Deferred - current pipeline execution is functional
+- [x] ~~Add helper functions for socketpair optimization~~ (deferred - not needed)
 
 ### 3.4 Create Socketpair Pipe Tests ✅
 **File**: `tests/jshell/test_pipes.py`
