@@ -13,6 +13,7 @@
 #include "jshell_history.h"
 #include "jshell_register_builtins.h"
 #include "jshell_register_externals.h"
+#include "jshell_path.h"
 #include "utils/jbox_utils.h"
 #include "jshell.h"
 
@@ -72,6 +73,7 @@ void jshell_print_usage(FILE *out) {
 int jshell_exec_string(const char *cmd_string) {
   Input parse_tree;
 
+  jshell_init_path();
   jshell_init_job_control();
   jshell_register_all_builtin_commands();
   jshell_register_all_external_commands();
@@ -101,6 +103,7 @@ static int jshell_interactive(void) {
 
   Input parse_tree;
 
+  jshell_init_path();
   jshell_init_job_control();
   jshell_history_init();
   jshell_register_all_builtin_commands();

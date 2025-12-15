@@ -12,6 +12,7 @@
 #include <ctype.h>
 
 #include "jshell/jshell_cmd_registry.h"
+#include "jshell/jshell_path.h"
 #include "utils/jbox_utils.h"
 #include "jshell/jshell.h"
 #include "jshell/jshell_job_control.h"
@@ -231,12 +232,19 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
       close(pipes[i][0]);
       close(pipes[i][1]);
     }
-    
-    execvp(cmd_params->argv[0], cmd_params->argv);
-    perror("execvp");
-    exit(EXIT_FAILURE);
+
+    char* resolved_path = jshell_resolve_command(cmd_params->argv[0]);
+    if (resolved_path != NULL) {
+      execv(resolved_path, cmd_params->argv);
+      perror("execv");
+      free(resolved_path);
+    } else {
+      execvp(cmd_params->argv[0], cmd_params->argv);
+      perror("execvp");
+    }
+    exit(127);
   }
-  
+
   return pid;
 }
 
@@ -336,14 +344,21 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
     if (jshell_setup_input_redir(job->input_fd) == -1) {
       exit(EXIT_FAILURE);
     }
-    
+
     if (jshell_setup_output_redir(job->output_fd) == -1) {
       exit(EXIT_FAILURE);
     }
-    
-    execvp(cmd_params->argv[0], cmd_params->argv);
-    perror("execvp");
-    exit(EXIT_FAILURE);
+
+    char* resolved_path = jshell_resolve_command(cmd_params->argv[0]);
+    if (resolved_path != NULL) {
+      execv(resolved_path, cmd_params->argv);
+      perror("execv");
+      free(resolved_path);
+    } else {
+      execvp(cmd_params->argv[0], cmd_params->argv);
+      perror("execvp");
+    }
+    exit(127);
   }
   
   if (job->input_fd != -1) {

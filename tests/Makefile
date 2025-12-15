@@ -3,15 +3,17 @@
 PYTHON ?= python
 PROJECT_ROOT := ..
 
-.PHONY: all apps builtins grammar ls stat cat head tail rg less vi \
+.PHONY: all apps builtins jshell grammar ls stat cat head tail rg less vi \
         edit-replace-line edit-insert-line edit-delete-line edit-replace \
-        pkg-srv clean
+        jshell-path pkg-srv clean
 
-all: apps builtins
+all: apps builtins jshell
 
 apps: ls stat cat head tail rg less vi
 
 builtins: edit-replace-line edit-insert-line edit-delete-line edit-replace
+
+jshell: jshell-path
 
 grammar:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.grammar.test_grammar -v
@@ -54,6 +56,9 @@ edit-replace:
 
 pkg-srv:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg_srv.test_pkg_srv -v
+
+jshell-path:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.test_path -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
