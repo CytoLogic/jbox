@@ -47,6 +47,7 @@ class PkgTestBase(unittest.TestCase):
 
         - Verify pkg binary exists
         - Backup existing .jshell directory
+        - Start registry server
         """
         if not cls.PKG_BIN.exists():
             raise unittest.SkipTest(f"pkg binary not found at {cls.PKG_BIN}")
@@ -58,6 +59,13 @@ class PkgTestBase(unittest.TestCase):
             if cls.backup_dir.exists():
                 shutil.rmtree(cls.backup_dir)
             shutil.move(cls.JSHELL_HOME, cls.backup_dir)
+
+        # Start registry server for all tests
+        try:
+            cls.start_registry_server()
+        except unittest.SkipTest:
+            # Server not available, tests will run without it
+            pass
 
     @classmethod
     def tearDownClass(cls):
@@ -320,6 +328,11 @@ class PkgTestBase(unittest.TestCase):
             )
 
         if cls.server_process:
+            # Close stdout/stderr pipes to avoid ResourceWarnings
+            if cls.server_process.stdout:
+                cls.server_process.stdout.close()
+            if cls.server_process.stderr:
+                cls.server_process.stderr.close()
             try:
                 cls.server_process.wait(timeout=2)
             except subprocess.TimeoutExpired:
