@@ -13,6 +13,7 @@
 
 #include "jshell/jshell_cmd_registry.h"
 #include "jshell/jshell_path.h"
+#include "jshell/jshell_thread_exec.h"
 #include "utils/jbox_utils.h"
 #include "jshell/jshell.h"
 #include "jshell/jshell_job_control.h"
@@ -128,16 +129,16 @@ static const jshell_cmd_spec_t* jshell_find_builtin(const char* name) {
 }
 
 
-static int jshell_exec_builtin(const jshell_cmd_spec_t* spec, 
-                                JShellCmdParams* cmd_params,
-                                int input_fd,
-                                int output_fd) {
-  DPRINT("Executing builtin: %s", spec->name);
-  
+static int jshell_exec_builtin_direct(const jshell_cmd_spec_t* spec,
+                                       JShellCmdParams* cmd_params,
+                                       int input_fd,
+                                       int output_fd) {
+  DPRINT("Executing builtin directly: %s", spec->name);
+
   int saved_stdin = -1;
   int saved_stdout = -1;
   int result = 0;
-  
+
   if (input_fd != -1) {
     saved_stdin = dup(STDIN_FILENO);
     if (saved_stdin == -1) {
@@ -149,7 +150,7 @@ static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
       return -1;
     }
   }
-  
+
   if (output_fd != -1) {
     saved_stdout = dup(STDOUT_FILENO);
     if (saved_stdout == -1) {
@@ -169,19 +170,46 @@ static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
       return -1;
     }
   }
-  
+
   result = spec->run(cmd_params->argc, cmd_params->argv);
-  
+
   if (saved_stdout != -1) {
     dup2(saved_stdout, STDOUT_FILENO);
     close(saved_stdout);
   }
-  
+
   if (saved_stdin != -1) {
     dup2(saved_stdin, STDIN_FILENO);
     close(saved_stdin);
   }
-  
+
+  return result;
+}
+
+
+static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
+                                JShellCmdParams* cmd_params,
+                                int input_fd,
+                                int output_fd) {
+  DPRINT("Executing builtin: %s", spec->name);
+
+  if (jshell_builtin_requires_main_thread(spec->name)) {
+    DPRINT("Builtin %s requires main thread execution", spec->name);
+    return jshell_exec_builtin_direct(spec, cmd_params, input_fd, output_fd);
+  }
+
+  JShellBuiltinThread* bt = jshell_spawn_builtin_thread(
+    spec, cmd_params->argc, cmd_params->argv, input_fd, output_fd
+  );
+
+  if (bt == NULL) {
+    DPRINT("Failed to spawn thread, falling back to direct execution");
+    return jshell_exec_builtin_direct(spec, cmd_params, input_fd, output_fd);
+  }
+
+  int result = jshell_wait_builtin_thread(bt);
+  jshell_free_builtin_thread(bt);
+
   return result;
 }
 

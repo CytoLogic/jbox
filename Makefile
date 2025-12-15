@@ -46,7 +46,8 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_register_externals.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c \
 			   $(SRC_DIR)/jshell/jshell_history.c \
-			   $(SRC_DIR)/jshell/jshell_path.c
+			   $(SRC_DIR)/jshell/jshell_path.c \
+			   $(SRC_DIR)/jshell/jshell_thread_exec.c
 
 BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_ps.c \
