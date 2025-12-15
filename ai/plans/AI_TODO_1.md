@@ -61,18 +61,18 @@ For each external app, create `tests/apps/<cmd>/test_<cmd>.py`:
   - [x] Ensure `jshell_find_builtin()` uses `jshell_find_command()`
   - [x] Ensure `jshell_exec_builtin()` respects `spec->type`
 
-### 1.4 Create External Command Registration System
-- [ ] Create `src/jshell/jshell_register_externals.h`:
-  - [ ] Declare `void jshell_register_all_external_commands(void);`
-  - [ ] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
-- [ ] Create `src/jshell/jshell_register_externals.c`:
-  - [ ] Include headers from `src/apps/<cmd>/cmd_<cmd>.h` for each external command
-  - [ ] Implement `jshell_register_all_external_commands()` that calls all individual registration functions
-- [ ] Update `src/jshell/jshell.c`:
-  - [ ] Call `jshell_register_all_external_commands()` in `jshell_main()` initialization (after builtins)
-- [ ] Update Makefile:
-  - [ ] Add `jshell_register_externals.c` to `JSHELL_SRCS`
-  - [ ] Add all `cmd_<name>.c` files from `src/apps/` to jbox build (for registration only)
+### 1.4 Create External Command Registration System ✅ COMPLETED
+- [x] Create `src/jshell/jshell_register_externals.h`:
+  - [x] Declare `void jshell_register_all_external_commands(void);`
+  - [x] Declare individual registration functions (e.g., `void jshell_register_ls_command(void);`)
+- [x] Create `src/jshell/jshell_register_externals.c`:
+  - [x] Include headers from `src/apps/<cmd>/cmd_<cmd>.h` for each external command
+  - [x] Implement `jshell_register_all_external_commands()` that calls all individual registration functions
+- [x] Update `src/jshell/jshell.c`:
+  - [x] Call `jshell_register_all_external_commands()` in `jshell_main()` initialization (after builtins)
+- [x] Update Makefile:
+  - [x] Add `jshell_register_externals.c` to `JSHELL_SRCS`
+  - [x] Add all `cmd_<name>.c` files from `src/apps/` to jbox build (for registration only)
 
 ---
 
@@ -100,7 +100,7 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
 - [x] Create `src/apps/ls/ls_main.c`:
   - [x] Implement `main()` that calls `cmd_ls_spec.run(argc, argv)`
 - [x] Update Makefile to build standalone `ls` binary
-- [ ] Register in `jshell_register_externals.c`
+- [x] Register in `jshell_register_externals.c`
 - [x] Create `tests/apps/ls/test_ls.py`:
   - [x] Implement unit tests using Python unittest framework
 
@@ -121,7 +121,7 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [x] Implement `jshell_register_stat_command()`
 - [x] Create `src/apps/stat/stat_main.c`
 - [x] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
+- [x] Register in `jshell_register_externals.c`
 - [x] Create `tests/apps/stat/test_stat.py`:
   - [x] Implement unit tests using Python unittest framework
 
