@@ -1,0 +1,7 @@
+{
+  "name": "tail",
+  "version": "0.0.1",
+  "description": "output the last part of files",
+  "files": ["bin/tail"],
+  "docs": ["README.md"]
+}

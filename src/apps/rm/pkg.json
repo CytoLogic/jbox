@@ -1,0 +1,7 @@
+{
+  "name": "rm",
+  "version": "0.0.1",
+  "description": "remove files or directories",
+  "files": ["bin/rm"],
+  "docs": ["README.md"]
+}

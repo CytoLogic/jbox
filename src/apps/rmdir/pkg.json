@@ -1,0 +1,7 @@
+{
+  "name": "rmdir",
+  "version": "0.0.1",
+  "description": "remove empty directories",
+  "files": ["bin/rmdir"],
+  "docs": ["README.md"]
+}

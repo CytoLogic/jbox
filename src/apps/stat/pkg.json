@@ -1,0 +1,7 @@
+{
+  "name": "stat",
+  "version": "0.0.1",
+  "description": "display file metadata",
+  "files": ["bin/stat"],
+  "docs": ["README.md"]
+}

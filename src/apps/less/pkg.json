@@ -1,0 +1,7 @@
+{
+  "name": "less",
+  "version": "0.0.1",
+  "description": "view file contents with paging",
+  "files": ["bin/less"],
+  "docs": ["README.md"]
+}

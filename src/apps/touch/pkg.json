@@ -1,0 +1,7 @@
+{
+  "name": "touch",
+  "version": "0.0.1",
+  "description": "change file timestamps",
+  "files": ["bin/touch"],
+  "docs": ["README.md"]
+}

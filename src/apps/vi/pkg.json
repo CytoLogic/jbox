@@ -1,0 +1,7 @@
+{
+  "name": "vi",
+  "version": "0.0.1",
+  "description": "edit files with vi-like interface",
+  "files": ["bin/vi"],
+  "docs": ["README.md"]
+}

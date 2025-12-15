@@ -1,0 +1,7 @@
+{
+  "name": "head",
+  "version": "0.0.1",
+  "description": "output the first part of files",
+  "files": ["bin/head"],
+  "docs": ["README.md"]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "mv",
+  "version": "0.0.1",
+  "description": "move (rename) files",
+  "files": ["bin/mv"],
+  "docs": ["README.md"]
+}

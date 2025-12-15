@@ -1,0 +1,7 @@
+{
+  "name": "ls",
+  "version": "0.0.1",
+  "description": "list directory contents",
+  "files": ["bin/ls"],
+  "docs": ["README.md"]
+}

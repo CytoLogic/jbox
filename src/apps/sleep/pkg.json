@@ -1,0 +1,7 @@
+{
+  "name": "sleep",
+  "version": "0.0.1",
+  "description": "delay for a specified amount of time",
+  "files": ["bin/sleep"],
+  "docs": ["README.md"]
+}

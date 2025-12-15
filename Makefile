@@ -89,7 +89,7 @@ AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 
 all: jbox apps
 
-.PHONY: test test-apps test-grammar
+.PHONY: test test-apps test-grammar apps clean-apps bnfc
 test: test-apps
 
 test-apps: apps
@@ -98,116 +98,27 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app echo-app sleep-app date-app less-app vi-app
+APP_DIRS := cat cp date echo head less ls mkdir mv rg rm rmdir sleep stat tail touch vi
+
+apps: $(ARGTABLE3_OBJ)
+	@for app in $(APP_DIRS); do \
+		echo "Building $$app..."; \
+		$(MAKE) -C $(SRC_DIR)/apps/$$app; \
+	done
+
+clean-apps:
+	@for app in $(APP_DIRS); do \
+		$(MAKE) -C $(SRC_DIR)/apps/$$app clean; \
+	done
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
 
+$(BNFC_OBJS): bnfc
+
 jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LIB)
 	mkdir -p bin/
 	$(COMPILE) $(CURL_CFLAGS) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(EXTERNAL_CMD_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LDFLAGS) $(LDFLAGS) -o $(BIN_DIR)/jbox
-
-ls-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/ls $(SRC_DIR)/apps/ls/ls_main.c \
-	           $(SRC_DIR)/apps/ls/cmd_ls.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/ls
-
-stat-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/stat $(SRC_DIR)/apps/stat/stat_main.c \
-	           $(SRC_DIR)/apps/stat/cmd_stat.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/stat
-
-cat-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/cat $(SRC_DIR)/apps/cat/cat_main.c \
-	           $(SRC_DIR)/apps/cat/cmd_cat.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/cat
-
-head-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/head $(SRC_DIR)/apps/head/head_main.c \
-	           $(SRC_DIR)/apps/head/cmd_head.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/head
-
-tail-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/tail $(SRC_DIR)/apps/tail/tail_main.c \
-	           $(SRC_DIR)/apps/tail/cmd_tail.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/tail
-
-cp-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/cp $(SRC_DIR)/apps/cp/cp_main.c \
-	           $(SRC_DIR)/apps/cp/cmd_cp.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/cp
-
-mv-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/mv $(SRC_DIR)/apps/mv/mv_main.c \
-	           $(SRC_DIR)/apps/mv/cmd_mv.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/mv
-
-rm-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/rm $(SRC_DIR)/apps/rm/rm_main.c \
-	           $(SRC_DIR)/apps/rm/cmd_rm.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rm
-
-mkdir-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/mkdir $(SRC_DIR)/apps/mkdir/mkdir_main.c \
-	           $(SRC_DIR)/apps/mkdir/cmd_mkdir.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/mkdir
-
-rmdir-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/rmdir $(SRC_DIR)/apps/rmdir/rmdir_main.c \
-	           $(SRC_DIR)/apps/rmdir/cmd_rmdir.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rmdir
-
-touch-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/touch $(SRC_DIR)/apps/touch/touch_main.c \
-	           $(SRC_DIR)/apps/touch/cmd_touch.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/touch
-
-rg-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/rg $(SRC_DIR)/apps/rg/rg_main.c \
-	           $(SRC_DIR)/apps/rg/cmd_rg.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rg
-
-echo-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/echo $(SRC_DIR)/apps/echo/echo_main.c \
-	           $(SRC_DIR)/apps/echo/cmd_echo.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/echo
-
-sleep-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/sleep $(SRC_DIR)/apps/sleep/sleep_main.c \
-	           $(SRC_DIR)/apps/sleep/cmd_sleep.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/sleep
-
-date-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/date $(SRC_DIR)/apps/date/date_main.c \
-	           $(SRC_DIR)/apps/date/cmd_date.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/date
-
-less-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/less $(SRC_DIR)/apps/less/less_main.c \
-	           $(SRC_DIR)/apps/less/cmd_less.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/less
-
-vi-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/vi $(SRC_DIR)/apps/vi/vi_main.c \
-	           $(SRC_DIR)/apps/vi/cmd_vi.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/vi
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

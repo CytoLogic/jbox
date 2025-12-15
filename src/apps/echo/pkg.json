@@ -1,0 +1,7 @@
+{
+  "name": "echo",
+  "version": "0.0.1",
+  "description": "display a line of text",
+  "files": ["bin/echo"],
+  "docs": ["README.md"]
+}

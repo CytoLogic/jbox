@@ -1,0 +1,7 @@
+{
+  "name": "cp",
+  "version": "0.0.1",
+  "description": "copy files and directories",
+  "files": ["bin/cp"],
+  "docs": ["README.md"]
+}

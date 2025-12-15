@@ -1,0 +1,7 @@
+{
+  "name": "date",
+  "version": "0.0.1",
+  "description": "display the current date and time",
+  "files": ["bin/date"],
+  "docs": ["README.md"]
+}

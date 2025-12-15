@@ -1,0 +1,7 @@
+{
+  "name": "cat",
+  "version": "0.0.1",
+  "description": "concatenate files and print on standard output",
+  "files": ["bin/cat"],
+  "docs": ["README.md"]
+}

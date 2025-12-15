@@ -1,0 +1,7 @@
+{
+  "name": "rg",
+  "version": "0.0.1",
+  "description": "search for patterns using regular expressions",
+  "files": ["bin/rg"],
+  "docs": ["README.md"]
+}
