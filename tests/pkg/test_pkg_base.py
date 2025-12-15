@@ -177,13 +177,16 @@ class PkgTestBase(unittest.TestCase):
         bin_dir = pkg_dir / "bin"
         bin_dir.mkdir()
 
-        # Create executable
-        exe_path = bin_dir / name
-        exe_path.write_text(f'#!/bin/sh\necho "Hello from {name}!"')
-        exe_path.chmod(0o755)
-
         if files is None:
             files = [f"bin/{name}"]
+
+        # Create executable
+        exe_path = bin_dir / name
+        if not with_source:
+            # For non-source packages, create a shell script placeholder
+            exe_path.write_text(f'#!/bin/sh\necho "Hello from {name}!"')
+            exe_path.chmod(0o755)
+        # For source packages, the binary is created by make below
 
         # Create pkg.json
         manifest = {
@@ -205,7 +208,31 @@ class PkgTestBase(unittest.TestCase):
                 f'}}\n'
             )
             manifest["sources"] = [f"src/{name}_main.c"]
-            manifest["build"] = "gcc -o bin/{name} src/{name}_main.c"
+            manifest["build"] = f"gcc -o bin/{name} src/{name}_main.c"
+
+            # Create Makefile for pkg compile support
+            makefile_content = f"""# Makefile for {name}
+CC ?= gcc
+CFLAGS ?= -Wall -Wextra
+
+.PHONY: all clean
+
+all: bin/{name}
+
+bin/{name}: src/{name}_main.c
+\t@mkdir -p bin
+\t$(CC) $(CFLAGS) -o $@ $<
+
+clean:
+\trm -f bin/{name}
+"""
+            (pkg_dir / "Makefile").write_text(makefile_content)
+
+            # Compile the source to create the binary
+            subprocess.run(
+                ["make", "-C", str(pkg_dir)],
+                capture_output=True, check=True
+            )
 
         (pkg_dir / "pkg.json").write_text(json.dumps(manifest, indent=2))
 

@@ -38,6 +38,11 @@ typedef struct {
 } pkg_args_t;
 
 
+// Forward declarations
+static int compile_package_dir(const char *name, const char *dir,
+                               int json_output, int verbose);
+
+
 static void build_pkg_argtable(pkg_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -71,12 +76,12 @@ static void pkg_print_usage(FILE *out) {
   fprintf(out, "  list                      list installed packages\n");
   fprintf(out, "  info NAME                 show information about a package\n");
   fprintf(out, "  search QUERY              search registry for packages\n");
-  fprintf(out, "  install <tarball>         install package from tarball\n");
+  fprintf(out, "  install <tarball>         install and compile package from tarball\n");
   fprintf(out, "  remove NAME               remove an installed package\n");
   fprintf(out, "  build <src> <out.tar.gz>  build a package for distribution\n");
   fprintf(out, "  check-update              check for available updates\n");
   fprintf(out, "  upgrade                   upgrade all packages with updates\n");
-  fprintf(out, "  compile [name]            compile apps (all if name omitted)\n");
+  fprintf(out, "  compile [name]            recompile installed package from source\n");
   fprintf(out, "\nEnvironment:\n");
   fprintf(out, "  JSHELL_PKG_REGISTRY       registry URL (default: %s)\n",
           PKG_REGISTRY_DEFAULT_URL);
@@ -451,6 +456,22 @@ static int pkg_install(const char *tarball, int json_output) {
       pkg_manifest_free(m);
       pkg_remove_dir_recursive(temp_dir);
       return 1;
+    }
+  }
+
+  // Compile package if it has a Makefile
+  char makefile_path[4096];
+  snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", install_path);
+  struct stat makefile_st;
+  if (stat(makefile_path, &makefile_st) == 0) {
+    if (!json_output) {
+      printf("Compiling %s...\n", m->name);
+    }
+    int compile_result = compile_package_dir(m->name, install_path, 0, 0);
+    if (compile_result != 0) {
+      if (!json_output) {
+        fprintf(stderr, "Warning: compilation failed, using pre-built binary\n");
+      }
     }
   }
 

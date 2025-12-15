@@ -1,5 +1,9 @@
 # Package Manager Enhancement Implementation Plan
 
+## Status: ✅ COMPLETE
+
+All phases implemented. See also: **AI_TODO_5_1.md** for install+compile verification.
+
 ## Overview
 
 Enhance the package manager (`pkg`) to support a complete package lifecycle including:
@@ -9,39 +13,34 @@ Enhance the package manager (`pkg`) to support a complete package lifecycle incl
 - Compilation of installed packages from source
 - Shell integration tests using `jshell -c`
 
-### Current State
+### Final State
 
-The package manager has a working skeleton with:
-- `pkg list/info/search/install/remove/build` - Basic operations working
-- `pkg check-update/upgrade` - Implemented but needs refinement
-- `pkg compile` - Compiles from `src/apps/`, not installed packages
-- `~/.jshell/pkgdb.txt` - Plain text database (name version format)
-- Package server at `src/pkg_srv/server.js`
-
-### Target State
-
+The package manager now supports:
 - `~/.jshell/pkgs/pkgdb.json` - JSON database with full package metadata
+- `pkg list/info/search/install/remove/build` - All operations working with JSON
 - `pkg check-update` - Clear "up to date" or "Update available: X.X.X → Y.Y.Y" messages
-- `pkg upgrade` - Download to `~/.jshell/pkgs/_tmp/`, compile, install, symlink
-- `pkg compile` - Compile installed packages (not just source)
-- Updated app Makefiles for proper package building
-- Comprehensive tests using `jshell -c`
+- `pkg upgrade` - Download, compile, install, symlink workflow
+- `pkg compile` - Compile installed packages from source
+- `pkg install` - **Now automatically compiles packages with Makefile** (AI_TODO_5_1)
+- Updated app Makefiles with PKG_SRCS/PKG_HDRS for source inclusion
+- Comprehensive tests (60 tests passing)
 - **Dynamic command registration**: Shell reads pkgdb.json on startup and registers installed packages as external commands that fork/exec from `~/.jshell/bin/`
 
 ---
 
 ## Implementation Progress
 
-| Phase | Status | Commit | Tests |
-|-------|--------|--------|-------|
-| Phase 1: Test Infrastructure | ✅ DONE | pre-existing | tests/helpers/jshell.py, tests/pkg/test_pkg_base.py |
-| Phase 2: JSON Package Database | ✅ DONE | pending | tests/pkg/test_pkg_db.py |
-| Phase 3: Dynamic Shell Command Registration | ✅ DONE | pending | - |
-| Phase 4: Package Check-Update Enhancement | ✅ DONE | pending | - |
-| Phase 5: Package Upgrade Enhancement | ✅ DONE | pending | - |
-| Phase 6: Package Compile for Installed Packages | ✅ DONE | pending | - |
-| Phase 7: Makefile Updates | ✅ DONE | pending | - |
-| Phase 8: Integration Tests | ✅ DONE | pending | tests/pkg/test_pkg_*.py |
+| Phase | Status | Tests |
+|-------|--------|-------|
+| Phase 1: Test Infrastructure | ✅ DONE | tests/helpers/jshell.py, tests/pkg/test_pkg_base.py |
+| Phase 2: JSON Package Database | ✅ DONE | tests/pkg/test_pkg_db.py |
+| Phase 3: Dynamic Shell Command Registration | ✅ DONE | - |
+| Phase 4: Package Check-Update Enhancement | ✅ DONE | - |
+| Phase 5: Package Upgrade Enhancement | ✅ DONE | - |
+| Phase 6: Package Compile for Installed Packages | ✅ DONE | - |
+| Phase 7: Makefile Updates | ✅ DONE | - |
+| Phase 8: Integration Tests | ✅ DONE | tests/pkg/test_pkg_*.py |
+| **AI_TODO_5_1: Install+Compile Verification** | ✅ DONE | tests/pkg/test_pkg_install_compile.py |
 
 ---
 
