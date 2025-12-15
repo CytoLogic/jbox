@@ -6,6 +6,7 @@
 
 #include "ast/jshell_ast_interpreter.h"
 #include "jshell_job_control.h"
+#include "jshell_history.h"
 #include "jshell_register_builtins.h"
 #include "jshell_register_externals.h"
 #include "utils/jbox_utils.h"
@@ -18,6 +19,7 @@ int jshell_main(void) {
   Input parse_tree;
 
   jshell_init_job_control();
+  jshell_history_init();
   jshell_register_all_builtin_commands();
   jshell_register_all_external_commands();
 
@@ -44,6 +46,8 @@ int jshell_main(void) {
     }
 
     strcat(full_line, line); // append final or sole line
+
+    jshell_history_add(full_line);
 
     parse_tree = psInput(full_line);
     

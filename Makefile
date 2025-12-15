@@ -37,7 +37,8 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 			   $(SRC_DIR)/jshell/jshell_register_builtins.c \
 			   $(SRC_DIR)/jshell/jshell_register_externals.c \
-			   $(SRC_DIR)/jshell/jshell_job_control.c
+			   $(SRC_DIR)/jshell/jshell_job_control.c \
+			   $(SRC_DIR)/jshell/jshell_history.c
 
 BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_ps.c \
@@ -53,7 +54,8 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_export.c \
 				$(SRC_DIR)/jshell/builtins/cmd_unset.c \
 				$(SRC_DIR)/jshell/builtins/cmd_type.c \
-				$(SRC_DIR)/jshell/builtins/cmd_help.c
+				$(SRC_DIR)/jshell/builtins/cmd_help.c \
+				$(SRC_DIR)/jshell/builtins/cmd_history.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \

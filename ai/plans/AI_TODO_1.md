@@ -660,18 +660,19 @@ Help should print all registered commands.
   - [x] Implement `jshell_register_help_command()`
 - [x] Update `jshell_register_builtins.h` and `.c`
 
-### 7.8 history - Show Command History
+### 7.8 history - Show Command History ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Needs access to shell's history
 
-- [ ] Create `src/jshell/builtins/cmd_history.h`
-- [ ] Create `src/jshell/builtins/cmd_history.c`:
-  - [ ] Implement `build_history_argtable()` with:
-    - [ ] `-h, --help`
-  - [ ] Implement `history_run()`
-  - [ ] Implement `history_print_usage()`
-  - [ ] Define `cmd_history_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_history_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_history.h`
+- [x] Create `src/jshell/builtins/cmd_history.c`:
+  - [x] Implement `build_history_argtable()` with:
+    - [x] `-h, --help`
+  - [x] Implement `history_run()`
+  - [x] Implement `history_print_usage()`
+  - [x] Define `cmd_history_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_history_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/jshell_history.h` and `.c` for history storage
 
 ### 7.9 less - Pager (Optional, Complex)
 **External App** (`src/apps/less/`)
