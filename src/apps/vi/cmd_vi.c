@@ -57,6 +57,8 @@ typedef struct {
 
 static struct termios orig_termios;
 static volatile sig_atomic_t term_resized = 0;
+static volatile sig_atomic_t term_suspended = 0;
+static volatile sig_atomic_t term_terminated = 0;
 
 
 static void build_vi_argtable(vi_args_t *args) {
@@ -120,6 +122,24 @@ static void vi_print_usage(FILE *out) {
 static void handle_sigwinch(int sig) {
   (void)sig;
   term_resized = 1;
+}
+
+
+static void handle_sigtstp(int sig) {
+  (void)sig;
+  term_suspended = 1;
+}
+
+
+static void handle_sigcont(int sig) {
+  (void)sig;
+  /* Terminal state will be restored in main loop */
+}
+
+
+static void handle_sigterm(int sig) {
+  (void)sig;
+  term_terminated = 1;
 }
 
 
@@ -401,6 +421,37 @@ static void hide_cursor(void) {
 
 static void show_cursor(void) {
   write(STDOUT_FILENO, "\x1b[?25h", 6);
+}
+
+
+static void vi_suspend(void) {
+  /* Restore terminal to normal mode */
+  disable_raw_mode();
+  show_cursor();
+
+  /* Send SIGSTOP to ourselves */
+  raise(SIGSTOP);
+
+  /* When we resume (after SIGCONT), restore raw mode */
+  enable_raw_mode();
+
+  /* Force terminal resize check and redraw */
+  term_resized = 1;
+}
+
+
+static void vi_emergency_save(vi_state_t *state) {
+  if (state->modified && state->filename) {
+    char backup[512];
+    snprintf(backup, sizeof(backup), "%s.swp", state->filename);
+    FILE *fp = fopen(backup, "w");
+    if (fp) {
+      for (size_t i = 0; i < state->line_count; i++) {
+        fprintf(fp, "%s\n", state->lines[i].text);
+      }
+      fclose(fp);
+    }
+  }
 }
 
 
@@ -1177,16 +1228,28 @@ static int vi_run(int argc, char **argv) {
   }
 
   struct sigaction sa;
-  sa.sa_handler = handle_sigwinch;
-  sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  /* Set up signal handlers */
+  sa.sa_handler = handle_sigwinch;
   sigaction(SIGWINCH, &sa, NULL);
+
+  sa.sa_handler = handle_sigtstp;
+  sigaction(SIGTSTP, &sa, NULL);
+
+  sa.sa_handler = handle_sigcont;
+  sigaction(SIGCONT, &sa, NULL);
+
+  sa.sa_handler = handle_sigterm;
+  sigaction(SIGTERM, &sa, NULL);
 
   clear_screen();
   vi_draw_screen(&state);
 
   int quit = 0;
   while (!quit) {
+    /* Handle terminal resize */
     if (term_resized) {
       term_resized = 0;
       get_terminal_size(&state.rows, &state.cols);
@@ -1194,9 +1257,41 @@ static int vi_run(int argc, char **argv) {
       vi_draw_screen(&state);
     }
 
+    /* Handle SIGTSTP (external signal) */
+    if (term_suspended) {
+      term_suspended = 0;
+      vi_suspend();
+      vi_draw_screen(&state);
+      continue;
+    }
+
+    /* Handle SIGTERM - save and exit gracefully */
+    if (term_terminated) {
+      vi_emergency_save(&state);
+      quit = 1;
+      continue;
+    }
+
     int key = vi_read_key();
     if (key == -1) continue;
     if (key == -2) continue;
+
+    /* Handle Ctrl+C (0x03) - cancel current operation, return to normal mode */
+    if (key == 0x03) {
+      state.mode = MODE_NORMAL;
+      state.command_buf[0] = '\0';
+      state.command_len = 0;
+      snprintf(state.status_msg, sizeof(state.status_msg), "^C");
+      vi_draw_screen(&state);
+      continue;
+    }
+
+    /* Handle Ctrl+Z (0x1a) - suspend editor */
+    if (key == 0x1a) {
+      vi_suspend();
+      vi_draw_screen(&state);
+      continue;
+    }
 
     switch (state.mode) {
       case MODE_NORMAL:

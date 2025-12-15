@@ -43,8 +43,8 @@ The shell has:
 | Phase 1: Core Signal Infrastructure | ✅ COMPLETED | 5b49766 | - |
 | Phase 2: Shell Signal Handlers | ✅ COMPLETED | 32ae8df | - |
 | Phase 3: Child Process Signal Reset | ✅ COMPLETED | fa8e60c | - |
-| Phase 4: External App Signal Handling | ✅ COMPLETED | - | ✓ |
-| Phase 5: Interactive App Signals | PENDING | - | - |
+| Phase 4: External App Signal Handling | ✅ COMPLETED | eabec84 | ✓ |
+| Phase 5: Interactive App Signals | ✅ COMPLETED | 09f4c39 | ✓ |
 | Phase 6: Builtin Command Signals | PENDING | - | - |
 | Phase 7: Test Suite | PENDING | - | - |
 
@@ -257,35 +257,39 @@ These apps read/write files and could hang on large files:
 
 ---
 
-## Phase 5: Interactive App Signals
+## Phase 5: Interactive App Signals ✅ COMPLETED
 
-### 5.1 Update vi Editor
+### 5.1 Update vi Editor ✅
 **File**: `src/apps/vi/cmd_vi.c`
 
 - [x] Already has SIGWINCH handler for resize
-- [ ] Add SIGINT handling:
-  - [ ] In command mode: cancel current operation, return to normal mode
-  - [ ] In insert mode: exit insert mode
-  - [ ] Never exit vi on SIGINT (standard vi behavior)
-- [ ] Add SIGTERM handling:
-  - [ ] Save file to backup location if modified
-  - [ ] Exit gracefully
-- [ ] Add SIGTSTP handling:
-  - [ ] Restore terminal settings
-  - [ ] Send SIGSTOP to self
-  - [ ] On resume (SIGCONT): restore raw mode, redraw screen
+- [x] Add SIGINT handling:
+  - [x] Handle Ctrl+C (0x03) in raw mode: cancel current operation, return to normal mode
+  - [x] In insert mode: exit insert mode
+  - [x] Never exit vi on SIGINT (standard vi behavior)
+- [x] Add SIGTERM handling:
+  - [x] Save file to .swp backup location if modified
+  - [x] Exit gracefully
+- [x] Add SIGTSTP handling:
+  - [x] Handle Ctrl+Z (0x1a) in raw mode
+  - [x] Restore terminal settings via vi_suspend()
+  - [x] Send SIGSTOP to self
+  - [x] On resume (SIGCONT): restore raw mode, redraw screen
 
-### 5.2 Update less Pager
+### 5.2 Update less Pager ✅
 **File**: `src/apps/less/cmd_less.c`
 
 - [x] Already has SIGWINCH handler for resize
-- [ ] Add SIGINT handling:
-  - [ ] Cancel current search if in progress
-  - [ ] Return to normal viewing mode
-- [ ] Add SIGTSTP handling:
-  - [ ] Restore terminal settings
-  - [ ] Send SIGSTOP to self
-  - [ ] On SIGCONT: restore raw mode, redraw screen
+- [x] Add SIGINT handling:
+  - [x] Handle via signal handler (ISIG not disabled)
+  - [x] Check term_interrupted flag in main loop
+  - [x] Cancel current search if in progress
+  - [x] Exit cleanly with code 130
+- [x] Add SIGTSTP handling:
+  - [x] Handle via signal handler
+  - [x] Restore terminal settings via less_suspend()
+  - [x] Send SIGSTOP to self
+  - [x] On SIGCONT: restore raw mode, redraw screen
 
 ---
 
@@ -563,8 +567,8 @@ When a process is terminated by a signal, the exit code is `128 + signal_number`
 - [x] Phase 2: Shell Signal Handlers (3 tasks)
 - [x] Phase 3: Child Process Signal Reset (2 tasks)
 - [x] Phase 4: External App Signal Handling (4 tasks)
-- [ ] Phase 5: Interactive App Signals (2 tasks)
+- [x] Phase 5: Interactive App Signals (2 tasks)
 - [ ] Phase 6: Builtin Command Signals (3 tasks)
 - [ ] Phase 7: Test Suite (5 tasks)
 
-**Total: 21 major tasks (13 completed)**
+**Total: 21 major tasks (15 completed)**

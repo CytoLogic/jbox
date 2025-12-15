@@ -39,6 +39,9 @@ typedef struct {
 
 static struct termios orig_termios;
 static volatile sig_atomic_t term_resized = 0;
+static volatile sig_atomic_t term_suspended = 0;
+static volatile sig_atomic_t term_terminated = 0;
+static volatile sig_atomic_t term_interrupted = 0;
 
 
 static void build_less_argtable(less_args_t *args) {
@@ -86,6 +89,30 @@ static void less_print_usage(FILE *out) {
 static void handle_sigwinch(int sig) {
   (void)sig;
   term_resized = 1;
+}
+
+
+static void handle_sigtstp(int sig) {
+  (void)sig;
+  term_suspended = 1;
+}
+
+
+static void handle_sigcont(int sig) {
+  (void)sig;
+  /* Terminal state will be restored in main loop */
+}
+
+
+static void handle_sigterm(int sig) {
+  (void)sig;
+  term_terminated = 1;
+}
+
+
+static void handle_sigint(int sig) {
+  (void)sig;
+  term_interrupted = 1;
 }
 
 
@@ -227,6 +254,27 @@ static void set_reverse_video(void) {
 
 static void reset_video(void) {
   write(STDOUT_FILENO, "\x1b[0m", 4);
+}
+
+
+static void show_cursor(void) {
+  write(STDOUT_FILENO, "\x1b[?25h", 6);
+}
+
+
+static void less_suspend(void) {
+  /* Restore terminal to normal mode */
+  disable_raw_mode();
+  show_cursor();
+
+  /* Send SIGSTOP to ourselves */
+  raise(SIGSTOP);
+
+  /* When we resume (after SIGCONT), restore raw mode */
+  enable_raw_mode();
+
+  /* Force terminal resize check and redraw */
+  term_resized = 1;
 }
 
 
@@ -407,8 +455,22 @@ static int read_search_input(less_state_t *state) {
   state->search_pattern[0] = '\0';
 
   while (1) {
+    /* Check for signal interruption */
+    if (term_interrupted || term_terminated || term_suspended) {
+      state->search_pattern[0] = '\0';
+      return -1;  /* Signal pending, let main loop handle it */
+    }
+
     char c;
-    if (read(STDIN_FILENO, &c, 1) != 1) break;
+    ssize_t n = read(STDIN_FILENO, &c, 1);
+    if (n != 1) {
+      /* read() interrupted or error */
+      if (term_interrupted || term_terminated || term_suspended) {
+        state->search_pattern[0] = '\0';
+        return -1;
+      }
+      break;
+    }
 
     if (c == '\n' || c == '\r') {
       search_pattern(state);
@@ -447,7 +509,15 @@ static int read_search_input(less_state_t *state) {
 
 static int read_key(void) {
   char c;
-  if (read(STDIN_FILENO, &c, 1) != 1) return -1;
+  ssize_t n = read(STDIN_FILENO, &c, 1);
+
+  /* Check for signal interruption */
+  if (n != 1) {
+    if (term_interrupted || term_terminated || term_suspended) {
+      return -2;  /* Signal pending, let main loop handle it */
+    }
+    return -1;
+  }
 
   if (c == 27) {
     char seq[3];
@@ -612,11 +682,25 @@ static int less_run(int argc, char **argv) {
     return 1;
   }
 
+  /* Set up signal handlers */
   struct sigaction sa;
-  sa.sa_handler = handle_sigwinch;
-  sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  sa.sa_handler = handle_sigwinch;
   sigaction(SIGWINCH, &sa, NULL);
+
+  sa.sa_handler = handle_sigtstp;
+  sigaction(SIGTSTP, &sa, NULL);
+
+  sa.sa_handler = handle_sigcont;
+  sigaction(SIGCONT, &sa, NULL);
+
+  sa.sa_handler = handle_sigterm;
+  sigaction(SIGTERM, &sa, NULL);
+
+  sa.sa_handler = handle_sigint;
+  sigaction(SIGINT, &sa, NULL);
 
   less_state_t state = {
     .lines = lines,
@@ -638,7 +722,31 @@ static int less_run(int argc, char **argv) {
   draw_screen(&state);
 
   int running = 1;
+  int exit_code = 0;
   while (running) {
+    /* Handle SIGTERM - graceful exit */
+    if (term_terminated) {
+      term_terminated = 0;
+      running = 0;
+      break;
+    }
+
+    /* Handle SIGINT - exit cleanly */
+    if (term_interrupted) {
+      term_interrupted = 0;
+      running = 0;
+      exit_code = 130;  /* 128 + SIGINT(2) */
+      break;
+    }
+
+    /* Handle SIGTSTP - suspend */
+    if (term_suspended) {
+      term_suspended = 0;
+      less_suspend();
+      draw_screen(&state);
+      continue;
+    }
+
     if (term_resized) {
       term_resized = 0;
       get_terminal_size(&state.rows, &state.cols);
@@ -707,6 +815,10 @@ static int less_run(int argc, char **argv) {
       case -1:
         running = 0;
         break;
+
+      case -2:
+        /* Signal pending - continue to let signal check handle it */
+        break;
     }
   }
 
@@ -717,7 +829,7 @@ static int less_run(int argc, char **argv) {
   free_lines(lines, line_count);
   cleanup_less_argtable(&args);
 
-  return 0;
+  return exit_code;
 }
 
 
