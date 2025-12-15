@@ -39,7 +39,10 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_register_externals.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c
 
-BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c \
+BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
+				$(SRC_DIR)/jshell/builtins/cmd_ps.c \
+				$(SRC_DIR)/jshell/builtins/cmd_kill.c \
+				$(SRC_DIR)/jshell/builtins/cmd_wait.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_replace_line.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_insert_line.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_delete_line.c \

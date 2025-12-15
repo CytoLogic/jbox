@@ -429,70 +429,70 @@ These commands are **Builtins** because they provide core file editing functiona
 
 ---
 
-## Phase 5: Process and Job Control (MEDIUM PRIORITY)
+## Phase 5: Process and Job Control (MEDIUM PRIORITY) ✅ COMPLETED
 
 These commands are **Builtins** because they need access to shell internal state (job table, process groups).
 
-### 5.1 jobs - List Background Jobs (Refactor Existing)
+### 5.1 jobs - List Background Jobs (Refactor Existing) ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Refactor `src/jshell/builtins/jobs.c`:
-  - [ ] Rename to `cmd_jobs.c`
-  - [ ] Implement `build_jobs_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-  - [ ] Refactor `jobs_run()` to use `argtable3`
-  - [ ] Add `--json` output support
-  - [ ] Implement `jobs_print_usage()` using `argtable3`
-  - [ ] Define `cmd_jobs_spec` with `.type = CMD_BUILTIN`
-  - [ ] Rename `jshell_register_jobs_cmd()` to `jshell_register_jobs_command()`
-- [ ] Update `src/jshell/builtins/cmd_jobs.h` (create if needed)
-- [ ] Update `jshell_register_builtins.c` to call registration
+- [x] Refactor `src/jshell/builtins/jobs.c`:
+  - [x] Rename to `cmd_jobs.c`
+  - [x] Implement `build_jobs_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+  - [x] Refactor `jobs_run()` to use `argtable3`
+  - [x] Add `--json` output support
+  - [x] Implement `jobs_print_usage()` using `argtable3`
+  - [x] Define `cmd_jobs_spec` with `.type = CMD_BUILTIN`
+  - [x] Rename `jshell_register_jobs_cmd()` to `jshell_register_jobs_command()`
+- [x] Update `src/jshell/builtins/cmd_jobs.h` (create if needed)
+- [x] Update `jshell_register_builtins.c` to call registration
 
-### 5.2 ps - List Processes/Threads
+### 5.2 ps - List Processes/Threads ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_ps.h`
-- [ ] Create `src/jshell/builtins/cmd_ps.c`:
-  - [ ] Implement `build_ps_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-  - [ ] Implement `ps_run()`
-  - [ ] Implement `ps_print_usage()`
-  - [ ] Define `cmd_ps_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_ps_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_ps.h`
+- [x] Create `src/jshell/builtins/cmd_ps.c`:
+  - [x] Implement `build_ps_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+  - [x] Implement `ps_run()`
+  - [x] Implement `ps_print_usage()`
+  - [x] Define `cmd_ps_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_ps_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
 
-### 5.3 kill - Send Signal to Job/Process
+### 5.3 kill - Send Signal to Job/Process ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_kill.h`
-- [ ] Create `src/jshell/builtins/cmd_kill.c`:
-  - [ ] Implement `build_kill_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-s SIGNAL` (signal name or number)
-    - [ ] `--json`
-    - [ ] `<PID>` (required)
-  - [ ] Implement `kill_run()`
-  - [ ] Implement `kill_print_usage()`
-  - [ ] Define `cmd_kill_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_kill_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_kill.h`
+- [x] Create `src/jshell/builtins/cmd_kill.c`:
+  - [x] Implement `build_kill_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-s SIGNAL` (signal name or number)
+    - [x] `--json`
+    - [x] `<PID>` (required)
+  - [x] Implement `kill_run()`
+  - [x] Implement `kill_print_usage()`
+  - [x] Define `cmd_kill_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_kill_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
 
-### 5.4 wait - Wait for Job to Finish
+### 5.4 wait - Wait for Job to Finish ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/jshell/builtins/cmd_wait.h`
-- [ ] Create `src/jshell/builtins/cmd_wait.c`:
-  - [ ] Implement `build_wait_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<JOB_ID>` (optional)
-  - [ ] Implement `wait_run()`
-  - [ ] Implement `wait_print_usage()`
-  - [ ] Define `cmd_wait_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_wait_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_wait.h`
+- [x] Create `src/jshell/builtins/cmd_wait.c`:
+  - [x] Implement `build_wait_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<JOB_ID>` (optional)
+  - [x] Implement `wait_run()`
+  - [x] Implement `wait_print_usage()`
+  - [x] Define `cmd_wait_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_wait_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
 
 ---
 

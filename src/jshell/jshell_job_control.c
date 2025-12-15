@@ -215,15 +215,72 @@ void jshell_print_jobs(void) {
 
 void jshell_cleanup_finished_jobs(void) {
   DPRINT("jshell_cleanup_finished_jobs called");
-  
+
   for (int i = 0; i < MAX_JOBS; i++) {
     if (!job_list[i].in_use) {
       continue;
     }
-    
+
     if (job_list[i].status == JOB_DONE) {
       DPRINT("Cleaning up job [%d]", job_list[i].job_id);
       job_list[i].in_use = false;
     }
   }
+}
+
+
+BackgroundJob* jshell_find_job_by_id(int job_id) {
+  for (int i = 0; i < MAX_JOBS; i++) {
+    if (job_list[i].in_use && job_list[i].job_id == job_id) {
+      return &job_list[i];
+    }
+  }
+  return NULL;
+}
+
+
+size_t jshell_get_job_count(void) {
+  size_t count = 0;
+  for (int i = 0; i < MAX_JOBS; i++) {
+    if (job_list[i].in_use) {
+      count++;
+    }
+  }
+  return count;
+}
+
+
+void jshell_for_each_job(void (*callback)(const BackgroundJob *job,
+                                          void *userdata),
+                         void *userdata) {
+  for (int i = 0; i < MAX_JOBS; i++) {
+    if (job_list[i].in_use) {
+      callback(&job_list[i], userdata);
+    }
+  }
+}
+
+
+int jshell_wait_for_job(int job_id) {
+  BackgroundJob *job = jshell_find_job_by_id(job_id);
+  if (job == NULL) {
+    return -1;
+  }
+
+  int final_status = 0;
+  for (size_t i = 0; i < job->pid_count; i++) {
+    int status;
+    pid_t result = waitpid(job->pids[i], &status, 0);
+    if (result > 0) {
+      if (WIFEXITED(status)) {
+        final_status = WEXITSTATUS(status);
+      } else if (WIFSIGNALED(status)) {
+        final_status = 128 + WTERMSIG(status);
+      }
+    }
+  }
+
+  job->status = JOB_DONE;
+  job->in_use = false;
+  return final_status;
 }

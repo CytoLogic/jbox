@@ -41,5 +41,15 @@ void jshell_cleanup_finished_jobs(void);
 
 BackgroundJob* jshell_find_job_by_pid(pid_t pid);
 
+BackgroundJob* jshell_find_job_by_id(int job_id);
+
+size_t jshell_get_job_count(void);
+
+void jshell_for_each_job(void (*callback)(const BackgroundJob *job,
+                                          void *userdata),
+                         void *userdata);
+
+int jshell_wait_for_job(int job_id);
+
 
 #endif
