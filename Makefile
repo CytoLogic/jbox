@@ -43,7 +43,9 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \
-					 $(SRC_DIR)/apps/cat/cmd_cat.c
+					 $(SRC_DIR)/apps/cat/cmd_cat.c \
+					 $(SRC_DIR)/apps/head/cmd_head.c \
+					 $(SRC_DIR)/apps/tail/cmd_tail.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -59,7 +61,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app
+apps: ls-app stat-app cat-app head-app tail-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -85,6 +87,18 @@ cat-app: $(ARGTABLE3_OBJ)
 	$(COMPILE) -I$(SRC_DIR)/apps/cat $(SRC_DIR)/apps/cat/cat_main.c \
 	           $(SRC_DIR)/apps/cat/cmd_cat.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/cat
+
+head-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/head $(SRC_DIR)/apps/head/head_main.c \
+	           $(SRC_DIR)/apps/head/cmd_head.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/head
+
+tail-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/tail $(SRC_DIR)/apps/tail/tail_main.c \
+	           $(SRC_DIR)/apps/tail/cmd_tail.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/tail
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

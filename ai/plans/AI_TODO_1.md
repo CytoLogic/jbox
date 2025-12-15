@@ -142,41 +142,45 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
 - [x] Create `tests/apps/cat/test_cat.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 2.4 head - View Start of File
+### 2.4 head - View Start of File ✅ COMPLETED
 **External App** (`src/apps/head/`)
 
-- [ ] Create `src/apps/head/cmd_head.h`
-- [ ] Create `src/apps/head/cmd_head.c`:
-  - [ ] Implement `build_head_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-n N` (number of lines, default 10)
-    - [ ] `--json`
-    - [ ] `<FILE>`
-  - [ ] Implement `head_run()`
-  - [ ] Implement `head_print_usage()`
-  - [ ] Define `cmd_head_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/head/head_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/head/test_head.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/head/cmd_head.h`
+- [x] Create `src/apps/head/cmd_head.c`:
+  - [x] Implement `build_head_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-n N` (number of lines, default 10)
+    - [x] `--json`
+    - [x] `<FILE>`
+  - [x] Implement `head_run()`
+  - [x] Implement `head_print_usage()`
+  - [x] Define `cmd_head_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/head/head_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/head/test_head.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add head test target
 
-### 2.5 tail - View End of File
+### 2.5 tail - View End of File ✅ COMPLETED
 **External App** (`src/apps/tail/`)
 
-- [ ] Create `src/apps/tail/cmd_tail.h`
-- [ ] Create `src/apps/tail/cmd_tail.c`:
-  - [ ] Implement `build_tail_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-n N` (number of lines, default 10)
-    - [ ] `--json`
-    - [ ] `<FILE>`
-  - [ ] Implement `tail_run()`
-  - [ ] Implement `tail_print_usage()`
-  - [ ] Define `cmd_tail_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/tail/tail_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/tail/test_tail.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/tail/cmd_tail.h`
+- [x] Create `src/apps/tail/cmd_tail.c`:
+  - [x] Implement `build_tail_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-n N` (number of lines, default 10)
+    - [x] `--json`
+    - [x] `<FILE>`
+  - [x] Implement `tail_run()`
+  - [x] Implement `tail_print_usage()`
+  - [x] Define `cmd_tail_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/tail/tail_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/tail/test_tail.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add tail test target
 
 ### 2.6 cp - Copy Files/Directories
 **External App** (`src/apps/cp/`)
@@ -195,8 +199,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_cp_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/cp/cp_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/cp/test_cp.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add cp test target
 
 ### 2.7 mv - Move/Rename Files
 **External App** (`src/apps/mv/`)
@@ -214,8 +220,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_mv_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/mv/mv_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/mv/test_mv.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add mv test target
 
 ### 2.8 rm - Remove Files/Directories
 **External App** (`src/apps/rm/`)
@@ -233,8 +241,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_rm_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/rm/rm_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/rm/test_rm.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add rm test target
 
 ### 2.9 mkdir - Create Directories
 **External App** (`src/apps/mkdir/`)
@@ -251,8 +261,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_mkdir_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/mkdir/mkdir_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/mkdir/test_mkdir.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add mkdir test target
 
 ### 2.10 rmdir - Remove Empty Directories
 **External App** (`src/apps/rmdir/`)
@@ -268,8 +280,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_rmdir_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/rmdir/rmdir_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/rmdir/test_rmdir.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add rmdir test target
 
 ### 2.11 touch - Create Empty File or Update Timestamps
 **External App** (`src/apps/touch/`)
@@ -285,8 +299,10 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [ ] Define `cmd_touch_spec` with `.type = CMD_EXTERNAL`
 - [ ] Create `src/apps/touch/touch_main.c`
 - [ ] Update Makefile
+- [ ] Register in `jshell_register_externals.c`
 - [ ] Create `tests/apps/touch/test_touch.py`:
   - [ ] Implement unit tests using Python unittest framework
+- [ ] Update `tests/Makefile` to add touch test target
 
 ---
 
