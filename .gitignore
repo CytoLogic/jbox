@@ -7,3 +7,5 @@ gen/
 tests/results/
 __pycache__/
 *.pyc
+src/apps/**/*.o
+src/apps/**/*.a
