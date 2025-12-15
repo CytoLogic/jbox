@@ -18,16 +18,21 @@ class TestPackageRegistryServer(unittest.TestCase):
 
     PROJECT_ROOT = Path(__file__).parent.parent.parent
     START_SCRIPT = PROJECT_ROOT / "scripts" / "start-pkg-server.sh"
+    SHUTDOWN_SCRIPT = PROJECT_ROOT / "scripts" / "shutdown-pkg-server.sh"
     BASE_URL = "http://localhost:3000"
     server_process = None
 
     @classmethod
     def setUpClass(cls):
         """Start the server before running tests."""
-        # Check if start script exists
+        # Check if scripts exist
         if not cls.START_SCRIPT.exists():
             raise unittest.SkipTest(
                 f"start script not found at {cls.START_SCRIPT}"
+            )
+        if not cls.SHUTDOWN_SCRIPT.exists():
+            raise unittest.SkipTest(
+                f"shutdown script not found at {cls.SHUTDOWN_SCRIPT}"
             )
 
         # Start the server using the script
@@ -67,14 +72,20 @@ class TestPackageRegistryServer(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Stop the server after tests."""
+        """Stop the server after tests using the shutdown script."""
+        result = subprocess.run(
+            ["bash", str(cls.SHUTDOWN_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PORT": "3000"}
+        )
+        # Also clean up the Popen process handle
         if cls.server_process:
-            cls.server_process.terminate()
             try:
-                cls.server_process.wait(timeout=5)
+                cls.server_process.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                cls.server_process.kill()
-                cls.server_process.wait()
+                pass
 
     def fetch_json(self, path, expected_status=200):
         """Fetch JSON from the server."""

@@ -91,16 +91,22 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
 
-all: jbox apps
+all: jbox apps packages
 
-.PHONY: test test-apps test-grammar apps clean-apps bnfc packages clean-packages
-test: test-apps
+.PHONY: test test-apps test-builtins test-grammar test-pkg-srv apps clean-apps bnfc packages clean-packages clean-pkg-repository
+test: test-apps test-builtins test-pkg-srv
 
 test-apps: apps
 	$(MAKE) -C tests apps
 
+test-builtins: jbox
+	$(MAKE) -C tests builtins
+
 test-grammar:
 	$(MAKE) -C tests grammar
+
+test-pkg-srv:
+	$(MAKE) -C tests pkg-srv
 
 APP_DIRS := cat cp date echo head less ls mkdir mv pkg rg rm rmdir sleep stat tail touch vi
 
@@ -121,13 +127,17 @@ packages: apps
 		echo "Packaging $$app..."; \
 		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg; \
 	done
+	@./scripts/generate-pkg-manifest.sh
 	@echo "All packages built to srv/pkg_repository/downloads/"
 
 clean-packages:
 	@for app in $(APP_DIRS); do \
 		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg-clean; \
 	done
+
+clean-pkg-repository:
 	rm -rf srv/pkg_repository/downloads/*
+	rm -f srv/pkg_repository/pkg_manifest.json
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -186,7 +196,7 @@ standalone:
 
 
 
-clean:
+clean: clean-pkg-repository
 	rm -rf $(BIN_DIR)/*
 	rm -f $(BIN_DIR)/jshell
 	rm -rf $(ARGTABLE3_DIST)
