@@ -3,11 +3,11 @@
 PYTHON ?= python
 PROJECT_ROOT := ..
 
-.PHONY: all apps grammar ls stat cat head tail rg clean
+.PHONY: all apps grammar ls stat cat head tail rg edit-replace-line clean
 
 all: apps
 
-apps: ls stat cat head tail rg
+apps: ls stat cat head tail rg edit-replace-line
 
 grammar:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.grammar.test_grammar -v
@@ -29,6 +29,9 @@ tail:
 
 rg:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.rg.test_rg -v
+
+edit-replace-line:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.edit-replace-line.test_edit_replace_line -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
