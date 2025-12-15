@@ -9,6 +9,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_signals.h"
 
 
 typedef struct {
@@ -127,6 +128,13 @@ static int copy_file(const char *src, const char *dest, int force) {
   int result = 0;
 
   while ((bytes_read = fread(buffer, 1, sizeof(buffer), src_fp)) > 0) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      fclose(src_fp);
+      fclose(dest_fp);
+      return -2;  /* Signal interruption */
+    }
+
     if (fwrite(buffer, 1, bytes_read, dest_fp) != bytes_read) {
       result = -1;
       break;
@@ -164,9 +172,13 @@ static int copy_entry(const char *src_path, const char *dest_path,
       errno = EISDIR;
       return -1;
     }
-    return copy_directory(src_path, dest_path, force);
+    int result = copy_directory(src_path, dest_path, force);
+    if (result == -2) return -2;  /* Propagate interruption */
+    return result;
   } else {
-    return copy_file(src_path, dest_path, force);
+    int result = copy_file(src_path, dest_path, force);
+    if (result == -2) return -2;  /* Propagate interruption */
+    return result;
   }
 }
 
@@ -192,6 +204,12 @@ static int copy_directory(const char *src, const char *dest, int force) {
   struct dirent *entry;
 
   while ((entry = readdir(dir)) != NULL) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      closedir(dir);
+      return -2;  /* Signal interruption */
+    }
+
     if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
       continue;
     }
@@ -212,7 +230,14 @@ static int copy_directory(const char *src, const char *dest, int force) {
     snprintf(src_path, src_len, "%s/%s", src, entry->d_name);
     snprintf(dest_path, dest_len, "%s/%s", dest, entry->d_name);
 
-    if (copy_entry(src_path, dest_path, 1, force) != 0) {
+    int copy_result = copy_entry(src_path, dest_path, 1, force);
+    if (copy_result == -2) {
+      free(src_path);
+      free(dest_path);
+      closedir(dir);
+      return -2;  /* Propagate interruption */
+    }
+    if (copy_result != 0) {
       result = -1;
     }
 
@@ -252,6 +277,9 @@ static int cp_run(int argc, char **argv) {
   cp_args_t args;
   build_cp_argtable(&args);
 
+  /* Set up signal handler for clean interrupt */
+  jbox_setup_sigint_handler();
+
   int nerrors = arg_parse(argc, argv, args.argtable);
 
   if (args.help->count > 0) {
@@ -286,6 +314,13 @@ static int cp_run(int argc, char **argv) {
   }
 
   int result = copy_entry(source, final_dest, recursive, force);
+
+  /* Check for interruption */
+  if (result == -2) {
+    free(final_dest);
+    cleanup_cp_argtable(&args);
+    return 130;  /* 128 + SIGINT(2) */
+  }
 
   if (show_json) {
     char escaped_source[512];

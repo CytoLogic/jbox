@@ -5,6 +5,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_signals.h"
 
 #define DEFAULT_LINES 10
 
@@ -92,6 +93,17 @@ static char **read_all_lines(FILE *fp, int *out_count) {
   ssize_t nread;
 
   while ((nread = getline(&line, &len, fp)) != -1) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      free(line);
+      for (int i = 0; i < count; i++) {
+        free(lines[i]);
+      }
+      free(lines);
+      *out_count = -1;  /* Signal interruption */
+      return NULL;
+    }
+
     // Remove trailing newline
     if (nread > 0 && line[nread - 1] == '\n') {
       line[nread - 1] = '\0';
@@ -157,6 +169,11 @@ static int tail_file(const char *path, int num_lines, int show_json) {
   char **lines = read_all_lines(fp, &total_lines);
   fclose(fp);
 
+  /* Check for interruption */
+  if (!lines && total_lines == -1) {
+    return 130;  /* 128 + SIGINT(2) */
+  }
+
   if (!lines && total_lines != 0) {
     if (show_json) {
       char escaped_path[512];
@@ -209,6 +226,9 @@ static int tail_file(const char *path, int num_lines, int show_json) {
 static int tail_run(int argc, char **argv) {
   tail_args_t args;
   build_tail_argtable(&args);
+
+  /* Set up signal handler for clean interrupt */
+  jbox_setup_sigint_handler();
 
   int nerrors = arg_parse(argc, argv, args.argtable);
 

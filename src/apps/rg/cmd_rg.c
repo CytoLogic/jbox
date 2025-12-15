@@ -6,6 +6,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_signals.h"
 
 
 typedef struct {
@@ -171,6 +172,13 @@ static int read_file_lines(const char *path, line_buffer_t *buf) {
   ssize_t line_len;
 
   while ((line_len = getline(&line, &line_cap, fp)) != -1) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      free(line);
+      fclose(fp);
+      return -2;  /* Signal interruption */
+    }
+
     if (line_len > 0 && line[line_len - 1] == '\n') {
       line[line_len - 1] = '\0';
     }
@@ -266,7 +274,11 @@ static int search_file(const char *path, regex_t *regex, int show_json,
   line_buffer_t lines;
   line_buffer_init(&lines);
 
-  if (read_file_lines(path, &lines) != 0) {
+  int read_result = read_file_lines(path, &lines);
+  if (read_result == -2) {
+    return -2;  /* Propagate interruption */
+  }
+  if (read_result != 0) {
     if (show_json) {
       if (!*first_json_entry) printf(",\n");
       *first_json_entry = 0;
@@ -360,6 +372,13 @@ static int search_stdin(regex_t *regex, int show_json, int show_line_numbers,
   ssize_t line_len;
 
   while ((line_len = getline(&line, &line_cap, stdin)) != -1) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      free(line);
+      line_buffer_free(&lines);
+      return -2;  /* Signal interruption */
+    }
+
     if (line_len > 0 && line[line_len - 1] == '\n') {
       line[line_len - 1] = '\0';
     }
@@ -444,6 +463,9 @@ static int rg_run(int argc, char **argv) {
   rg_args_t args;
   build_rg_argtable(&args);
 
+  /* Set up signal handler for clean interrupt */
+  jbox_setup_sigint_handler();
+
   int nerrors = arg_parse(argc, argv, args.argtable);
 
   if (args.help->count > 0) {
@@ -524,15 +546,39 @@ static int rg_run(int argc, char **argv) {
   }
 
   if (file_count == 0) {
-    if (search_stdin(&regex, show_json, show_line_numbers, context_lines,
-                     &first_json_entry, &found_any) != 0) {
+    int search_result = search_stdin(&regex, show_json, show_line_numbers,
+                                     context_lines, &first_json_entry,
+                                     &found_any);
+    if (search_result == -2) {
+      if (show_json) printf("\n]\n");
+      regfree(&regex);
+      cleanup_rg_argtable(&args);
+      return 130;  /* 128 + SIGINT(2) */
+    }
+    if (search_result != 0) {
       result = 1;
     }
   } else {
     for (int i = 0; i < file_count; i++) {
-      if (search_file(args.files->filename[i], &regex, show_json,
-                      show_line_numbers, show_filename, context_lines,
-                      &first_json_entry, &found_any) != 0) {
+      /* Check for interrupt between files */
+      if (jbox_is_interrupted()) {
+        if (show_json) printf("\n]\n");
+        regfree(&regex);
+        cleanup_rg_argtable(&args);
+        return 130;  /* 128 + SIGINT(2) */
+      }
+
+      int search_result = search_file(args.files->filename[i], &regex,
+                                      show_json, show_line_numbers,
+                                      show_filename, context_lines,
+                                      &first_json_entry, &found_any);
+      if (search_result == -2) {
+        if (show_json) printf("\n]\n");
+        regfree(&regex);
+        cleanup_rg_argtable(&args);
+        return 130;  /* 128 + SIGINT(2) */
+      }
+      if (search_result != 0) {
         result = 1;
       }
     }

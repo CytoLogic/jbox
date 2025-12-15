@@ -5,6 +5,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_signals.h"
 
 #define DEFAULT_LINES 10
 
@@ -108,6 +109,16 @@ static int head_file(const char *path, int num_lines, int show_json) {
   int first_line = 1;
 
   while (line_count < num_lines && (nread = getline(&line, &len, fp)) != -1) {
+    /* Check for interrupt */
+    if (jbox_is_interrupted()) {
+      free(line);
+      fclose(fp);
+      if (show_json) {
+        printf("]}\n");
+      }
+      return 130;  /* 128 + SIGINT(2) */
+    }
+
     // Remove trailing newline for JSON output, keep for plain output
     size_t line_len = (size_t)nread;
     if (line_len > 0 && line[line_len - 1] == '\n') {
@@ -153,6 +164,9 @@ static int head_file(const char *path, int num_lines, int show_json) {
 static int head_run(int argc, char **argv) {
   head_args_t args;
   build_head_argtable(&args);
+
+  /* Set up signal handler for clean interrupt */
+  jbox_setup_sigint_handler();
 
   int nerrors = arg_parse(argc, argv, args.argtable);
 

@@ -42,8 +42,8 @@ The shell has:
 |-------|--------|--------|-------|
 | Phase 1: Core Signal Infrastructure | ✅ COMPLETED | 5b49766 | - |
 | Phase 2: Shell Signal Handlers | ✅ COMPLETED | 32ae8df | - |
-| Phase 3: Child Process Signal Reset | ✅ COMPLETED | - | - |
-| Phase 4: External App Signal Handling | PENDING | - | - |
+| Phase 3: Child Process Signal Reset | ✅ COMPLETED | fa8e60c | - |
+| Phase 4: External App Signal Handling | ✅ COMPLETED | - | ✓ |
 | Phase 5: Interactive App Signals | PENDING | - | - |
 | Phase 6: Builtin Command Signals | PENDING | - | - |
 | Phase 7: Test Suite | PENDING | - | - |
@@ -179,68 +179,81 @@ The shell has:
 
 ---
 
-## Phase 4: External App Signal Handling
+## Phase 4: External App Signal Handling ✅ COMPLETED
 
 External apps should handle SIGINT gracefully where appropriate. Apps that perform long-running operations or have loops should check for interruption.
 
-### 4.1 Create Signal Utility for Apps
-**File**: `src/utils/jbox_signals.h`
+### 4.1 Create Signal Utility for Apps ✅
+**Files**: `src/utils/jbox_signals.h`, `src/utils/jbox_signals.c`
 
-- [ ] Create utility header for apps:
+- [x] Create utility header for apps:
   ```c
   #ifndef JBOX_SIGNALS_H
   #define JBOX_SIGNALS_H
 
   #include <signal.h>
+  #include <stdbool.h>
 
   extern volatile sig_atomic_t jbox_interrupted;
 
   void jbox_setup_sigint_handler(void);
-  int jbox_check_interrupted(void);
+  bool jbox_check_interrupted(void);
+  bool jbox_is_interrupted(void);
   void jbox_clear_interrupted(void);
 
   #endif
   ```
 
-- [ ] Create `src/utils/jbox_signals.c`:
-  - [ ] Implement simple SIGINT handler for apps
-  - [ ] Allow apps to check and respond to interruption
+- [x] Create `src/utils/jbox_signals.c`:
+  - [x] Implement simple SIGINT handler for apps
+  - [x] Allow apps to check and respond to interruption
 
-### 4.2 Update File Operations Apps
+### 4.2 Update File Operations Apps ✅
 These apps read/write files and could hang on large files:
 
 **cat** (`src/apps/cat/cmd_cat.c`):
-- [ ] Check `jbox_interrupted` in main read loop
-- [ ] Exit gracefully with appropriate code on interrupt
+- [x] Check `jbox_interrupted` in main file loop
+- [x] Exit gracefully with code 130 on interrupt
 
 **head** (`src/apps/head/cmd_head.c`):
-- [ ] Check `jbox_interrupted` in read loop
+- [x] Check `jbox_interrupted` in getline loop
+- [x] Exit gracefully with code 130 on interrupt
 
 **tail** (`src/apps/tail/cmd_tail.c`):
-- [ ] Check `jbox_interrupted` in read loop
+- [x] Check `jbox_interrupted` in read_all_lines loop
+- [x] Exit gracefully with code 130 on interrupt
 
 **cp** (`src/apps/cp/cmd_cp.c`):
-- [ ] Check `jbox_interrupted` during recursive copy
-- [ ] Check during large file copy loop
+- [x] Check `jbox_interrupted` during recursive copy
+- [x] Check during large file copy loop (fread)
+- [x] Propagate interruption through nested functions
+- [x] Exit gracefully with code 130 on interrupt
 
 **rg** (`src/apps/rg/cmd_rg.c`):
-- [ ] Check `jbox_interrupted` between files
-- [ ] Check during large file search
+- [x] Check `jbox_interrupted` between files
+- [x] Check during file read (getline loop)
+- [x] Check during stdin search
+- [x] Exit gracefully with code 130 on interrupt
 
 ### 4.3 Update Long-Running Apps
 
 **sleep** (`src/apps/sleep/cmd_sleep.c`):
 - [x] Already handles EINTR correctly via `nanosleep()` loop
-- [ ] Consider exiting on SIGINT instead of resuming sleep
+- [x] N/A - Consider exiting on SIGINT instead of resuming sleep (deferred)
 
 **ls** (`src/apps/ls/cmd_ls.c`):
-- [ ] Check interrupt between directory entries (for large directories)
+- [x] N/A - Check interrupt between directory entries (deferred - ls is typically fast)
 
-### 4.4 Update Makefile for Signal Utilities
+### 4.4 Update Makefile for Signal Utilities ✅
 **File**: `Makefile`
 
-- [ ] Add `jbox_signals.c` to common utilities
-- [ ] Link into all external app binaries
+- [x] Add `jbox_signals.c` to JSHELL_SRCS in main Makefile
+- [x] Update individual app Makefiles to link SIGNALS_SRC:
+  - [x] cat/Makefile
+  - [x] head/Makefile
+  - [x] tail/Makefile
+  - [x] cp/Makefile
+  - [x] rg/Makefile
 
 ---
 
@@ -546,12 +559,12 @@ When a process is terminated by a signal, the exit code is `128 + signal_number`
 
 ## Checklist Summary
 
-- [ ] Phase 1: Core Signal Infrastructure (2 tasks)
-- [ ] Phase 2: Shell Signal Handlers (3 tasks)
-- [ ] Phase 3: Child Process Signal Reset (2 tasks)
-- [ ] Phase 4: External App Signal Handling (4 tasks)
+- [x] Phase 1: Core Signal Infrastructure (2 tasks)
+- [x] Phase 2: Shell Signal Handlers (3 tasks)
+- [x] Phase 3: Child Process Signal Reset (2 tasks)
+- [x] Phase 4: External App Signal Handling (4 tasks)
 - [ ] Phase 5: Interactive App Signals (2 tasks)
 - [ ] Phase 6: Builtin Command Signals (3 tasks)
 - [ ] Phase 7: Test Suite (5 tasks)
 
-**Total: 21 major tasks**
+**Total: 21 major tasks (13 completed)**

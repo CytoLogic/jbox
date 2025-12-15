@@ -5,6 +5,7 @@ SRC_DIR = ../../../src
 CFLAGS += -I$(ARGTABLE_DIR) -I$(SRC_DIR)
 ARGTABLE_OBJ = $(ARGTABLE_DIR)/argtable3.o
 REGISTRY_SRC = $(SRC_DIR)/jshell/jshell_cmd_registry.c
+SIGNALS_SRC = $(SRC_DIR)/utils/jbox_signals.c
 
 OBJS = cmd_tail.o
 LIB = libtail.a
@@ -20,7 +21,7 @@ $(LIB): $(OBJS)
 	ar rcs $(LIB) $(OBJS)
 
 $(BIN): tail_main.o cmd_tail.o $(ARGTABLE_OBJ) | $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(BIN) tail_main.o cmd_tail.o $(REGISTRY_SRC) $(ARGTABLE_OBJ) -lm
+	$(CC) $(CFLAGS) -o $(BIN) tail_main.o cmd_tail.o $(REGISTRY_SRC) $(SIGNALS_SRC) $(ARGTABLE_OBJ) -lm
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)

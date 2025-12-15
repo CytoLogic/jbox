@@ -5,6 +5,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "utils/jbox_signals.h"
 
 
 typedef struct {
@@ -177,6 +178,9 @@ static int cat_run(int argc, char **argv) {
   cat_args_t args;
   build_cat_argtable(&args);
 
+  /* Set up signal handler for clean interrupt */
+  jbox_setup_sigint_handler();
+
   int nerrors = arg_parse(argc, argv, args.argtable);
 
   if (args.help->count > 0) {
@@ -201,6 +205,11 @@ static int cat_run(int argc, char **argv) {
   }
 
   for (int i = 0; i < args.files->count; i++) {
+    /* Check for interrupt between files */
+    if (jbox_is_interrupted()) {
+      result = 130;  /* 128 + SIGINT(2) */
+      break;
+    }
     if (cat_file(args.files->filename[i], show_json, &first_entry) != 0) {
       result = 1;
     }
