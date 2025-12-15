@@ -143,6 +143,11 @@ bool jshell_check_interrupted(void) {
 }
 
 
+bool jshell_is_interrupted(void) {
+  return jshell_interrupted != 0;
+}
+
+
 void jshell_clear_interrupted(void) {
   jshell_interrupted = 0;
 }

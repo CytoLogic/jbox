@@ -7,6 +7,7 @@
 
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
+#include "jshell/jshell_signals.h"
 
 
 typedef struct {
@@ -286,6 +287,13 @@ static int read_file_lines(const char *path, line_buffer_t *buf) {
   ssize_t line_len;
 
   while ((line_len = getline(&line, &line_cap, fp)) != -1) {
+    /* Check for interruption during file read */
+    if (jshell_is_interrupted()) {
+      free(line);
+      fclose(fp);
+      return -2;  /* Interrupted */
+    }
+
     if (line_len > 0 && line[line_len - 1] == '\n') {
       line[line_len - 1] = '\0';
     }
@@ -370,7 +378,19 @@ static int edit_replace_run(int argc, char **argv) {
   line_buffer_t lines;
   line_buffer_init(&lines);
 
-  if (read_file_lines(filepath, &lines) != 0) {
+  int read_result = read_file_lines(filepath, &lines);
+  if (read_result == -2) {
+    /* Interrupted by signal */
+    if (show_json) {
+      print_json_result(filepath, "interrupted", 0, 0, "operation interrupted");
+    } else {
+      fprintf(stderr, "edit-replace: interrupted\n");
+    }
+    line_buffer_free(&lines);
+    if (regex_compiled) regfree(&regex);
+    cleanup_edit_replace_argtable(&args);
+    return 130;  /* 128 + SIGINT(2) */
+  } else if (read_result != 0) {
     if (show_json) {
       print_json_result(filepath, "error", 0, 0, strerror(errno));
     } else {
@@ -386,6 +406,19 @@ static int edit_replace_run(int argc, char **argv) {
   int total_replacements = 0;
 
   for (size_t i = 0; i < lines.count; i++) {
+    /* Check for interruption during replacement */
+    if (jshell_is_interrupted()) {
+      if (show_json) {
+        print_json_result(filepath, "interrupted", total_matches,
+                          total_replacements, "operation interrupted");
+      } else {
+        fprintf(stderr, "edit-replace: interrupted\n");
+      }
+      line_buffer_free(&lines);
+      if (regex_compiled) regfree(&regex);
+      cleanup_edit_replace_argtable(&args);
+      return 130;  /* 128 + SIGINT(2) */
+    }
     int count = 0;
     char *new_line;
 

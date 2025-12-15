@@ -50,6 +50,14 @@ void jshell_unblock_signals(const sigset_t *oldmask);
 bool jshell_check_interrupted(void);
 
 /**
+ * Check if shell was interrupted without clearing the flag.
+ * Useful for polling during long operations.
+ *
+ * @return true if interrupted, false otherwise
+ */
+bool jshell_is_interrupted(void);
+
+/**
  * Clear the interrupted flag without checking it.
  */
 void jshell_clear_interrupted(void);

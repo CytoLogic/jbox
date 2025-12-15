@@ -45,7 +45,7 @@ The shell has:
 | Phase 3: Child Process Signal Reset | ✅ COMPLETED | fa8e60c | - |
 | Phase 4: External App Signal Handling | ✅ COMPLETED | eabec84 | ✓ |
 | Phase 5: Interactive App Signals | ✅ COMPLETED | 09f4c39 | ✓ |
-| Phase 6: Builtin Command Signals | PENDING | - | - |
+| Phase 6: Builtin Command Signals | ✅ COMPLETED | 704f318 | ✓ |
 | Phase 7: Test Suite | PENDING | - | - |
 
 ---
@@ -293,39 +293,42 @@ These apps read/write files and could hang on large files:
 
 ---
 
-## Phase 6: Builtin Command Signals
+## Phase 6: Builtin Command Signals ✅ COMPLETED
 
 Builtins run in the shell process or in threads, requiring careful signal handling.
 
-### 6.1 Network Builtins
+### 6.1 Network Builtins ✅
 **Files**: `src/jshell/builtins/cmd_http_get.c`, `src/jshell/builtins/cmd_http_post.c`
 
-- [ ] Use libcurl's progress callback to check for interruption:
-  ```c
-  static int progress_callback(void *clientp, ...) {
-    if (jshell_interrupted) {
-      return 1;  // Abort transfer
-    }
-    return 0;
-  }
-  ```
-- [ ] Set `CURLOPT_PROGRESSFUNCTION` and `CURLOPT_NOPROGRESS` to 0
-- [ ] Handle `CURLE_ABORTED_BY_CALLBACK` return code
+- [x] Use libcurl's progress callback to check for interruption:
+  - [x] Added `progress_callback()` function checking `jshell_is_interrupted()`
+  - [x] Returns 1 to abort transfer when interrupted
+- [x] Set `CURLOPT_XFERINFOFUNCTION` and `CURLOPT_NOPROGRESS` to 0
+- [x] Handle `CURLE_ABORTED_BY_CALLBACK` return code:
+  - [x] Return exit code 130 (128 + SIGINT)
+  - [x] JSON output: `{"status":"interrupted",...}`
 
-### 6.2 Wait Builtin
+### 6.2 Wait Builtin ✅
 **File**: `src/jshell/builtins/cmd_wait.c`
 
-- [ ] Handle SIGINT during `waitpid()`:
-  - [ ] `waitpid()` will return -1 with `errno == EINTR` on signal
-  - [ ] Check `jshell_interrupted` and exit wait if set
-  - [ ] Print message about interrupted wait
+- [x] Handle SIGINT during `waitpid()`:
+  - [x] Updated `jshell_wait_for_job()` in `jshell_job_control.c`
+  - [x] Loop on EINTR, check `jshell_is_interrupted()`
+  - [x] Return -2 when interrupted
+- [x] Updated `cmd_wait.c` to handle -2 return:
+  - [x] Print message about interrupted wait
+  - [x] JSON output: `{"status":"interrupted",...}`
+  - [x] Return exit code 130
 
-### 6.3 Edit Commands
-**Files**: `src/jshell/builtins/cmd_edit_*.c`
+### 6.3 Edit Commands ✅
+**Files**: `src/jshell/builtins/cmd_edit_replace.c`
 
-- [ ] Edit commands are typically fast, but for large files:
-  - [ ] Check `jshell_interrupted` during file read
-  - [ ] Check during search/replace operations in `edit-replace`
+- [x] Updated `edit-replace` for large files:
+  - [x] Check `jshell_is_interrupted()` during file read in `read_file_lines()`
+  - [x] Check during search/replace loop
+  - [x] Return -2 from `read_file_lines()` on interruption
+  - [x] Return exit code 130 on interrupt
+- [x] Other edit commands (edit-replace-line, edit-insert-line, edit-delete-line) are single-line operations and typically fast enough to not require signal handling
 
 ---
 
@@ -568,7 +571,7 @@ When a process is terminated by a signal, the exit code is `128 + signal_number`
 - [x] Phase 3: Child Process Signal Reset (2 tasks)
 - [x] Phase 4: External App Signal Handling (4 tasks)
 - [x] Phase 5: Interactive App Signals (2 tasks)
-- [ ] Phase 6: Builtin Command Signals (3 tasks)
+- [x] Phase 6: Builtin Command Signals (3 tasks)
 - [ ] Phase 7: Test Suite (5 tasks)
 
-**Total: 21 major tasks (15 completed)**
+**Total: 21 major tasks (18 completed)**

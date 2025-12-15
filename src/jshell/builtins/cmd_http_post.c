@@ -5,6 +5,7 @@
 
 #include "argtable3.h"
 #include "cmd_http_post.h"
+#include "jshell/jshell_signals.h"
 
 
 typedef struct {
@@ -169,6 +170,26 @@ static void print_json_string(FILE *out, const char *str) {
 }
 
 
+/**
+ * Progress callback to check for interruption during transfer.
+ * Returns non-zero to abort the transfer.
+ */
+static int progress_callback(void *clientp, curl_off_t dltotal,
+                             curl_off_t dlnow, curl_off_t ultotal,
+                             curl_off_t ulnow) {
+  (void)clientp;
+  (void)dltotal;
+  (void)dlnow;
+  (void)ultotal;
+  (void)ulnow;
+
+  if (jshell_is_interrupted()) {
+    return 1;  /* Abort transfer */
+  }
+  return 0;
+}
+
+
 static int http_post_run(int argc, char **argv) {
   http_post_args_t args;
   build_http_post_argtable(&args);
@@ -239,6 +260,11 @@ static int http_post_run(int argc, char **argv) {
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "jbox-http-post/1.0");
 
+  /* Enable progress callback for signal interruption */
+  curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+  curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+  curl_easy_setopt(curl, CURLOPT_XFERINFODATA, NULL);
+
   struct curl_slist *req_headers = NULL;
   for (int i = 0; i < args.headers->count; i++) {
     req_headers = curl_slist_append(req_headers, args.headers->sval[i]);
@@ -257,7 +283,15 @@ static int http_post_run(int argc, char **argv) {
 
   int ret = 0;
 
-  if (res != CURLE_OK) {
+  if (res == CURLE_ABORTED_BY_CALLBACK) {
+    /* Transfer was interrupted by signal */
+    if (json_output) {
+      printf("{\"status\":\"interrupted\",\"message\":\"Transfer interrupted\"}\n");
+    } else {
+      fprintf(stderr, "http-post: transfer interrupted\n");
+    }
+    ret = 130;  /* 128 + SIGINT(2) */
+  } else if (res != CURLE_OK) {
     if (json_output) {
       printf("{\"status\":\"error\",\"code\":%d,\"message\":", (int)res);
       print_json_string(stdout, curl_easy_strerror(res));

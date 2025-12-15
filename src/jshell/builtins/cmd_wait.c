@@ -63,6 +63,12 @@ static void wait_for_job_callback(const BackgroundJob *job, void *userdata) {
 
   int status = jshell_wait_for_job(job->job_id);
 
+  if (status == -2) {
+    /* Interrupted by signal - mark context and return */
+    ctx->total_status = 130;  /* 128 + SIGINT(2) */
+    return;
+  }
+
   if (ctx->show_json) {
     if (!ctx->first) {
       printf(",\n");
@@ -160,6 +166,17 @@ static int wait_run(int argc, char **argv) {
   }
 
   int status = jshell_wait_for_job((int)job_id);
+
+  if (status == -2) {
+    /* Interrupted by signal */
+    if (show_json) {
+      printf("{\"job\": %ld, \"status\": \"interrupted\"}\n", job_id);
+    } else {
+      fprintf(stderr, "wait: interrupted\n");
+    }
+    cleanup_wait_argtable(&args);
+    return 130;  /* 128 + SIGINT(2) */
+  }
 
   if (show_json) {
     printf("{\"job\": %ld, \"status\": \"exited\", \"code\": %d}\n",

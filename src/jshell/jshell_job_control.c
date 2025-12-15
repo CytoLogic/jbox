@@ -3,8 +3,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "jshell_job_control.h"
+#include "jshell_signals.h"
 #include "utils/jbox_utils.h"
 
 
@@ -270,7 +272,22 @@ int jshell_wait_for_job(int job_id) {
   int final_status = 0;
   for (size_t i = 0; i < job->pid_count; i++) {
     int status;
-    pid_t result = waitpid(job->pids[i], &status, 0);
+    pid_t result;
+
+    /* Loop until waitpid succeeds or we're interrupted */
+    while ((result = waitpid(job->pids[i], &status, 0)) == -1) {
+      if (errno == EINTR) {
+        /* Check if we should abort due to signal */
+        if (jshell_is_interrupted()) {
+          return -2;  /* Interrupted by SIGINT */
+        }
+        /* Otherwise, continue waiting */
+        continue;
+      }
+      /* Some other error occurred */
+      break;
+    }
+
     if (result > 0) {
       if (WIFEXITED(status)) {
         final_status = WEXITSTATUS(status);
