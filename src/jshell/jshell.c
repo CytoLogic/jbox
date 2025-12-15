@@ -7,6 +7,7 @@
 #include "ast/jshell_ast_interpreter.h"
 #include "jshell_job_control.h"
 #include "jshell_register_builtins.h"
+#include "jshell_register_externals.h"
 #include "utils/jbox_utils.h"
 
 
@@ -18,6 +19,7 @@ int jshell_main(void) {
 
   jshell_init_job_control();
   jshell_register_all_builtin_commands();
+  jshell_register_all_external_commands();
 
   while (true) {
     jshell_check_background_jobs();
