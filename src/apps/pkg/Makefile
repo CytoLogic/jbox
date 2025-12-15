@@ -10,6 +10,7 @@ OBJS = cmd_pkg.o pkg_utils.o pkg_json.o pkg_db.o
 LIB = libpkg.a
 BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/pkg
+PKG_BIN = $(BIN)
 
 all: $(BIN) $(LIB)
 
@@ -29,3 +30,5 @@ $(BIN_DIR):
 
 clean:
 	rm -f *.o $(BIN) $(LIB)
+
+include ../pkg.mk

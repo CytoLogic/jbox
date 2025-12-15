@@ -10,6 +10,7 @@ OBJS = cmd_mv.o
 LIB = libmv.a
 BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/mv
+PKG_BIN = $(BIN)
 
 all: $(BIN) $(LIB)
 
@@ -26,3 +27,5 @@ $(BIN_DIR):
 
 clean:
 	rm -f *.o $(BIN) $(LIB)
+
+include ../pkg.mk

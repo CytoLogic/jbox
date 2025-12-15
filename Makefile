@@ -93,7 +93,7 @@ AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 
 all: jbox apps
 
-.PHONY: test test-apps test-grammar apps clean-apps bnfc
+.PHONY: test test-apps test-grammar apps clean-apps bnfc packages clean-packages
 test: test-apps
 
 test-apps: apps
@@ -114,6 +114,20 @@ clean-apps:
 	@for app in $(APP_DIRS); do \
 		$(MAKE) -C $(SRC_DIR)/apps/$$app clean; \
 	done
+
+# Package building
+packages: apps
+	@for app in $(APP_DIRS); do \
+		echo "Packaging $$app..."; \
+		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg; \
+	done
+	@echo "All packages built to srv/pkg_repository/downloads/"
+
+clean-packages:
+	@for app in $(APP_DIRS); do \
+		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg-clean; \
+	done
+	rm -rf srv/pkg_repository/downloads/*
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)

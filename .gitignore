@@ -11,3 +11,5 @@ src/apps/**/*.o
 src/apps/**/*.a
 src/pkg_srv/node_modules/
 src/pkg_srv/package-lock.json
+srv/pkg_repository/downloads/
+src/apps/*/.pkg-staging/

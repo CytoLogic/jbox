@@ -115,7 +115,7 @@ Implement the Express server with in-memory package storage.
   - [x] Initialize in-memory packages array with example data
   - [x] Implement `GET /packages` endpoint
   - [x] Implement `GET /packages/:name` endpoint
-  - [ ] Serve static files from `downloads/` directory at `/downloads/` (deferred to Phase 3.7)
+  - [x] Serve static files from `downloads/` directory at `/downloads/` (completed in Phase 3.7)
   - [x] Start server on port 3000
   - [x] Add basic logging
 
@@ -184,18 +184,18 @@ const packages = [
 
 ---
 
-## Phase 3: Package Build System (PARTIAL)
+## Phase 3: Package Build System ✅ COMPLETED
 
-### 3.1 Create Repository Directory Structure
+### 3.1 Create Repository Directory Structure ✅ COMPLETED
 Set up the directory structure for serving package tarballs.
 
-- [ ] Create `srv/pkg_repository/downloads/` directory
-- [ ] Add `srv/pkg_repository/downloads/` to `.gitignore`
+- [x] Create `srv/pkg_repository/downloads/` directory
+- [x] Add `srv/pkg_repository/downloads/` to `.gitignore`
 
-### 3.2 Create Shared Makefile Rules (pkg.mk)
+### 3.2 Create Shared Makefile Rules (pkg.mk) ✅ COMPLETED
 Create shared Makefile rules that each app can include for package building.
 
-- [ ] Create `src/apps/pkg.mk`:
+- [x] Create `src/apps/pkg.mk`:
   ```makefile
   # Shared package building rules for jshell apps
   # Include this in each app's Makefile after defining:
@@ -246,10 +246,10 @@ Add package manifests to existing apps.
 - [x] Create `src/apps/cat/pkg.json`
 - [x] Create pkg.json for remaining apps (stat, head, tail, cp, mv, rm, mkdir, rmdir, touch, rg, echo, sleep, date, less, vi, pkg)
 
-### 3.4 Update App Makefiles to Include pkg.mk
+### 3.4 Update App Makefiles to Include pkg.mk ✅ COMPLETED
 Add package building support to each app's Makefile.
 
-- [ ] Update `src/apps/ls/Makefile`:
+- [x] Update `src/apps/ls/Makefile`:
   ```makefile
   # Add at top after existing variables:
   PKG_BIN = $(BIN)
@@ -257,12 +257,12 @@ Add package building support to each app's Makefile.
   # Add at bottom:
   include ../pkg.mk
   ```
-- [ ] Update remaining app Makefiles similarly
+- [x] Update remaining app Makefiles similarly
 
-### 3.5 Add Package Targets to Root Makefile
+### 3.5 Add Package Targets to Root Makefile ✅ COMPLETED
 Add targets to build packages from the root Makefile.
 
-- [ ] Update root `Makefile`:
+- [x] Update root `Makefile`:
   ```makefile
   # Add to .PHONY:
   .PHONY: packages clean-packages
@@ -284,10 +284,10 @@ Add targets to build packages from the root Makefile.
   	rm -rf srv/pkg_repository/downloads/*
   ```
 
-### 3.6 Create Optional Build Script
+### 3.6 Create Optional Build Script ✅ COMPLETED
 Create a convenience script for building packages outside of make.
 
-- [ ] Create `scripts/build-packages.sh`:
+- [x] Create `scripts/build-packages.sh`:
   ```bash
   #!/bin/bash
   # Build all jshell app packages
@@ -304,12 +304,12 @@ Create a convenience script for building packages outside of make.
   echo "Packages available in srv/pkg_repository/downloads/:"
   ls -la srv/pkg_repository/downloads/*.tar.gz 2>/dev/null || echo "  (none built yet)"
   ```
-- [ ] Make script executable
+- [x] Make script executable
 
-### 3.7 Update server.js for Static File Serving
+### 3.7 Update server.js for Static File Serving ✅ COMPLETED
 Update Express server to serve downloads from the new location.
 
-- [ ] Update `src/pkg_srv/server.js`:
+- [x] Update `src/pkg_srv/server.js`:
   ```javascript
   const path = require('path');
 
@@ -321,14 +321,14 @@ Update Express server to serve downloads from the new location.
   app.use('/downloads', express.static(DOWNLOADS_DIR));
   ```
 
-### 3.8 Update Server Package Registry
+### 3.8 Update Server Package Registry ✅ COMPLETED
 Update the server to dynamically read package info or maintain a registry.
 
-- [ ] Option A: Static registry in server.js (simple, current approach)
-- [ ] Option B: Read pkg.json files from src/apps/ at startup
-- [ ] Option C: Scan tarballs in downloads/ directory
+- [x] Option A: Static registry in server.js (simple, current approach)
+- [ ] Option B: Read pkg.json files from src/apps/ at startup (future enhancement)
+- [ ] Option C: Scan tarballs in downloads/ directory (future enhancement)
 
-For now, use Option A and manually update the packages array when new packages are added.
+Using Option A - manually updated packages array in server.js with all 18 apps.
 
 ---
 
@@ -400,15 +400,15 @@ python -m unittest tests.pkg_srv.test_pkg_srv -v
 
 ---
 
-## Phase 6: Update .gitignore (PARTIAL)
+## Phase 6: Update .gitignore ✅ COMPLETED
 
-### 6.1 Add Node.js and Build Artifact Ignores
+### 6.1 Add Node.js and Build Artifact Ignores ✅ COMPLETED
 Add Node.js-specific and build artifact entries to `.gitignore`.
 
 - [x] Add `src/pkg_srv/node_modules/` to `.gitignore`
 - [x] Add `src/pkg_srv/package-lock.json` to `.gitignore`
-- [ ] Add `srv/pkg_repository/downloads/` to `.gitignore` (built packages, not committed)
-- [ ] Add `src/apps/*/.pkg-staging/` to `.gitignore` (temp staging dirs)
+- [x] Add `srv/pkg_repository/downloads/` to `.gitignore` (built packages, not committed)
+- [x] Add `src/apps/*/.pkg-staging/` to `.gitignore` (temp staging dirs)
 
 ---
 

@@ -10,6 +10,7 @@ OBJS = cmd_echo.o
 LIB = libecho.a
 BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/echo
+PKG_BIN = $(BIN)
 
 all: $(BIN) $(LIB)
 
@@ -26,3 +27,5 @@ $(BIN_DIR):
 
 clean:
 	rm -f *.o $(BIN) $(LIB)
+
+include ../pkg.mk

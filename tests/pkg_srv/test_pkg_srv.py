@@ -118,19 +118,19 @@ class TestPackageRegistryServer(unittest.TestCase):
         self.assertIn("packages", data)
         self.assertIsInstance(data["packages"], list)
 
-    def test_get_packages_contains_hello(self):
-        """Test GET /packages includes the 'hello' example package."""
+    def test_get_packages_contains_ls(self):
+        """Test GET /packages includes the 'ls' package."""
         data = self.fetch_json("/packages")
         packages = data["packages"]
         names = [p["name"] for p in packages]
-        self.assertIn("hello", names)
+        self.assertIn("ls", names)
 
-    def test_get_packages_contains_wcplus(self):
-        """Test GET /packages includes the 'wcplus' example package."""
+    def test_get_packages_contains_cat(self):
+        """Test GET /packages includes the 'cat' package."""
         data = self.fetch_json("/packages")
         packages = data["packages"]
         names = [p["name"] for p in packages]
-        self.assertIn("wcplus", names)
+        self.assertIn("cat", names)
 
     def test_get_packages_package_has_required_fields(self):
         """Test packages in GET /packages have required fields."""
@@ -151,51 +151,51 @@ class TestPackageRegistryServer(unittest.TestCase):
     # GET /packages/:name tests (existing package)
     # -------------------------------------------------------------------------
 
-    def test_get_package_hello_returns_200(self):
-        """Test GET /packages/hello returns 200 OK."""
-        response = urlopen(f"{self.BASE_URL}/packages/hello", timeout=5)
+    def test_get_package_ls_returns_200(self):
+        """Test GET /packages/ls returns 200 OK."""
+        response = urlopen(f"{self.BASE_URL}/packages/ls", timeout=5)
         self.assertEqual(response.status, 200)
 
-    def test_get_package_hello_returns_json(self):
-        """Test GET /packages/hello returns valid JSON."""
-        response = urlopen(f"{self.BASE_URL}/packages/hello", timeout=5)
+    def test_get_package_ls_returns_json(self):
+        """Test GET /packages/ls returns valid JSON."""
+        response = urlopen(f"{self.BASE_URL}/packages/ls", timeout=5)
         content_type = response.headers.get("Content-Type", "")
         self.assertIn("application/json", content_type)
 
-    def test_get_package_hello_has_status_ok(self):
-        """Test GET /packages/hello response has status: ok."""
-        data = self.fetch_json("/packages/hello")
+    def test_get_package_ls_has_status_ok(self):
+        """Test GET /packages/ls response has status: ok."""
+        data = self.fetch_json("/packages/ls")
         self.assertEqual(data["status"], "ok")
 
-    def test_get_package_hello_has_package_object(self):
-        """Test GET /packages/hello response has package object."""
-        data = self.fetch_json("/packages/hello")
+    def test_get_package_ls_has_package_object(self):
+        """Test GET /packages/ls response has package object."""
+        data = self.fetch_json("/packages/ls")
         self.assertIn("package", data)
         self.assertIsInstance(data["package"], dict)
 
-    def test_get_package_hello_name_matches(self):
-        """Test GET /packages/hello returns correct name."""
-        data = self.fetch_json("/packages/hello")
-        self.assertEqual(data["package"]["name"], "hello")
+    def test_get_package_ls_name_matches(self):
+        """Test GET /packages/ls returns correct name."""
+        data = self.fetch_json("/packages/ls")
+        self.assertEqual(data["package"]["name"], "ls")
 
-    def test_get_package_hello_has_version(self):
-        """Test GET /packages/hello has latestVersion field."""
-        data = self.fetch_json("/packages/hello")
+    def test_get_package_ls_has_version(self):
+        """Test GET /packages/ls has latestVersion field."""
+        data = self.fetch_json("/packages/ls")
         self.assertIn("latestVersion", data["package"])
-        self.assertEqual(data["package"]["latestVersion"], "1.0.0")
+        self.assertEqual(data["package"]["latestVersion"], "0.0.1")
 
-    def test_get_package_hello_has_download_url(self):
-        """Test GET /packages/hello has downloadUrl field."""
-        data = self.fetch_json("/packages/hello")
+    def test_get_package_ls_has_download_url(self):
+        """Test GET /packages/ls has downloadUrl field."""
+        data = self.fetch_json("/packages/ls")
         self.assertIn("downloadUrl", data["package"])
-        self.assertIn("hello", data["package"]["downloadUrl"])
+        self.assertIn("ls", data["package"]["downloadUrl"])
 
-    def test_get_package_wcplus(self):
-        """Test GET /packages/wcplus returns correct data."""
-        data = self.fetch_json("/packages/wcplus")
+    def test_get_package_cat(self):
+        """Test GET /packages/cat returns correct data."""
+        data = self.fetch_json("/packages/cat")
         self.assertEqual(data["status"], "ok")
-        self.assertEqual(data["package"]["name"], "wcplus")
-        self.assertEqual(data["package"]["latestVersion"], "2.1.0")
+        self.assertEqual(data["package"]["name"], "cat")
+        self.assertEqual(data["package"]["latestVersion"], "0.0.1")
 
     # -------------------------------------------------------------------------
     # GET /packages/:name tests (non-existent package)
@@ -249,8 +249,8 @@ class TestPackageRegistryServer(unittest.TestCase):
 
     def test_case_sensitive_package_name(self):
         """Test package names are case-sensitive."""
-        # 'Hello' (capital H) should not match 'hello'
-        data = self.fetch_json("/packages/Hello", expected_status=404)
+        # 'Ls' (capital L) should not match 'ls'
+        data = self.fetch_json("/packages/Ls", expected_status=404)
         self.assertEqual(data["status"], "error")
 
     def test_package_name_with_special_chars(self):
