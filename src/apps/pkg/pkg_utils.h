@@ -10,12 +10,26 @@ char *pkg_get_pkgs_dir(void);
 // Returns path to ~/.jshell/bin (caller must free)
 char *pkg_get_bin_dir(void);
 
-// Returns path to ~/.jshell/pkgdb.txt (caller must free)
+// Returns path to ~/.jshell/pkgs/pkgdb.json (caller must free)
 char *pkg_get_db_path(void);
+
+// Returns path to ~/.jshell/pkgdb.txt (legacy, caller must free)
+char *pkg_get_db_path_txt(void);
+
+// Returns path to ~/.jshell/pkgs/_tmp (caller must free)
+char *pkg_get_tmp_dir(void);
 
 // Creates ~/.jshell, ~/.jshell/pkgs, ~/.jshell/bin if needed
 // Returns 0 on success, -1 on error
 int pkg_ensure_dirs(void);
+
+// Ensures ~/.jshell/pkgs/_tmp exists
+// Returns 0 on success, -1 on error
+int pkg_ensure_tmp_dir(void);
+
+// Cleans up ~/.jshell/pkgs/_tmp contents
+// Returns 0 on success, -1 on error
+int pkg_cleanup_tmp_dir(void);
 
 // Fork/exec wrapper - runs command and waits for completion
 // Returns exit status of child, or -1 on fork/exec error

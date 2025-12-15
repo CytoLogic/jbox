@@ -495,7 +495,8 @@ static int pkg_install(const char *tarball, int json_output) {
 
   free(bin_dir);
 
-  pkg_db_add(db, m->name, m->version);
+  pkg_db_add_full(db, m->name, m->version, m->description,
+                  m->files, m->files_count);
   pkg_db_save(db);
 
   if (json_output) {

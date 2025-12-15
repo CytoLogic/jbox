@@ -34,8 +34,8 @@ The package manager has a working skeleton with:
 
 | Phase | Status | Commit | Tests |
 |-------|--------|--------|-------|
-| Phase 1: Test Infrastructure | ⬜ TODO | - | - |
-| Phase 2: JSON Package Database | ⬜ TODO | - | - |
+| Phase 1: Test Infrastructure | ✅ DONE | pre-existing | tests/helpers/jshell.py, tests/pkg/test_pkg_base.py |
+| Phase 2: JSON Package Database | ✅ DONE | pending | tests/pkg/test_pkg_db.py |
 | Phase 3: Dynamic Shell Command Registration | ⬜ TODO | - | - |
 | Phase 4: Package Check-Update Enhancement | ⬜ TODO | - | - |
 | Phase 5: Package Upgrade Enhancement | ⬜ TODO | - | - |
@@ -109,7 +109,7 @@ Schema:
 ### 2.2 Update pkg_db.h
 **File**: `src/apps/pkg/pkg_db.h`
 
-- [ ] Add new fields to `PkgDbEntry`:
+- [x] Add new fields to `PkgDbEntry`:
   ```c
   typedef struct {
     char *name;
@@ -121,7 +121,7 @@ Schema:
   } PkgDbEntry;
   ```
 
-- [ ] Add JSON-specific functions:
+- [x] Add JSON-specific functions:
   ```c
   PkgDb *pkg_db_load_json(void);
   int pkg_db_save_json(const PkgDb *db);
@@ -131,52 +131,62 @@ Schema:
 ### 2.3 Update pkg_db.c
 **File**: `src/apps/pkg/pkg_db.c`
 
-- [ ] Implement `pkg_db_load_json()`:
-  - [ ] Read `~/.jshell/pkgs/pkgdb.json`
-  - [ ] Parse JSON using existing `pkg_json.c` utilities
-  - [ ] Fallback to `pkgdb.txt` if JSON doesn't exist
-  - [ ] Auto-migrate from txt to JSON on first load
+- [x] Implement `pkg_db_load_json()`:
+  - [x] Read `~/.jshell/pkgs/pkgdb.json`
+  - [x] Parse JSON using custom JSON parser
+  - [x] Fallback to `pkgdb.txt` if JSON doesn't exist
+  - [x] Auto-migrate from txt to JSON on first load
 
-- [ ] Implement `pkg_db_save_json()`:
-  - [ ] Write proper JSON format
-  - [ ] Include all metadata fields
-  - [ ] Create `~/.jshell/pkgs/` directory if needed
+- [x] Implement `pkg_db_save_json()`:
+  - [x] Write proper JSON format
+  - [x] Include all metadata fields
+  - [x] Create `~/.jshell/pkgs/` directory if needed
 
-- [ ] Implement `pkg_db_migrate_from_txt()`:
-  - [ ] Read existing `pkgdb.txt`
-  - [ ] Convert entries to new format
-  - [ ] Add default values for new fields
-  - [ ] Write `pkgdb.json`
-  - [ ] Keep backup of `pkgdb.txt`
+- [x] Implement `pkg_db_migrate_from_txt()`:
+  - [x] Read existing `pkgdb.txt`
+  - [x] Convert entries to new format
+  - [x] Add default values for new fields
+  - [x] Write `pkgdb.json`
+  - [x] Keep backup of `pkgdb.txt`
 
-- [ ] Update `pkg_db_load()` to use JSON:
-  - [ ] Call `pkg_db_load_json()` internally
-  - [ ] Handle migration transparently
+- [x] Update `pkg_db_load()` to use JSON:
+  - [x] Call `pkg_db_load_json()` internally
+  - [x] Handle migration transparently
 
-- [ ] Update `pkg_db_save()` to use JSON:
-  - [ ] Call `pkg_db_save_json()` internally
+- [x] Update `pkg_db_save()` to use JSON:
+  - [x] Call `pkg_db_save_json()` internally
 
-- [ ] Update `pkg_db_add()`:
-  - [ ] Accept additional metadata (files, description)
-  - [ ] Set `installed_at` timestamp
+- [x] Update `pkg_db_add()`:
+  - [x] Accept additional metadata (files, description) via `pkg_db_add_full()`
+  - [x] Set `installed_at` timestamp
 
 ### 2.4 Update pkg_utils.h/c
 **File**: `src/apps/pkg/pkg_utils.h`, `src/apps/pkg/pkg_utils.c`
 
-- [ ] Update `pkg_get_db_path()`:
-  - [ ] Return path to `pkgdb.json` instead of `pkgdb.txt`
+- [x] Update `pkg_get_db_path()`:
+  - [x] Return path to `pkgdb.json` instead of `pkgdb.txt`
 
-- [ ] Add `pkg_get_tmp_dir()`:
-  - [ ] Return `~/.jshell/pkgs/_tmp/`
-  - [ ] Create directory if it doesn't exist
+- [x] Add `pkg_get_db_path_txt()`:
+  - [x] Return legacy path to `pkgdb.txt` for migration
+
+- [x] Add `pkg_get_tmp_dir()`:
+  - [x] Return `~/.jshell/pkgs/_tmp/`
+
+- [x] Add `pkg_ensure_tmp_dir()`:
+  - [x] Create directory if it doesn't exist
+
+- [x] Add `pkg_cleanup_tmp_dir()`:
+  - [x] Clean up tmp directory contents
 
 ### 2.5 Create Database Tests
 **File**: `tests/pkg/test_pkg_db.py`
 
-- [ ] Test JSON database creation
-- [ ] Test loading/saving entries
-- [ ] Test migration from txt to JSON
-- [ ] Test database integrity after operations
+- [x] Test JSON database creation
+- [x] Test loading/saving entries
+- [x] Test migration from txt to JSON
+- [x] Test database integrity after operations
+- [x] Test metadata fields (installed_at, files, description)
+- [x] Test edge cases (special characters, empty values)
 
 ---
 

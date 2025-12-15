@@ -66,6 +66,25 @@ char *pkg_get_bin_dir(void) {
 
 
 char *pkg_get_db_path(void) {
+  char *pkgs = pkg_get_pkgs_dir();
+  if (pkgs == NULL) {
+    return NULL;
+  }
+
+  size_t len = strlen(pkgs) + strlen("/pkgdb.json") + 1;
+  char *path = malloc(len);
+  if (path == NULL) {
+    free(pkgs);
+    return NULL;
+  }
+
+  snprintf(path, len, "%s/pkgdb.json", pkgs);
+  free(pkgs);
+  return path;
+}
+
+
+char *pkg_get_db_path_txt(void) {
   char *home = pkg_get_home_dir();
   if (home == NULL) {
     return NULL;
@@ -80,6 +99,25 @@ char *pkg_get_db_path(void) {
 
   snprintf(path, len, "%s/pkgdb.txt", home);
   free(home);
+  return path;
+}
+
+
+char *pkg_get_tmp_dir(void) {
+  char *pkgs = pkg_get_pkgs_dir();
+  if (pkgs == NULL) {
+    return NULL;
+  }
+
+  size_t len = strlen(pkgs) + strlen("/_tmp") + 1;
+  char *path = malloc(len);
+  if (path == NULL) {
+    free(pkgs);
+    return NULL;
+  }
+
+  snprintf(path, len, "%s/_tmp", pkgs);
+  free(pkgs);
   return path;
 }
 
@@ -258,4 +296,32 @@ char *pkg_read_file(const char *path) {
 
   content[read] = '\0';
   return content;
+}
+
+
+int pkg_ensure_tmp_dir(void) {
+  if (pkg_ensure_dirs() != 0) {
+    return -1;
+  }
+
+  char *tmp = pkg_get_tmp_dir();
+  if (tmp == NULL) {
+    return -1;
+  }
+
+  int result = ensure_dir(tmp);
+  free(tmp);
+  return result;
+}
+
+
+int pkg_cleanup_tmp_dir(void) {
+  char *tmp = pkg_get_tmp_dir();
+  if (tmp == NULL) {
+    return -1;
+  }
+
+  int result = pkg_remove_dir_recursive(tmp);
+  free(tmp);
+  return result;
 }
