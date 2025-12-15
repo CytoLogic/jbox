@@ -115,6 +115,9 @@ static void* builtin_thread_entry(void* arg) {
 
   bt->exit_code = bt->spec->run(bt->argc, bt->argv);
 
+  // Flush stdout to ensure all output goes to the redirected fd
+  fflush(stdout);
+
   DPRINT("Thread builtin %s completed with exit code %d",
          bt->spec->name, bt->exit_code);
 

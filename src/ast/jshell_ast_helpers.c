@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -264,11 +265,29 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
     char* resolved_path = jshell_resolve_command(cmd_params->argv[0]);
     if (resolved_path != NULL) {
       execv(resolved_path, cmd_params->argv);
-      perror("execv");
+      if (errno == EACCES) {
+        fprintf(stderr, "jshell: %s: Permission denied\n",
+                cmd_params->argv[0]);
+        free(resolved_path);
+        exit(126);
+      }
+      fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0],
+              strerror(errno));
       free(resolved_path);
+      exit(127);
     } else {
       execvp(cmd_params->argv[0], cmd_params->argv);
-      perror("execvp");
+      if (errno == EACCES) {
+        fprintf(stderr, "jshell: %s: Permission denied\n",
+                cmd_params->argv[0]);
+        exit(126);
+      } else if (errno == ENOENT) {
+        fprintf(stderr, "jshell: %s: command not found\n",
+                cmd_params->argv[0]);
+      } else {
+        fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0],
+                strerror(errno));
+      }
     }
     exit(127);
   }
@@ -380,15 +399,33 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
     char* resolved_path = jshell_resolve_command(cmd_params->argv[0]);
     if (resolved_path != NULL) {
       execv(resolved_path, cmd_params->argv);
-      perror("execv");
+      if (errno == EACCES) {
+        fprintf(stderr, "jshell: %s: Permission denied\n",
+                cmd_params->argv[0]);
+        free(resolved_path);
+        exit(126);
+      }
+      fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0],
+              strerror(errno));
       free(resolved_path);
+      exit(127);
     } else {
       execvp(cmd_params->argv[0], cmd_params->argv);
-      perror("execvp");
+      if (errno == EACCES) {
+        fprintf(stderr, "jshell: %s: Permission denied\n",
+                cmd_params->argv[0]);
+        exit(126);
+      } else if (errno == ENOENT) {
+        fprintf(stderr, "jshell: %s: command not found\n",
+                cmd_params->argv[0]);
+      } else {
+        fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0],
+                strerror(errno));
+      }
     }
     exit(127);
   }
-  
+
   if (job->input_fd != -1) {
     close(job->input_fd);
   }

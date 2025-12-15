@@ -5,7 +5,7 @@ PROJECT_ROOT := ..
 
 .PHONY: all apps builtins jshell grammar ls stat cat head tail rg less vi \
         edit-replace-line edit-insert-line edit-delete-line edit-replace \
-        jshell-path jshell-thread-exec jshell-pipes pkg-srv clean
+        jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec pkg-srv clean
 
 all: apps builtins jshell
 
@@ -13,7 +13,7 @@ apps: ls stat cat head tail rg less vi
 
 builtins: edit-replace-line edit-insert-line edit-delete-line edit-replace
 
-jshell: jshell-path jshell-thread-exec jshell-pipes
+jshell: jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec
 
 grammar:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.grammar.test_grammar -v
@@ -65,6 +65,9 @@ jshell-thread-exec:
 
 jshell-pipes:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.test_pipes -v
+
+jshell-ast-exec:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.test_ast_exec -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

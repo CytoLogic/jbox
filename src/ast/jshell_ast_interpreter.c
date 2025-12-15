@@ -6,8 +6,10 @@
 #include <wordexp.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "utils/jbox_utils.h"
+#include "jshell/jshell.h"
 
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
@@ -158,23 +160,40 @@ JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type)
   {
   case is_CmdLine:
     {
-      int input_fd = 
+      int input_fd =
         visitOptionalInputRedirection(
           p->u.cmdLine_.optionalinputredirection_);
-      
-      JShellCmdVector* cmd_vector = 
+
+      // Check for redirection error (-2 means error, -1 means no redirection)
+      if (input_fd == -2) {
+        jshell_set_last_exit_status(1);
+        return NULL;
+      }
+
+      JShellCmdVector* cmd_vector =
         visitCommandPart(p->u.cmdLine_.commandpart_);
-      
-      int output_fd = 
+
+      int output_fd =
         visitOptionalOutputRedirection(
           p->u.cmdLine_.optionaloutputredirection_);
-      
+
+      // Check for output redirection error
+      if (output_fd == -2) {
+        if (input_fd != -1) close(input_fd);
+        if (cmd_vector != NULL) {
+          jshell_cleanup_cmd_vector(cmd_vector);
+          free(cmd_vector);
+        }
+        jshell_set_last_exit_status(1);
+        return NULL;
+      }
+
       if (cmd_vector == NULL) {
         if (input_fd != -1) close(input_fd);
         if (output_fd != -1) close(output_fd);
         return NULL;
       }
-      
+
       JShellExecJob* exec_job = malloc(sizeof(JShellExecJob));
       if (exec_job == NULL) {
         perror("malloc JShellExecJob");
@@ -184,16 +203,16 @@ JShellExecJob* visitCommandLine(CommandLine p, ExecJobType job_type)
         free(cmd_vector);
         return NULL;
       }
-      
+
       exec_job->exec_job_type = job_type;
       exec_job->jshell_cmd_vector_ptr = cmd_vector;
       exec_job->input_fd = input_fd;
       exec_job->output_fd = output_fd;
-      
+
       DPRINT("Built JShellExecJob: type=%d, cmd_count=%zu, input_fd=%d, "
              "output_fd=%d",
              job_type, cmd_vector->cmd_count, input_fd, output_fd);
-      
+
       return exec_job;
     }
     break;
@@ -278,24 +297,26 @@ int visitOptionalInputRedirection(OptionalInputRedirection p)
   case is_InRedir:
     DPRINT("is InRedir");
     {
-      int result = 
+      int result =
         visitShellToken(p->u.inRedir_.shelltoken_, &word_vector);
       DPRINT("wordexp result: %d", result);
-      
+
       if (result != 0 || word_vector.we_wordc != 1) {
-        fprintf(stderr, "Error: invalid input redirection\n");
+        fprintf(stderr, "jshell: invalid input redirection\n");
         wordfree(&word_vector);
-        return -1;
+        return -2;  // -2 indicates error (vs -1 for no redirection)
       }
-      
+
       DPRINT("Opening input file: %s", word_vector.we_wordv[0]);
       int fd = open(word_vector.we_wordv[0], O_RDONLY);
       if (fd == -1) {
-        perror("open input file");
-      } else {
-        DPRINT("Opened input file: fd=%d", fd);
+        fprintf(stderr, "jshell: %s: %s\n", word_vector.we_wordv[0],
+                strerror(errno));
+        wordfree(&word_vector);
+        return -2;  // -2 indicates error
       }
-      
+      DPRINT("Opened input file: fd=%d", fd);
+
       wordfree(&word_vector);
       return fd;
     }
@@ -324,26 +345,28 @@ int visitOptionalOutputRedirection(OptionalOutputRedirection p)
   case is_OutRedir:
     DPRINT("is OutRedir");
     {
-      int result = 
+      int result =
         visitShellToken(p->u.outRedir_.shelltoken_, &word_vector);
       DPRINT("wordexp result: %d", result);
-      
+
       if (result != 0 || word_vector.we_wordc != 1) {
-        fprintf(stderr, "Error: invalid output redirection\n");
+        fprintf(stderr, "jshell: invalid output redirection\n");
         wordfree(&word_vector);
-        return -1;
+        return -2;  // -2 indicates error (vs -1 for no redirection)
       }
-      
+
       DPRINT("Opening output file: %s", word_vector.we_wordv[0]);
-      int fd = open(word_vector.we_wordv[0], 
-                    O_WRONLY | O_CREAT | O_TRUNC, 
+      int fd = open(word_vector.we_wordv[0],
+                    O_WRONLY | O_CREAT | O_TRUNC,
                     0644);
       if (fd == -1) {
-        perror("open output file");
-      } else {
-        DPRINT("Opened output file: fd=%d", fd);
+        fprintf(stderr, "jshell: %s: %s\n", word_vector.we_wordv[0],
+                strerror(errno));
+        wordfree(&word_vector);
+        return -2;  // -2 indicates error
       }
-      
+      DPRINT("Opened output file: fd=%d", fd);
+
       wordfree(&word_vector);
       return fd;
     }
