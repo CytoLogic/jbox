@@ -793,42 +793,7 @@ long_help = "Build, install, list, remove, compile, and upgrade packages for the
 - [x] Update `jshell_register_externals.h` and `.c`
 - [x] Create `tests/apps/pkg/test_pkg.py`
 
-### 9.2 Implement pkg list (FUTURE)
-- [ ] Implement package registry/database
-- [ ] Read installed packages from registry
-- [ ] Output package list in human and JSON format
-
-### 9.3 Implement pkg info (FUTURE)
-- [ ] Read package metadata from registry
-- [ ] Output package info in human and JSON format
-
-### 9.4 Implement pkg search (FUTURE)
-- [ ] Connect to remote package registry
-- [ ] Search and filter packages
-- [ ] Output results in human and JSON format
-
-### 9.5 Implement pkg install (FUTURE)
-- [ ] Download package from registry
-- [ ] Extract and install files
-- [ ] Update local registry
-
-### 9.6 Implement pkg remove (FUTURE)
-- [ ] Remove installed files
-- [ ] Update local registry
-
-### 9.7 Implement pkg build (FUTURE)
-- [ ] Read pkg.json from current directory
-- [ ] Build package archive
-
-### 9.8 Implement pkg check-update (FUTURE)
-- [ ] Compare installed versions with registry
-- [ ] List available updates
-
-### 9.9 Implement pkg upgrade (FUTURE)
-- [ ] Download and install updates
-
-### 9.10 Implement pkg compile (FUTURE)
-- [ ] Compile source packages
+**Note:** Full pkg implementation moved to `AI_TODO_2.md`
 
 ---
 
