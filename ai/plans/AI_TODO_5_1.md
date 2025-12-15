@@ -170,10 +170,10 @@ Code analysis of `pkg_install()` (lines 305-513):
 ```
 
 **Tasks**:
-- [ ] Add test to verify extraction creates correct directory structure
-- [ ] Add test to verify pkg.json is in package root
-- [ ] Add test to verify bin/ directory contains pre-built binary
-- [ ] Add test to verify src/ and Makefile are present (for source packages)
+- [x] Add test to verify extraction creates correct directory structure
+- [x] Add test to verify pkg.json is in package root
+- [x] Add test to verify bin/ directory contains pre-built binary
+- [x] Add test to verify src/ and Makefile are present (for source packages)
 
 #### 2.2 Create Extraction Verification Tests
 
@@ -257,13 +257,13 @@ pkg_db_save(db);
 3. Update symlinks to point to compiled binaries
 
 **Tasks**:
-- [ ] Modify `pkg_install()`:
-  - [ ] After moving package to `install_path`, check for Makefile
-  - [ ] If Makefile exists, call `compile_package_dir(name, install_path, json_output, 0)`
-  - [ ] Continue with symlink creation (which now points to compiled binaries)
-  - [ ] Handle compilation failure gracefully (package still installed, just not compiled)
+- [x] Modify `pkg_install()`:
+  - [x] After moving package to `install_path`, check for Makefile
+  - [x] If Makefile exists, call `compile_package_dir(name, install_path, json_output, 0)`
+  - [x] Continue with symlink creation (which now points to compiled binaries)
+  - [x] Handle compilation failure gracefully (package still installed, just not compiled)
 
-- [ ] Add compilation step (after line 455):
+- [x] Add compilation step (after line 455):
 ```c
 // Move package to install location
 if (rename(temp_dir, install_path) != 0) { ... }
@@ -307,11 +307,11 @@ The symlink creation code (lines 465-494) already handles this correctly:
 
 **File**: `tests/pkg/test_pkg_install_compile.py`
 
-- [ ] Create test file with:
-  - [ ] `test_install_compiles_package` - Install package with source, verify compilation runs
-  - [ ] `test_install_creates_symlinks_after_compile` - Verify symlinks work after compile
-  - [ ] `test_install_without_source` - Package without Makefile still works
-  - [ ] `test_install_compile_failure_fallback` - Graceful handling if compile fails
+- [x] Create test file with:
+  - [x] `test_install_compiles_package` - Install package with source, verify compilation runs
+  - [x] `test_install_creates_symlinks_after_compile` - Verify symlinks work after compile
+  - [x] `test_install_without_source` - Package without Makefile still works
+  - [x] `test_install_compile_failure_fallback` - Graceful handling if compile fails
 
 ```python
 class TestPkgInstallCompile(PkgTestBase):
@@ -357,8 +357,8 @@ class TestPkgInstallCompile(PkgTestBase):
 
 **File**: `tests/pkg/test_pkg_lifecycle.py` (update existing)
 
-- [ ] Add test case:
-  - [ ] `test_lifecycle_with_compilation` - Build → Install (with compile) → Use → Remove
+- [x] Add test case:
+  - [x] `test_lifecycle_with_compilation` - Build → Install (with compile) → Use → Remove
 
 ---
 
@@ -368,7 +368,7 @@ class TestPkgInstallCompile(PkgTestBase):
 
 **File**: `src/apps/pkg/cmd_pkg.c`
 
-- [ ] Update `pkg_print_usage()` to document that:
+- [x] Update `pkg_print_usage()` to document that:
   - `install` automatically compiles packages with Makefile/source
   - `compile` can be used to recompile installed packages
 

@@ -49,9 +49,9 @@ The package manager now supports:
 Create test infrastructure for testing pkg commands via `jshell -c`.
 
 ### 1.1 Create Shell Integration Test Helper
-**File**: `tests/helpers/shell_runner.py`
+**File**: `tests/helpers/jshell.py`
 
-- [ ] Create helper class for running `jshell -c` commands:
+- [x] Create helper class for running `jshell -c` commands:
   ```python
   class ShellRunner:
       JSHELL = Path(__file__).parent.parent.parent / "bin" / "jshell"
@@ -68,17 +68,17 @@ Create test infrastructure for testing pkg commands via `jshell -c`.
 ### 1.2 Create Package Manager Test Base
 **File**: `tests/pkg/test_pkg_base.py`
 
-- [ ] Create base test class with common setup/teardown:
-  - [ ] Backup and restore `~/.jshell` directory
-  - [ ] Helper to create test package tarballs
-  - [ ] Helper to start/stop package registry server
-  - [ ] Helper to populate test registry with packages
+- [x] Create base test class with common setup/teardown:
+  - [x] Backup and restore `~/.jshell` directory
+  - [x] Helper to create test package tarballs
+  - [x] Helper to start/stop package registry server
+  - [x] Helper to populate test registry with packages
 
 ### 1.3 Update Test Helpers __init__.py
 **File**: `tests/helpers/__init__.py`
 
-- [ ] Export `ShellRunner` class
-- [ ] Add any common test utilities
+- [x] Export `JShellRunner` class
+- [x] Add any common test utilities
 
 ---
 
@@ -334,13 +334,13 @@ New packages are available after shell restart.
 - [x] External app objects retained (not removed) for backwards compatibility
 
 ### 3.9 Create Dynamic Registration Tests
-**File**: `tests/pkg/test_pkg_registration.py`
+**File**: `tests/pkg/test_pkg_lifecycle.py` (integrated into lifecycle tests)
 
-- [ ] Test shell starts with empty external registry
-- [ ] Test package commands available after install
-- [ ] Test command execution forks correct binary
-- [ ] Test package commands unavailable after remove
-- [ ] Test shell restart loads packages
+- [x] Test shell starts with empty external registry
+- [x] Test package commands available after install
+- [x] Test command execution forks correct binary
+- [x] Test package commands unavailable after remove
+- [x] Test shell restart loads packages
 
 ---
 
@@ -384,14 +384,14 @@ Improve `pkg check-update` output to be more user-friendly.
   ```
 
 ### 4.2 Create Check-Update Tests
-**File**: `tests/pkg/test_pkg_check_update.py`
+**File**: `tests/pkg/test_pkg_lifecycle.py` (TestCheckUpdateLocal class)
 
-- [ ] Test with no packages installed
-- [ ] Test with up-to-date packages
-- [ ] Test with outdated packages
-- [ ] Test with registry unavailable
-- [ ] Test JSON output format
-- [ ] Test via `jshell -c "pkg check-update"`
+- [x] Test with no packages installed
+- [x] Test with up-to-date packages
+- [x] Test with outdated packages
+- [x] Test with registry unavailable
+- [x] Test JSON output format
+- [x] Test via `jshell -c "pkg check-update"`
 
 ---
 
@@ -402,27 +402,27 @@ Enhance `pkg upgrade` to use proper temp directory and compile before install.
 ### 5.1 Update Directory Structure
 **File**: `src/apps/pkg/pkg_utils.c`
 
-- [ ] Add `pkg_ensure_tmp_dir()`:
-  - [ ] Create `~/.jshell/pkgs/_tmp/` if it doesn't exist
-  - [ ] Clean up old temp files on startup
+- [x] Add `pkg_ensure_tmp_dir()`:
+  - [x] Create `~/.jshell/pkgs/_tmp/` if it doesn't exist
+  - [x] Clean up old temp files on startup
 
-- [ ] Add `pkg_cleanup_tmp_dir()`:
-  - [ ] Remove contents of `_tmp/` directory
-  - [ ] Called after successful install
+- [x] Add `pkg_cleanup_tmp_dir()`:
+  - [x] Remove contents of `_tmp/` directory
+  - [x] Called after successful install
 
 ### 5.2 Update pkg_upgrade Function
 **File**: `src/apps/pkg/cmd_pkg.c`
 
-- [ ] Modify upgrade flow:
-  1. [ ] Check for updates (existing)
-  2. [ ] Download tarball to `~/.jshell/pkgs/_tmp/<name>-<version>.tar.gz`
-  3. [ ] Extract to `~/.jshell/pkgs/_tmp/<name>-<version>/`
-  4. [ ] If package has source code, compile with `pkg_compile_package()`
-  5. [ ] Remove old version
-  6. [ ] Install new version
-  7. [ ] Cleanup temp files
+- [x] Modify upgrade flow:
+  1. [x] Check for updates (existing)
+  2. [x] Download tarball to `~/.jshell/pkgs/_tmp/<name>-<version>.tar.gz`
+  3. [x] Extract to `~/.jshell/pkgs/_tmp/<name>-<version>/`
+  4. [x] If package has source code, compile with `pkg_compile_package()`
+  5. [x] Remove old version
+  6. [x] Install new version
+  7. [x] Cleanup temp files
 
-- [ ] Add progress output:
+- [x] Add progress output:
   ```
   Checking for updates...
   Downloading cat 0.0.2...
@@ -431,7 +431,7 @@ Enhance `pkg upgrade` to use proper temp directory and compile before install.
   Upgraded cat: 0.0.1 → 0.0.2
   ```
 
-- [ ] Improve JSON output:
+- [x] Improve JSON output:
   ```json
   {
     "status": "ok",
@@ -449,15 +449,15 @@ Enhance `pkg upgrade` to use proper temp directory and compile before install.
   ```
 
 ### 5.3 Create Upgrade Tests
-**File**: `tests/pkg/test_pkg_upgrade.py`
+**File**: `tests/pkg/test_pkg_lifecycle.py` (integrated into lifecycle tests)
 
-- [ ] Test upgrade with no packages
-- [ ] Test upgrade with all up-to-date
-- [ ] Test upgrade with outdated package
-- [ ] Test upgrade with download failure
-- [ ] Test upgrade with compile failure
-- [ ] Test cleanup after upgrade
-- [ ] Test via `jshell -c "pkg upgrade"`
+- [x] Test upgrade with no packages
+- [x] Test upgrade with all up-to-date
+- [x] Test upgrade with outdated package
+- [x] Test upgrade with download failure
+- [x] Test upgrade with compile failure
+- [x] Test cleanup after upgrade
+- [x] Test via `jshell -c "pkg upgrade"`
 
 ---
 
@@ -483,20 +483,20 @@ Installed packages should contain source code for compilation:
 ### 6.2 Update pkg_compile Function
 **File**: `src/apps/pkg/cmd_pkg.c`
 
-- [ ] Modify `pkg_compile()` to handle installed packages:
-  - [ ] If name provided, look in `~/.jshell/pkgs/<name>-<version>/`
-  - [ ] If no name, compile all installed packages with source
-  - [ ] Check for Makefile or src/ directory
-  - [ ] Run compilation
-  - [ ] Place binary in `bin/` subdirectory
-  - [ ] Update symlink in `~/.jshell/bin/`
+- [x] Modify `pkg_compile()` to handle installed packages:
+  - [x] If name provided, look in `~/.jshell/pkgs/<name>-<version>/`
+  - [x] If no name, compile all installed packages with source
+  - [x] Check for Makefile or src/ directory
+  - [x] Run compilation
+  - [x] Place binary in `bin/` subdirectory
+  - [x] Update symlink in `~/.jshell/bin/`
 
-- [ ] Add `pkg_compile_package()` helper:
+- [x] Add `pkg_compile_package()` helper:
   ```c
   int pkg_compile_package(const char *pkg_path, int json_output);
   ```
 
-- [ ] Output format:
+- [x] Output format:
   ```
   Compiling cat...
     Source: ~/.jshell/pkgs/cat-0.0.2/src/
@@ -505,16 +505,16 @@ Installed packages should contain source code for compilation:
   ```
 
 ### 6.3 Create Compile Tests
-**File**: `tests/pkg/test_pkg_compile.py`
+**File**: `tests/pkg/test_pkg_install_compile.py` (TestPkgCompileIntegration class)
 
-- [ ] Test compile with no installed packages
-- [ ] Test compile specific package
-- [ ] Test compile all packages
-- [ ] Test compile with missing source
-- [ ] Test compile with build error
-- [ ] Test binary is executable after compile
-- [ ] Test symlink is updated
-- [ ] Test via `jshell -c "pkg compile <name>"`
+- [x] Test compile with no installed packages
+- [x] Test compile specific package
+- [x] Test compile all packages
+- [x] Test compile with missing source
+- [x] Test compile with build error
+- [x] Test binary is executable after compile
+- [x] Test symlink is updated
+- [x] Test via `jshell -c "pkg compile <name>"`
 
 ---
 
@@ -587,7 +587,7 @@ For each app, update `pkg.json` to include source files:
 ```
 
 Apps to update:
-- [ ] All 17 apps in `src/apps/*/pkg.json`
+- [x] All 17 apps in `src/apps/*/pkg.json`
 
 ---
 
@@ -807,13 +807,13 @@ Use the package registry server for tests that require network access.
 
 ## Checklist Summary
 
-- [ ] Phase 1: Test Infrastructure (3 tasks)
-- [ ] Phase 2: JSON Package Database (5 tasks)
-- [ ] Phase 3: Dynamic Shell Command Registration (9 tasks)
-- [ ] Phase 4: Package Check-Update Enhancement (2 tasks)
-- [ ] Phase 5: Package Upgrade Enhancement (3 tasks)
-- [ ] Phase 6: Package Compile for Installed Packages (3 tasks)
-- [ ] Phase 7: Makefile Updates (3 tasks)
-- [ ] Phase 8: Integration Tests (5 tasks)
+- [x] Phase 1: Test Infrastructure (3 tasks)
+- [x] Phase 2: JSON Package Database (5 tasks)
+- [x] Phase 3: Dynamic Shell Command Registration (9 tasks)
+- [x] Phase 4: Package Check-Update Enhancement (2 tasks)
+- [x] Phase 5: Package Upgrade Enhancement (3 tasks)
+- [x] Phase 6: Package Compile for Installed Packages (3 tasks)
+- [x] Phase 7: Makefile Updates (3 tasks)
+- [x] Phase 8: Integration Tests (5 tasks)
 
-**Total: 33 major tasks**
+**Total: 33 major tasks - ALL COMPLETE**
