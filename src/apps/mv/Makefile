@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/mv
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_mv.c mv_main.c
+PKG_HDRS = cmd_mv.h
+
 all: $(BIN) $(LIB)
 
 cmd_mv.o: cmd_mv.c cmd_mv.h

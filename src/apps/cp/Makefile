@@ -13,6 +13,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/cp
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_cp.c cp_main.c
+PKG_HDRS = cmd_cp.h
+
 all: $(BIN) $(LIB)
 
 cmd_cp.o: cmd_cp.c cmd_cp.h

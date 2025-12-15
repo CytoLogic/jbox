@@ -40,7 +40,7 @@ The package manager has a working skeleton with:
 | Phase 4: Package Check-Update Enhancement | ✅ DONE | pending | - |
 | Phase 5: Package Upgrade Enhancement | ✅ DONE | pending | - |
 | Phase 6: Package Compile for Installed Packages | ✅ DONE | pending | - |
-| Phase 7: Makefile Updates | ⬜ TODO | - | - |
+| Phase 7: Makefile Updates | ✅ DONE | pending | - |
 | Phase 8: Integration Tests | ⬜ TODO | - | - |
 
 ---
@@ -526,7 +526,7 @@ Update app Makefiles to build packages properly for the new format.
 ### 7.1 Update pkg.mk Shared Rules
 **File**: `src/apps/pkg.mk`
 
-- [ ] Update package staging structure:
+- [x] Update package staging structure:
   ```makefile
   pkg: $(PKG_BIN) $(PKG_JSON)
       @echo "Building package $(PKG_NAME)-$(PKG_VERSION)..."
@@ -543,35 +543,35 @@ Update app Makefiles to build packages properly for the new format.
       @echo "  Created: $(PKG_DEST)"
   ```
 
-- [ ] Add `pkg-src` target:
-  - [ ] Include source files in package
-  - [ ] Include Makefile for compilation
+- [x] Add `pkg-src` target:
+  - [x] Include source files in package
+  - [x] Include Makefile for compilation
 
 ### 7.2 Update Individual App Makefiles
 
 For each app in `src/apps/`, ensure the Makefile:
-- [ ] Defines `PKG_SRCS` variable with source files
-- [ ] Includes proper compilation rules
-- [ ] Can be invoked from installed package directory
+- [x] Defines `PKG_SRCS` variable with source files
+- [x] Includes proper compilation rules
+- [x] Can be invoked from installed package directory
 
 Apps to update:
-- [ ] `src/apps/cat/Makefile`
-- [ ] `src/apps/cp/Makefile`
-- [ ] `src/apps/date/Makefile`
-- [ ] `src/apps/echo/Makefile`
-- [ ] `src/apps/head/Makefile`
-- [ ] `src/apps/less/Makefile`
-- [ ] `src/apps/ls/Makefile`
-- [ ] `src/apps/mkdir/Makefile`
-- [ ] `src/apps/mv/Makefile`
-- [ ] `src/apps/rg/Makefile`
-- [ ] `src/apps/rm/Makefile`
-- [ ] `src/apps/rmdir/Makefile`
-- [ ] `src/apps/sleep/Makefile`
-- [ ] `src/apps/stat/Makefile`
-- [ ] `src/apps/tail/Makefile`
-- [ ] `src/apps/touch/Makefile`
-- [ ] `src/apps/vi/Makefile`
+- [x] `src/apps/cat/Makefile`
+- [x] `src/apps/cp/Makefile`
+- [x] `src/apps/date/Makefile`
+- [x] `src/apps/echo/Makefile`
+- [x] `src/apps/head/Makefile`
+- [x] `src/apps/less/Makefile`
+- [x] `src/apps/ls/Makefile`
+- [x] `src/apps/mkdir/Makefile`
+- [x] `src/apps/mv/Makefile`
+- [x] `src/apps/rg/Makefile`
+- [x] `src/apps/rm/Makefile`
+- [x] `src/apps/rmdir/Makefile`
+- [x] `src/apps/sleep/Makefile`
+- [x] `src/apps/stat/Makefile`
+- [x] `src/apps/tail/Makefile`
+- [x] `src/apps/touch/Makefile`
+- [x] `src/apps/vi/Makefile`
 
 ### 7.3 Update pkg.json for Each App
 

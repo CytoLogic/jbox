@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/touch
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_touch.c touch_main.c
+PKG_HDRS = cmd_touch.h
+
 all: $(BIN) $(LIB)
 
 cmd_touch.o: cmd_touch.c cmd_touch.h

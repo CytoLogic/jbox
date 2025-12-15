@@ -13,6 +13,10 @@ BIN = $(BIN_DIR)/pkg
 PKG_BIN = $(BIN)
 LDFLAGS = -lm -lcurl
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_pkg.c pkg_main.c pkg_db.c pkg_json.c pkg_registry.c pkg_utils.c
+PKG_HDRS = cmd_pkg.h pkg_db.h pkg_json.h pkg_registry.h pkg_utils.h
+
 all: $(BIN) $(LIB)
 
 cmd_pkg.o: cmd_pkg.c cmd_pkg.h pkg_utils.h pkg_json.h pkg_db.h pkg_registry.h

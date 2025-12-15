@@ -13,6 +13,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/rg
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_rg.c rg_main.c
+PKG_HDRS = cmd_rg.h
+
 all: $(BIN) $(LIB)
 
 cmd_rg.o: cmd_rg.c cmd_rg.h

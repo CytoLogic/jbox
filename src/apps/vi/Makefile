@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/vi
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_vi.c vi_main.c
+PKG_HDRS = cmd_vi.h
+
 all: $(BIN) $(LIB)
 
 cmd_vi.o: cmd_vi.c cmd_vi.h

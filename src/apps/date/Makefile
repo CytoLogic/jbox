@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/date
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_date.c date_main.c
+PKG_HDRS = cmd_date.h
+
 all: $(BIN) $(LIB)
 
 cmd_date.o: cmd_date.c cmd_date.h

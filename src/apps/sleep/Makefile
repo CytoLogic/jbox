@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/sleep
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_sleep.c sleep_main.c
+PKG_HDRS = cmd_sleep.h
+
 all: $(BIN) $(LIB)
 
 cmd_sleep.o: cmd_sleep.c cmd_sleep.h

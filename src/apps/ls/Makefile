@@ -12,6 +12,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/ls
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_ls.c ls_main.c
+PKG_HDRS = cmd_ls.h
+
 all: $(BIN) $(LIB)
 
 cmd_ls.o: cmd_ls.c cmd_ls.h

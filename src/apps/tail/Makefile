@@ -13,6 +13,10 @@ BIN_DIR = ../../../bin/standalone-apps
 BIN = $(BIN_DIR)/tail
 PKG_BIN = $(BIN)
 
+# Source files for package inclusion (for pkg compile after install)
+PKG_SRCS = cmd_tail.c tail_main.c
+PKG_HDRS = cmd_tail.h
+
 all: $(BIN) $(LIB)
 
 cmd_tail.o: cmd_tail.c cmd_tail.h
