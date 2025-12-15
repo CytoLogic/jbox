@@ -728,25 +728,25 @@ Help should print all registered commands.
 
 ---
 
-## Phase 8: Networking (FUTURE)
+## Phase 8: Networking
 
-### 8.1 http-get - Fetch URL
-**External App** (`src/apps/http-get/`)
+### 8.1 http-get - Fetch URL ✅ COMPLETED
+**Builtin** (`src/jshell/builtins/`) - Implemented as builtin using libcurl
 
-- [ ] Create `src/apps/http-get/cmd_http_get.h`
-- [ ] Create `src/apps/http-get/cmd_http_get.c`:
-  - [ ] Implement `build_http_get_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-H KEY:VALUE` (headers, repeatable)
-    - [ ] `--json`
-    - [ ] `<URL>` (required)
-  - [ ] Implement `http_get_run()`
-  - [ ] Implement `http_get_print_usage()`
-  - [ ] Define `cmd_http_get_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/http-get/http_get_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/http-get/test_http_get.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/jshell/builtins/cmd_http_get.h`
+- [x] Create `src/jshell/builtins/cmd_http_get.c`:
+  - [x] Implement `build_http_get_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-H KEY:VALUE` (headers, repeatable)
+    - [x] `--json`
+    - [x] `<URL>` (required)
+  - [x] Implement `http_get_run()` using libcurl
+  - [x] Implement `http_get_print_usage()`
+  - [x] Define `cmd_http_get_spec` with `.type = CMD_BUILTIN`
+- [x] Update Makefile with libcurl linking
+- [x] Register in `jshell_register_builtins.c`
+- [x] Create `tests/jshell/builtins/test_http_get.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 8.2 http-post - POST to URL
 **External App** (`src/apps/http-post/`)
