@@ -15,6 +15,7 @@
 #include "jshell/jshell_cmd_registry.h"
 #include "jshell/jshell_path.h"
 #include "jshell/jshell_thread_exec.h"
+#include "jshell/jshell_signals.h"
 #include "utils/jbox_utils.h"
 #include "jshell/jshell.h"
 #include "jshell/jshell_job_control.h"
@@ -231,32 +232,35 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
   }
   
   if (pid == 0) {
+    /* Reset signal handlers to default for child process */
+    jshell_reset_signals_for_child();
+
     if (cmd_index == 0 && input_fd != -1) {
       if (jshell_setup_input_redir(input_fd) == -1) {
         exit(EXIT_FAILURE);
       }
     }
-    
+
     if (cmd_index > 0) {
       if (dup2(pipes[cmd_index - 1][0], STDIN_FILENO) == -1) {
         perror("dup2 pipe read");
         exit(EXIT_FAILURE);
       }
     }
-    
+
     if (cmd_index < total_cmds - 1) {
       if (dup2(pipes[cmd_index][1], STDOUT_FILENO) == -1) {
         perror("dup2 pipe write");
         exit(EXIT_FAILURE);
       }
     }
-    
+
     if (cmd_index == total_cmds - 1 && output_fd != -1) {
       if (jshell_setup_output_redir(output_fd) == -1) {
         exit(EXIT_FAILURE);
       }
     }
-    
+
     for (size_t i = 0; i < total_cmds - 1; i++) {
       close(pipes[i][0]);
       close(pipes[i][1]);
@@ -388,6 +392,9 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
   }
   
   if (pid == 0) {
+    /* Reset signal handlers to default for child process */
+    jshell_reset_signals_for_child();
+
     if (jshell_setup_input_redir(job->input_fd) == -1) {
       exit(EXIT_FAILURE);
     }
@@ -594,9 +601,12 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
   }
   
   if (tee_pid == 0) {
+    /* Reset signal handlers to default for child process */
+    jshell_reset_signals_for_child();
+
     close(capture_pipe[1]);
     close(buffer_pipe[0]);
-    
+
     char* buffer = malloc(MAX_VAR_SIZE);
     if (buffer == NULL) {
       perror("malloc capture buffer in tee");

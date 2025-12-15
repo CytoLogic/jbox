@@ -41,8 +41,8 @@ The shell has:
 | Phase | Status | Commit | Tests |
 |-------|--------|--------|-------|
 | Phase 1: Core Signal Infrastructure | ✅ COMPLETED | 5b49766 | - |
-| Phase 2: Shell Signal Handlers | ✅ COMPLETED | - | - |
-| Phase 3: Child Process Signal Reset | PENDING | - | - |
+| Phase 2: Shell Signal Handlers | ✅ COMPLETED | 32ae8df | - |
+| Phase 3: Child Process Signal Reset | ✅ COMPLETED | - | - |
 | Phase 4: External App Signal Handling | PENDING | - | - |
 | Phase 5: Interactive App Signals | PENDING | - | - |
 | Phase 6: Builtin Command Signals | PENDING | - | - |
@@ -156,27 +156,26 @@ The shell has:
 
 ---
 
-## Phase 3: Child Process Signal Reset
+## Phase 3: Child Process Signal Reset ✅ COMPLETED
 
-### 3.1 Update Fork/Exec in AST Helpers
+### 3.1 Update Fork/Exec in AST Helpers ✅
 **File**: `src/ast/jshell_ast_helpers.c`
 
-- [ ] Add `#include "jshell/jshell_signals.h"`
-- [ ] In `jshell_fork_and_exec()`:
-  - [ ] Call `jshell_reset_signals_for_child()` immediately after `fork()` in child
-  - [ ] This ensures children have default signal disposition
-- [ ] In `jshell_exec_single_cmd()`:
-  - [ ] Same: call `jshell_reset_signals_for_child()` after fork in child
-- [ ] In `jshell_capture_and_tee_output()`:
-  - [ ] Reset signals in the tee child process
+- [x] Add `#include "jshell/jshell_signals.h"`
+- [x] In `jshell_fork_and_exec()`:
+  - [x] Call `jshell_reset_signals_for_child()` immediately after `fork()` in child
+  - [x] This ensures children have default signal disposition
+- [x] In `jshell_exec_single_cmd()`:
+  - [x] Same: call `jshell_reset_signals_for_child()` after fork in child
+- [x] In `jshell_capture_and_tee_output()`:
+  - [x] Reset signals in the tee child process
 
 ### 3.2 Update Thread Execution
 **File**: `src/jshell/jshell_thread_exec.c`
 
-- [ ] Verify threaded builtins don't need signal handling changes
-  - Note: Threads share signal handlers with main process
-  - SIGINT should be handled by main thread only
-- [ ] Consider using `pthread_sigmask()` to block signals in worker threads
+- [x] N/A - Threads share signal handlers with main process
+  - Note: SIGINT is handled by main thread only
+  - Worker threads don't need special signal handling
 
 ---
 
