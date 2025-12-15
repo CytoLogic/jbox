@@ -700,15 +700,31 @@ Help should print all registered commands.
   - [x] Implement unit tests using Python unittest framework
 - [x] Update `tests/Makefile` to add less test target
 
-### 7.10 vi - Text Editor (Optional, Very Complex)
+### 7.10 vi - Text Editor ✅ COMPLETED
 **External App** (`src/apps/vi/`)
 
-- [ ] Consider using existing minimal vi implementation or deferring
-- [ ] If implementing:
-  - [ ] Create `src/apps/vi/`
-  - [ ] Implement basic vi-like editing
-  - [ ] Support `-h, --help`
-- [ ] Update Makefile
+- [x] Create `src/apps/vi/cmd_vi.h`:
+  - [x] Declare `extern jshell_cmd_spec_t cmd_vi_spec;`
+  - [x] Declare `void jshell_register_vi_command(void);`
+- [x] Create `src/apps/vi/cmd_vi.c`:
+  - [x] Implement `build_vi_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `[FILE]` (optional file argument)
+  - [x] Implement `vi_run()`:
+    - [x] Normal mode: hjkl navigation, w/b word movement, 0/$ line ends
+    - [x] Insert mode: text input, backspace, enter for new lines
+    - [x] Command mode: :w, :q, :wq, :q!, :e commands
+    - [x] Search: / for forward search, n for next match
+    - [x] Editing: x delete, dd delete line, yy yank, p/P paste
+  - [x] Implement `vi_print_usage()`
+  - [x] Define `cmd_vi_spec` with `.type = CMD_EXTERNAL`
+  - [x] Implement `jshell_register_vi_command()`
+- [x] Create `src/apps/vi/vi_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/vi/test_vi.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add vi test target
 
 ---
 
