@@ -22,6 +22,13 @@ ARGTABLE3_SRC := $(ARGTABLE3_DIST)/argtable3.c
 ARGTABLE3_HDR := $(ARGTABLE3_DIST)/argtable3.h
 ARGTABLE3_OBJ := $(ARGTABLE3_DIST)/argtable3.o
 
+CURL_DIR := $(EXTERN_DIR)/curl
+CURL_BUILD := $(CURL_DIR)/build
+CURL_LIB := $(CURL_BUILD)/lib/libcurl.a
+CURL_INCLUDE := $(CURL_DIR)/include
+CURL_CFLAGS := -I$(CURL_INCLUDE) -I$(CURL_BUILD)/include/curl
+CURL_LDFLAGS := $(CURL_LIB) -lssl -lcrypto -lz -lpthread
+
 BNFC_GEN := $(PROJECT_ROOT)/gen/bnfc
 BNFC_GRAMMAR := $(SRC_DIR)/shell-grammar/Grammar.cf
 BNFC_HDRS := $(BNFC_GEN)/Absyn.h \
@@ -207,6 +214,20 @@ argtable3-dist:
 		cd $(ARGTABLE3_DIR)/tools && ./build dist; \
 	fi
 
+$(CURL_LIB): curl-build
+
+curl-build:
+	@if [ ! -f $(CURL_LIB) ]; then \
+		mkdir -p $(CURL_BUILD) && \
+		cd $(CURL_BUILD) && \
+		cmake .. -DBUILD_SHARED_LIBS=OFF \
+		         -DBUILD_CURL_EXE=OFF \
+		         -DBUILD_TESTING=OFF \
+		         -DCURL_USE_OPENSSL=ON \
+		         -DHTTP_ONLY=ON && \
+		make -j$$(nproc); \
+	fi
+
 bnfc:
 	bnfc -m --c -o $(BNFC_GEN) $(BNFC_GRAMMAR)
 	cd $(BNFC_GEN) && make
@@ -225,4 +246,5 @@ standalone:
 clean:
 	rm -rf $(BIN_DIR)/*
 	rm -rf $(ARGTABLE3_DIST)
+	rm -rf $(CURL_BUILD)
 	rm -rf $(BNFC_GEN)/*
