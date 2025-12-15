@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 src/apps/**/*.o
 src/apps/**/*.a
+src/pkg_srv/node_modules/
+src/pkg_srv/package-lock.json

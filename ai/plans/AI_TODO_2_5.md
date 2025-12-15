@@ -1,0 +1,562 @@
+# Package Registry Server Implementation Plan
+
+## Overview
+
+Implement a minimal Node.js + Express server acting as a package registry for jshell. This server provides the backend for `pkg search`, `pkg check-update`, and `pkg upgrade` commands.
+
+**Prerequisites:** The pkg command skeleton and local operations were implemented in `AI_TODO_1.md` Phase 9.1 and `AI_TODO_2.md` Phases 1-8.
+
+### Directory Structure
+
+```
+jbox/
+├── src/
+│   ├── pkg_srv/
+│   │   ├── server.js           # Express server implementation
+│   │   ├── package.json        # Node.js package config
+│   │   └── node_modules/       # Dependencies (git-ignored)
+│   └── apps/
+│       ├── pkg.mk              # Shared Makefile rules for packaging
+│       ├── ls/
+│       │   ├── Makefile        # Includes pkg.mk
+│       │   ├── pkg.json        # Package manifest
+│       │   ├── cmd_ls.c
+│       │   └── ...
+│       ├── cat/
+│       │   ├── Makefile
+│       │   ├── pkg.json
+│       │   └── ...
+│       └── ...
+├── srv/
+│   └── pkg_repository/
+│       └── downloads/          # Package tarballs (built, git-ignored)
+│           ├── ls-1.0.0.tar.gz
+│           ├── cat-1.0.0.tar.gz
+│           └── ...
+└── scripts/
+    ├── start-pkg-server.sh     # Start the registry server
+    └── build-packages.sh       # Build all packages (optional helper)
+```
+
+- **Server source:** `src/pkg_srv/server.js`
+- **Package downloads:** `srv/pkg_repository/downloads/` (served at `/downloads/`)
+- **Package sources:** `src/apps/*/` (existing app source code)
+- **Package manifests:** `src/apps/*/pkg.json`
+- **Shared package rules:** `src/apps/pkg.mk`
+- **Startup script:** `scripts/start-pkg-server.sh`
+- **Port:** 3000 (default)
+
+### Data Model
+
+Packages are stored in memory as an array of objects:
+
+```json
+{
+  "name": "ls",
+  "latestVersion": "1.0.0",
+  "description": "List directory contents",
+  "downloadUrl": "http://localhost:3000/downloads/ls-1.0.0.tar.gz"
+}
+```
+
+### API Endpoints
+
+| Method | Endpoint                      | Description                              |
+|--------|-------------------------------|------------------------------------------|
+| GET    | /packages                     | List all packages                        |
+| GET    | /packages/:name               | Get package info (or 404)                |
+| GET    | /downloads/:filename          | Download package tarball (static file)   |
+
+---
+
+## Phase 1: Server Setup
+
+### 1.1 Initialize Node.js Project
+Create the package registry server directory and initialize npm.
+
+- [ ] Create `src/pkg_srv/` directory
+- [ ] Run `npm init -y` in `src/pkg_srv/`
+- [ ] Run `npm install express` in `src/pkg_srv/`
+- [ ] Add `src/pkg_srv/node_modules/` to `.gitignore`
+
+### 1.2 Create package.json
+Create or update the generated `package.json` with proper metadata.
+
+Expected `src/pkg_srv/package.json`:
+```json
+{
+  "name": "jshell-pkg-registry",
+  "version": "1.0.0",
+  "description": "Package registry server for jshell",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["jshell", "package", "registry"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
+```
+
+---
+
+## Phase 2: Server Implementation
+
+### 2.1 Create server.js
+Implement the Express server with in-memory package storage.
+
+- [ ] Create `src/pkg_srv/server.js`:
+  - [ ] Import express and path
+  - [ ] Create express app
+  - [ ] Initialize in-memory packages array with example data
+  - [ ] Implement `GET /packages` endpoint
+  - [ ] Implement `GET /packages/:name` endpoint
+  - [ ] Serve static files from `downloads/` directory at `/downloads/`
+  - [ ] Start server on port 3000
+  - [ ] Add basic logging
+
+Example package entries to include:
+```javascript
+const packages = [
+  {
+    name: "ls",
+    latestVersion: "1.0.0",
+    description: "List directory contents",
+    downloadUrl: "http://localhost:3000/downloads/ls-1.0.0.tar.gz"
+  },
+  {
+    name: "cat",
+    latestVersion: "1.0.0",
+    description: "Concatenate and print files",
+    downloadUrl: "http://localhost:3000/downloads/cat-1.0.0.tar.gz"
+  },
+  {
+    name: "rg",
+    latestVersion: "1.0.0",
+    description: "Search text with regex",
+    downloadUrl: "http://localhost:3000/downloads/rg-1.0.0.tar.gz"
+  }
+  // ... add more apps as needed
+];
+```
+
+### 2.2 API Response Formats
+
+**GET /packages response:**
+```json
+{
+  "status": "ok",
+  "packages": [
+    {
+      "name": "ls",
+      "latestVersion": "1.0.0",
+      "description": "List directory contents",
+      "downloadUrl": "http://localhost:3000/downloads/ls-1.0.0.tar.gz"
+    }
+  ]
+}
+```
+
+**GET /packages/:name response (found):**
+```json
+{
+  "status": "ok",
+  "package": {
+    "name": "ls",
+    "latestVersion": "1.0.0",
+    "description": "List directory contents",
+    "downloadUrl": "http://localhost:3000/downloads/ls-1.0.0.tar.gz"
+  }
+}
+```
+
+**GET /packages/:name response (not found):**
+```json
+{
+  "status": "error",
+  "message": "Package 'nonexistent' not found"
+}
+```
+
+---
+
+## Phase 3: Package Build System
+
+### 3.1 Create Repository Directory Structure
+Set up the directory structure for serving package tarballs.
+
+- [ ] Create `srv/pkg_repository/downloads/` directory
+- [ ] Add `srv/pkg_repository/downloads/` to `.gitignore`
+
+### 3.2 Create Shared Makefile Rules (pkg.mk)
+Create shared Makefile rules that each app can include for package building.
+
+- [ ] Create `src/apps/pkg.mk`:
+  ```makefile
+  # Shared package building rules for jshell apps
+  # Include this in each app's Makefile after defining:
+  #   PKG_NAME    - package name (defaults to current directory name)
+  #   PKG_BIN     - path to built binary (required)
+  #   PKG_VERSION - version string (read from pkg.json if not set)
+
+  PROJECT_ROOT ?= ../../..
+  PKG_REPO_DIR := $(PROJECT_ROOT)/srv/pkg_repository/downloads
+  PKG_NAME ?= $(notdir $(CURDIR))
+  PKG_JSON := pkg.json
+  PKG_STAGING := .pkg-staging
+
+  # Extract version from pkg.json if not provided
+  PKG_VERSION ?= $(shell grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' $(PKG_JSON) 2>/dev/null | \
+                   sed 's/.*"\([^"]*\)"$$/\1/' || echo "0.0.0")
+
+  PKG_TARBALL := $(PKG_NAME)-$(PKG_VERSION).tar.gz
+  PKG_DEST := $(PKG_REPO_DIR)/$(PKG_TARBALL)
+
+  .PHONY: pkg pkg-clean pkg-info
+
+  pkg: $(PKG_BIN) $(PKG_JSON)
+  	@echo "Building package $(PKG_NAME)-$(PKG_VERSION)..."
+  	@mkdir -p $(PKG_STAGING)/bin
+  	@cp $(PKG_BIN) $(PKG_STAGING)/bin/$(PKG_NAME)
+  	@cp $(PKG_JSON) $(PKG_STAGING)/
+  	@mkdir -p $(PKG_REPO_DIR)
+  	@tar -czf $(PKG_DEST) -C $(PKG_STAGING) .
+  	@rm -rf $(PKG_STAGING)
+  	@echo "  Created: $(PKG_DEST)"
+
+  pkg-clean:
+  	rm -rf $(PKG_STAGING)
+  	rm -f $(PKG_DEST)
+
+  pkg-info:
+  	@echo "Package: $(PKG_NAME)"
+  	@echo "Version: $(PKG_VERSION)"
+  	@echo "Binary:  $(PKG_BIN)"
+  	@echo "Output:  $(PKG_DEST)"
+  ```
+
+### 3.3 Create pkg.json for Each App
+Add package manifests to existing apps.
+
+- [ ] Create `src/apps/ls/pkg.json`:
+  ```json
+  {
+    "name": "ls",
+    "version": "1.0.0",
+    "description": "List directory contents",
+    "files": ["bin/ls"]
+  }
+  ```
+- [ ] Create `src/apps/cat/pkg.json`:
+  ```json
+  {
+    "name": "cat",
+    "version": "1.0.0",
+    "description": "Concatenate and print files",
+    "files": ["bin/cat"]
+  }
+  ```
+- [ ] Create pkg.json for remaining apps (stat, head, tail, cp, mv, rm, mkdir, rmdir, touch, rg, echo, sleep, date, less, vi)
+
+### 3.4 Update App Makefiles to Include pkg.mk
+Add package building support to each app's Makefile.
+
+- [ ] Update `src/apps/ls/Makefile`:
+  ```makefile
+  # Add at top after existing variables:
+  PKG_BIN = $(BIN)
+
+  # Add at bottom:
+  include ../pkg.mk
+  ```
+- [ ] Update remaining app Makefiles similarly
+
+### 3.5 Add Package Targets to Root Makefile
+Add targets to build packages from the root Makefile.
+
+- [ ] Update root `Makefile`:
+  ```makefile
+  # Add to .PHONY:
+  .PHONY: packages clean-packages
+
+  # Package building
+  PKG_APPS := ls cat stat head tail cp mv rm mkdir rmdir touch rg echo sleep date less vi
+
+  packages: apps
+  	@for app in $(PKG_APPS); do \
+  		echo "Packaging $$app..."; \
+  		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg; \
+  	done
+  	@echo "All packages built to srv/pkg_repository/downloads/"
+
+  clean-packages:
+  	@for app in $(PKG_APPS); do \
+  		$(MAKE) -C $(SRC_DIR)/apps/$$app pkg-clean; \
+  	done
+  	rm -rf srv/pkg_repository/downloads/*
+  ```
+
+### 3.6 Create Optional Build Script
+Create a convenience script for building packages outside of make.
+
+- [ ] Create `scripts/build-packages.sh`:
+  ```bash
+  #!/bin/bash
+  # Build all jshell app packages
+
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+  cd "$PROJECT_ROOT" || exit 1
+
+  echo "Building packages..."
+  make packages
+
+  echo ""
+  echo "Packages available in srv/pkg_repository/downloads/:"
+  ls -la srv/pkg_repository/downloads/*.tar.gz 2>/dev/null || echo "  (none built yet)"
+  ```
+- [ ] Make script executable
+
+### 3.7 Update server.js for Static File Serving
+Update Express server to serve downloads from the new location.
+
+- [ ] Update `src/pkg_srv/server.js`:
+  ```javascript
+  const path = require('path');
+
+  // Project root is three levels up from src/pkg_srv/
+  const PROJECT_ROOT = path.join(__dirname, '..', '..');
+  const DOWNLOADS_DIR = path.join(PROJECT_ROOT, 'srv', 'pkg_repository', 'downloads');
+
+  // Serve package downloads
+  app.use('/downloads', express.static(DOWNLOADS_DIR));
+  ```
+
+### 3.8 Update Server Package Registry
+Update the server to dynamically read package info or maintain a registry.
+
+- [ ] Option A: Static registry in server.js (simple, current approach)
+- [ ] Option B: Read pkg.json files from src/apps/ at startup
+- [ ] Option C: Scan tarballs in downloads/ directory
+
+For now, use Option A and manually update the packages array when new packages are added.
+
+---
+
+## Phase 4: Development Script
+
+### 4.1 Create Startup Script
+Create a convenience script to start the server during development.
+
+- [ ] Create `scripts/` directory if it doesn't exist
+- [ ] Create `scripts/start-pkg-server.sh`:
+  - [ ] Navigate to `src/pkg_srv/`
+  - [ ] Check if `node_modules/` exists, run `npm install` if not
+  - [ ] Start the server with `npm start`
+  - [ ] Make script executable
+
+Expected `scripts/start-pkg-server.sh`:
+```bash
+#!/bin/bash
+# Start the jshell package registry server
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+SERVER_DIR="$PROJECT_ROOT/src/pkg_srv"
+
+cd "$SERVER_DIR" || exit 1
+
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "Installing dependencies..."
+    npm install
+fi
+
+echo "Starting package registry server on http://localhost:3000"
+npm start
+```
+
+---
+
+## Phase 5: Tests
+
+### 5.1 Create Test Suite
+Create Python unittest tests for the server API.
+
+- [x] Create `tests/pkg_srv/` directory
+- [x] Create `tests/pkg_srv/__init__.py`
+- [x] Create `tests/pkg_srv/test_pkg_srv.py`:
+  - [x] Test GET /packages returns 200 OK
+  - [x] Test GET /packages returns valid JSON with status: ok
+  - [x] Test GET /packages contains packages array
+  - [x] Test packages have required fields (name, latestVersion, downloadUrl)
+  - [x] Test GET /packages/:name returns 200 for existing package
+  - [x] Test GET /packages/:name returns package object with correct data
+  - [x] Test GET /packages/:name returns 404 for non-existent package
+  - [x] Test 404 response has status: error and message
+  - [x] Test edge cases (case sensitivity, special chars)
+- [x] Update `tests/Makefile` with pkg-srv target
+
+### 5.2 Run Tests
+```bash
+# Start server in one terminal
+./scripts/start-pkg-server.sh
+
+# Run tests in another terminal
+make -C tests pkg-srv
+
+# Or directly
+python -m unittest tests.pkg_srv.test_pkg_srv -v
+```
+
+---
+
+## Phase 6: Update .gitignore
+
+### 6.1 Add Node.js and Build Artifact Ignores
+Add Node.js-specific and build artifact entries to `.gitignore`.
+
+- [x] Add `src/pkg_srv/node_modules/` to `.gitignore`
+- [x] Add `src/pkg_srv/package-lock.json` to `.gitignore`
+- [ ] Add `srv/pkg_repository/downloads/` to `.gitignore` (built packages, not committed)
+- [ ] Add `src/apps/*/.pkg-staging/` to `.gitignore` (temp staging dirs)
+
+---
+
+## Phase 7: Integration with pkg Command (FUTURE)
+
+These tasks connect the registry server to the pkg command and are tracked here for reference but may be implemented in a separate plan.
+
+### 7.1 pkg search Implementation
+- [ ] Create `src/apps/pkg/pkg_registry.h`:
+  - [ ] Declare `int pkg_registry_search(const char *query, bool json_output);`
+  - [ ] Declare `int pkg_registry_get_package(const char *name, PkgRegistryEntry *out);`
+- [ ] Create `src/apps/pkg/pkg_registry.c`:
+  - [ ] Implement HTTP GET using libcurl or sockets
+  - [ ] Parse JSON response
+  - [ ] Implement `pkg_registry_search()`
+  - [ ] Implement `pkg_registry_get_package()`
+- [ ] Update `cmd_pkg.c` to use registry functions
+
+### 7.2 pkg check-update Implementation
+- [ ] Implement `pkg_check_update()`:
+  - [ ] Load installed packages from database
+  - [ ] Query registry for each package
+  - [ ] Compare versions
+  - [ ] Report available updates
+
+### 7.3 pkg upgrade Implementation
+- [ ] Implement `pkg_upgrade()`:
+  - [ ] Check for updates
+  - [ ] Download new versions
+  - [ ] Install upgrades
+
+---
+
+## Usage
+
+### Starting the Server
+
+```bash
+# From project root
+./scripts/start-pkg-server.sh
+
+# Or manually
+cd src/pkg_srv
+npm install  # first time only
+npm start
+```
+
+### Testing the API
+
+```bash
+# List all packages
+curl http://localhost:3000/packages
+
+# Get specific package
+curl http://localhost:3000/packages/ls
+
+# Get non-existent package (returns 404)
+curl http://localhost:3000/packages/nonexistent
+
+# Download a package tarball
+curl -O http://localhost:3000/downloads/ls-1.0.0.tar.gz
+```
+
+### Building Packages
+
+```bash
+# Build all app packages (from project root)
+make packages
+
+# Or use the helper script
+./scripts/build-packages.sh
+
+# Build a single package
+make -C src/apps/ls pkg
+
+# Verify packages were created
+ls -la srv/pkg_repository/downloads/
+
+# Get package info for an app
+make -C src/apps/ls pkg-info
+```
+
+---
+
+## Workflow Summary
+
+### Complete Build and Serve Workflow
+
+```bash
+# 1. Build all apps (compiles binaries)
+make apps
+
+# 2. Build all packages (creates tarballs from binaries)
+make packages
+
+# 3. Start the registry server
+./scripts/start-pkg-server.sh
+
+# 4. Test package download
+curl http://localhost:3000/packages/ls
+curl -O http://localhost:3000/downloads/ls-1.0.0.tar.gz
+```
+
+### Adding a New App to the Registry
+
+1. Create the app in `src/apps/<name>/` with standard Makefile
+2. Add `pkg.json` manifest to the app directory
+3. Add `PKG_BIN = $(BIN)` and `include ../pkg.mk` to the Makefile
+4. Add the app name to `PKG_APPS` in the root Makefile
+5. Add the package entry to the `packages` array in `server.js`
+6. Run `make packages` to build
+
+### Updating Package Versions
+
+1. Update `version` in `src/apps/<name>/pkg.json`
+2. Update `latestVersion` in `src/pkg_srv/server.js`
+3. Run `make -C src/apps/<name> pkg` to rebuild
+
+---
+
+## Notes
+
+### Port Configuration
+The server listens on port 3000 by default. To use a different port, set the `PORT` environment variable:
+```bash
+PORT=8080 npm start
+```
+
+### Future Enhancements
+- Add POST endpoint for publishing packages
+- Add authentication for write operations
+- Persist data to a JSON file or SQLite database
+- Add version history per package
+- Add search filtering (by name, description)
+- Add package dependency resolution

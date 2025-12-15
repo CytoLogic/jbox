@@ -4,7 +4,8 @@ PYTHON ?= python
 PROJECT_ROOT := ..
 
 .PHONY: all apps builtins grammar ls stat cat head tail rg less vi \
-        edit-replace-line edit-insert-line edit-delete-line edit-replace clean
+        edit-replace-line edit-insert-line edit-delete-line edit-replace \
+        pkg-srv clean
 
 all: apps builtins
 
@@ -50,6 +51,9 @@ edit-delete-line:
 
 edit-replace:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.builtins.test_edit_replace -v
+
+pkg-srv:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.pkg_srv.test_pkg_srv -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
