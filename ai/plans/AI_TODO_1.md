@@ -630,20 +630,20 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [x] Create `tests/apps/sleep/test_sleep.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 7.3 date - Show System Time
+### 7.3 date - Show System Time ✅ COMPLETED
 **External App** (`src/apps/date/`)
 
-- [ ] Create `src/apps/date/cmd_date.h`
-- [ ] Create `src/apps/date/cmd_date.c`:
-  - [ ] Implement `build_date_argtable()` with:
-    - [ ] `-h, --help`
-  - [ ] Implement `date_run()`
-  - [ ] Implement `date_print_usage()`
-  - [ ] Define `cmd_date_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/date/date_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/date/test_date.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/date/cmd_date.h`
+- [x] Create `src/apps/date/cmd_date.c`:
+  - [x] Implement `build_date_argtable()` with:
+    - [x] `-h, --help`
+  - [x] Implement `date_run()`
+  - [x] Implement `date_print_usage()`
+  - [x] Define `cmd_date_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/date/date_main.c`
+- [x] Update Makefile
+- [x] Create `tests/apps/date/test_date.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 7.4 help - Shell Built-in Help
 **Builtin** (`src/jshell/builtins/`) - Needs access to command registry

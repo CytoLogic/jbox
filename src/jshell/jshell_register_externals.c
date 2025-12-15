@@ -14,6 +14,7 @@
 #include "apps/rg/cmd_rg.h"
 #include "apps/echo/cmd_echo.h"
 #include "apps/sleep/cmd_sleep.h"
+#include "apps/date/cmd_date.h"
 
 
 void jshell_register_all_external_commands(void) {
@@ -31,4 +32,5 @@ void jshell_register_all_external_commands(void) {
   jshell_register_rg_command();
   jshell_register_echo_command();
   jshell_register_sleep_command();
+  jshell_register_date_command();
 }
