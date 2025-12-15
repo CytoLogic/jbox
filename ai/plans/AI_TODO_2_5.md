@@ -69,17 +69,17 @@ Packages are stored in memory as an array of objects:
 
 ---
 
-## Phase 1: Server Setup
+## Phase 1: Server Setup ✅ COMPLETED
 
-### 1.1 Initialize Node.js Project
+### 1.1 Initialize Node.js Project ✅ COMPLETED
 Create the package registry server directory and initialize npm.
 
-- [ ] Create `src/pkg_srv/` directory
-- [ ] Run `npm init -y` in `src/pkg_srv/`
-- [ ] Run `npm install express` in `src/pkg_srv/`
-- [ ] Add `src/pkg_srv/node_modules/` to `.gitignore`
+- [x] Create `src/pkg_srv/` directory
+- [x] Run `npm init -y` in `src/pkg_srv/`
+- [x] Run `npm install express` in `src/pkg_srv/`
+- [x] Add `src/pkg_srv/node_modules/` to `.gitignore`
 
-### 1.2 Create package.json
+### 1.2 Create package.json ✅ COMPLETED
 Create or update the generated `package.json` with proper metadata.
 
 Expected `src/pkg_srv/package.json`:
@@ -104,20 +104,20 @@ Expected `src/pkg_srv/package.json`:
 
 ---
 
-## Phase 2: Server Implementation
+## Phase 2: Server Implementation ✅ COMPLETED
 
-### 2.1 Create server.js
+### 2.1 Create server.js ✅ COMPLETED
 Implement the Express server with in-memory package storage.
 
-- [ ] Create `src/pkg_srv/server.js`:
-  - [ ] Import express and path
-  - [ ] Create express app
-  - [ ] Initialize in-memory packages array with example data
-  - [ ] Implement `GET /packages` endpoint
-  - [ ] Implement `GET /packages/:name` endpoint
-  - [ ] Serve static files from `downloads/` directory at `/downloads/`
-  - [ ] Start server on port 3000
-  - [ ] Add basic logging
+- [x] Create `src/pkg_srv/server.js`:
+  - [x] Import express and path
+  - [x] Create express app
+  - [x] Initialize in-memory packages array with example data
+  - [x] Implement `GET /packages` endpoint
+  - [x] Implement `GET /packages/:name` endpoint
+  - [ ] Serve static files from `downloads/` directory at `/downloads/` (deferred to Phase 3.7)
+  - [x] Start server on port 3000
+  - [x] Add basic logging
 
 Example package entries to include:
 ```javascript
@@ -184,7 +184,7 @@ const packages = [
 
 ---
 
-## Phase 3: Package Build System
+## Phase 3: Package Build System (PARTIAL)
 
 ### 3.1 Create Repository Directory Structure
 Set up the directory structure for serving package tarballs.
@@ -239,28 +239,12 @@ Create shared Makefile rules that each app can include for package building.
   	@echo "Output:  $(PKG_DEST)"
   ```
 
-### 3.3 Create pkg.json for Each App
+### 3.3 Create pkg.json for Each App ✅ COMPLETED
 Add package manifests to existing apps.
 
-- [ ] Create `src/apps/ls/pkg.json`:
-  ```json
-  {
-    "name": "ls",
-    "version": "1.0.0",
-    "description": "List directory contents",
-    "files": ["bin/ls"]
-  }
-  ```
-- [ ] Create `src/apps/cat/pkg.json`:
-  ```json
-  {
-    "name": "cat",
-    "version": "1.0.0",
-    "description": "Concatenate and print files",
-    "files": ["bin/cat"]
-  }
-  ```
-- [ ] Create pkg.json for remaining apps (stat, head, tail, cp, mv, rm, mkdir, rmdir, touch, rg, echo, sleep, date, less, vi)
+- [x] Create `src/apps/ls/pkg.json`
+- [x] Create `src/apps/cat/pkg.json`
+- [x] Create pkg.json for remaining apps (stat, head, tail, cp, mv, rm, mkdir, rmdir, touch, rg, echo, sleep, date, less, vi, pkg)
 
 ### 3.4 Update App Makefiles to Include pkg.mk
 Add package building support to each app's Makefile.
@@ -348,17 +332,17 @@ For now, use Option A and manually update the packages array when new packages a
 
 ---
 
-## Phase 4: Development Script
+## Phase 4: Development Script ✅ COMPLETED
 
-### 4.1 Create Startup Script
+### 4.1 Create Startup Script ✅ COMPLETED
 Create a convenience script to start the server during development.
 
-- [ ] Create `scripts/` directory if it doesn't exist
-- [ ] Create `scripts/start-pkg-server.sh`:
-  - [ ] Navigate to `src/pkg_srv/`
-  - [ ] Check if `node_modules/` exists, run `npm install` if not
-  - [ ] Start the server with `npm start`
-  - [ ] Make script executable
+- [x] Create `scripts/` directory if it doesn't exist
+- [x] Create `scripts/start-pkg-server.sh`:
+  - [x] Navigate to `src/pkg_srv/`
+  - [x] Check if `node_modules/` exists, run `npm install` if not
+  - [x] Start the server with `npm start`
+  - [x] Make script executable
 
 Expected `scripts/start-pkg-server.sh`:
 ```bash
@@ -416,7 +400,7 @@ python -m unittest tests.pkg_srv.test_pkg_srv -v
 
 ---
 
-## Phase 6: Update .gitignore
+## Phase 6: Update .gitignore (PARTIAL)
 
 ### 6.1 Add Node.js and Build Artifact Ignores
 Add Node.js-specific and build artifact entries to `.gitignore`.
