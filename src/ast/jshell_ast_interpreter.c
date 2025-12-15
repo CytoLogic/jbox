@@ -467,10 +467,63 @@ int visitShellToken(ShellToken p, wordexp_t* word_vector_ptr)
 }
 
 
-int visitExpansionStringToken(ExpansionStringToken p, 
+// Helper to replace $? with exit status in strings
+static char* preprocess_special_vars(const char* str) {
+  // Check if $? appears in the string
+  const char* pos = strstr(str, "$?");
+  if (pos == NULL) {
+    return NULL;  // No preprocessing needed
+  }
+
+  // Calculate new string size
+  char exit_str[16];
+  snprintf(exit_str, sizeof(exit_str), "%d", jshell_get_last_exit_status());
+  size_t exit_len = strlen(exit_str);
+
+  // Count occurrences of $?
+  int count = 0;
+  const char* p = str;
+  while ((p = strstr(p, "$?")) != NULL) {
+    count++;
+    p += 2;
+  }
+
+  size_t new_len = strlen(str) + count * (exit_len - 2) + 1;
+  char* result = malloc(new_len);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  char* dest = result;
+  const char* src = str;
+  while (*src) {
+    if (src[0] == '$' && src[1] == '?') {
+      strcpy(dest, exit_str);
+      dest += exit_len;
+      src += 2;
+    } else {
+      *dest++ = *src++;
+    }
+  }
+  *dest = '\0';
+
+  return result;
+}
+
+
+int visitExpansionStringToken(ExpansionStringToken p,
                               wordexp_t* word_vector_ptr)
 {
   DPRINT("visiting ExpansionStringToken: %s", p);
+
+  // Preprocess to replace $? with exit code
+  char* preprocessed = preprocess_special_vars(p);
+  if (preprocessed != NULL) {
+    int result = jshell_expand_word(preprocessed, word_vector_ptr);
+    free(preprocessed);
+    return result;
+  }
+
   return jshell_expand_word(p, word_vector_ptr);
 }
 
@@ -486,6 +539,15 @@ int visitLiteralStringToken(LiteralStringToken p,
 int visitVariableToken(VariableToken p, wordexp_t* word_vector_ptr)
 {
   DPRINT("visiting VariableToken: %s", p);
+
+  // Handle special variables that aren't in environment
+  if (strcmp(p, "$?") == 0) {
+    // $? - last exit status
+    char exit_str[16];
+    snprintf(exit_str, sizeof(exit_str), "%d", jshell_get_last_exit_status());
+    return jshell_expand_word(exit_str, word_vector_ptr);
+  }
+
   return jshell_expand_word(p, word_vector_ptr);
 }
 
