@@ -66,7 +66,8 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/rmdir/cmd_rmdir.c \
 					 $(SRC_DIR)/apps/touch/cmd_touch.c \
 					 $(SRC_DIR)/apps/rg/cmd_rg.c \
-					 $(SRC_DIR)/apps/echo/cmd_echo.c
+					 $(SRC_DIR)/apps/echo/cmd_echo.c \
+					 $(SRC_DIR)/apps/sleep/cmd_sleep.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -82,7 +83,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app echo-app
+apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app echo-app sleep-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -168,6 +169,12 @@ echo-app: $(ARGTABLE3_OBJ)
 	$(COMPILE) -I$(SRC_DIR)/apps/echo $(SRC_DIR)/apps/echo/echo_main.c \
 	           $(SRC_DIR)/apps/echo/cmd_echo.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/echo
+
+sleep-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/sleep $(SRC_DIR)/apps/sleep/sleep_main.c \
+	           $(SRC_DIR)/apps/sleep/cmd_sleep.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/sleep
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

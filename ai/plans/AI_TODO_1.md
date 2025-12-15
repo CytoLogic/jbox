@@ -597,38 +597,38 @@ All shell and environment commands are implemented as **Builtins** for consisten
 
 ## Phase 7: Human-Facing Tools (LOW PRIORITY)
 
-### 7.1 echo - Print Text
+### 7.1 echo - Print Text ✅ COMPLETED
 **External App** (`src/apps/echo/`)
 
-- [ ] Create `src/apps/echo/cmd_echo.h`
-- [ ] Create `src/apps/echo/cmd_echo.c`:
-  - [ ] Implement `build_echo_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-n` (no trailing newline)
-    - [ ] `<TEXT...>` (arguments to print)
-  - [ ] Implement `echo_run()`
-  - [ ] Implement `echo_print_usage()`
-  - [ ] Define `cmd_echo_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/echo/echo_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/echo/test_echo.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/echo/cmd_echo.h`
+- [x] Create `src/apps/echo/cmd_echo.c`:
+  - [x] Implement `build_echo_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-n` (no trailing newline)
+    - [x] `<TEXT...>` (arguments to print)
+  - [x] Implement `echo_run()`
+  - [x] Implement `echo_print_usage()`
+  - [x] Define `cmd_echo_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/echo/echo_main.c`
+- [x] Update Makefile
+- [x] Create `tests/apps/echo/test_echo.py`:
+  - [x] Implement unit tests using Python unittest framework
 
-### 7.2 sleep - Delay
+### 7.2 sleep - Delay ✅ COMPLETED
 **External App** (`src/apps/sleep/`)
 
-- [ ] Create `src/apps/sleep/cmd_sleep.h`
-- [ ] Create `src/apps/sleep/cmd_sleep.c`:
-  - [ ] Implement `build_sleep_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `<SECONDS>` (required, can be float)
-  - [ ] Implement `sleep_run()`
-  - [ ] Implement `sleep_print_usage()`
-  - [ ] Define `cmd_sleep_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/sleep/sleep_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/sleep/test_sleep.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/sleep/cmd_sleep.h`
+- [x] Create `src/apps/sleep/cmd_sleep.c`:
+  - [x] Implement `build_sleep_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `<SECONDS>` (required, can be float)
+  - [x] Implement `sleep_run()`
+  - [x] Implement `sleep_print_usage()`
+  - [x] Define `cmd_sleep_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/sleep/sleep_main.c`
+- [x] Update Makefile
+- [x] Create `tests/apps/sleep/test_sleep.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 7.3 date - Show System Time
 **External App** (`src/apps/date/`)
