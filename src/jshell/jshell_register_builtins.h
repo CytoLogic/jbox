@@ -7,6 +7,7 @@ void jshell_register_all_builtin_commands(void);
 
 void jshell_register_jobs_command(void);
 void jshell_register_ls_command(void);
+void jshell_register_stat_command(void);
 
 
 #endif

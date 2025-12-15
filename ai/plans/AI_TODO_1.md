@@ -73,24 +73,26 @@ Implement CLI tools and shell builtins conforming to `ai/CLItools.md` and `ai/AP
 - [x] Create `tests/apps/ls/test_ls.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 2.2 stat - File Metadata
+### 2.2 stat - File Metadata ✅ COMPLETED
 **Builtin + Standalone**
 
-- [ ] Create `src/jshell/builtins/cmd_stat.h`
-- [ ] Create `src/jshell/builtins/cmd_stat.c`:
-  - [ ] Implement `build_stat_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<FILE>` (required positional argument)
-  - [ ] Implement `stat_run()`:
-    - [ ] Use `stat()` system call
-    - [ ] Display: path, type, size, mode, mtime, atime, ctime
-    - [ ] Support `--json` output
-  - [ ] Implement `stat_print_usage()`
-  - [ ] Define `cmd_stat_spec`
-  - [ ] Implement `jshell_register_stat_command()`
-- [ ] Create `src/apps/stat/stat_main.c`
-- [ ] Update Makefile
+- [x] Create `src/jshell/builtins/cmd_stat.h`
+- [x] Create `src/jshell/builtins/cmd_stat.c`:
+  - [x] Implement `build_stat_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<FILE>` (required positional argument)
+  - [x] Implement `stat_run()`:
+    - [x] Use `stat()` system call
+    - [x] Display: path, type, size, mode, mtime, atime, ctime
+    - [x] Support `--json` output
+  - [x] Implement `stat_print_usage()`
+  - [x] Define `cmd_stat_spec`
+  - [x] Implement `jshell_register_stat_command()`
+- [x] Create `src/apps/stat/stat_main.c`
+- [x] Update Makefile
+- [x] Create `tests/apps/stat/test_stat.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ### 2.3 cat - Print File Contents
 **Builtin + Standalone**

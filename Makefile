@@ -39,14 +39,15 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c
 
 BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c \
-               $(SRC_DIR)/jshell/builtins/cmd_ls.c
+               $(SRC_DIR)/jshell/builtins/cmd_ls.c \
+               $(SRC_DIR)/jshell/builtins/cmd_stat.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
 
 all: jbox apps
 
-apps: ls-app
+apps: ls-app stat-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -59,6 +60,11 @@ ls-app: $(ARGTABLE3_OBJ)
 	mkdir -p bin/
 	$(COMPILE) $(SRC_DIR)/apps/ls/ls_main.c $(SRC_DIR)/jshell/builtins/cmd_ls.c \
 	           $(SRC_DIR)/jshell/jshell_cmd_registry.c $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/ls
+
+stat-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) $(SRC_DIR)/apps/stat/stat_main.c $(SRC_DIR)/jshell/builtins/cmd_stat.c \
+	           $(SRC_DIR)/jshell/jshell_cmd_registry.c $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/stat
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
