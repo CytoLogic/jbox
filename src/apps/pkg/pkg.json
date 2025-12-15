@@ -1,0 +1,7 @@
+{
+  "name": "pkg",
+  "version": "0.0.1",
+  "description": "manage jshell packages",
+  "files": ["bin/pkg"],
+  "docs": ["README.md"]
+}

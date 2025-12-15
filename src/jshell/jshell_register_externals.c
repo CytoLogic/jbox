@@ -17,6 +17,7 @@
 #include "apps/date/cmd_date.h"
 #include "apps/less/cmd_less.h"
 #include "apps/vi/cmd_vi.h"
+#include "apps/pkg/cmd_pkg.h"
 
 
 void jshell_register_all_external_commands(void) {
@@ -37,4 +38,5 @@ void jshell_register_all_external_commands(void) {
   jshell_register_date_command();
   jshell_register_less_command();
   jshell_register_vi_command();
+  jshell_register_pkg_command();
 }

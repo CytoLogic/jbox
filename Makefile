@@ -82,7 +82,8 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/sleep/cmd_sleep.c \
 					 $(SRC_DIR)/apps/date/cmd_date.c \
 					 $(SRC_DIR)/apps/less/cmd_less.c \
-					 $(SRC_DIR)/apps/vi/cmd_vi.c
+					 $(SRC_DIR)/apps/vi/cmd_vi.c \
+				 $(SRC_DIR)/apps/pkg/cmd_pkg.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -98,7 +99,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-APP_DIRS := cat cp date echo head less ls mkdir mv rg rm rmdir sleep stat tail touch vi
+APP_DIRS := cat cp date echo head less ls mkdir mv pkg rg rm rmdir sleep stat tail touch vi
 
 apps: $(ARGTABLE3_OBJ)
 	@for app in $(APP_DIRS); do \

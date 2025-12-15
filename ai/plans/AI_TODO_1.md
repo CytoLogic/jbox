@@ -769,28 +769,66 @@ Help should print all registered commands.
 
 ---
 
-## Phase 9: Package Manager Integration (FUTURE)
+## Phase 9: Package Manager Integration
 
-### 9.1 Refactor pkg Command
-**Builtin** (`src/jshell/builtins/`)
+### 9.1 Skeleton implementation of pkg Command ✅ COMPLETED
+**External App** (`src/apps/pkg/`)
+summary = "manage jshell packages"
+long_help = "Build, install, list, remove, compile, and upgrade packages for the jshell."
 
-- [ ] Refactor existing `pkg` implementation:
-  - [ ] Move to `src/jshell/builtins/cmd_pkg.c`
-  - [ ] Implement `build_pkg_argtable()` with subcommands:
-    - [ ] `list --json`
-    - [ ] `info NAME --json`
-    - [ ] `search NAME --json`
-    - [ ] `install NAME`
-    - [ ] `remove NAME`
-    - [ ] `build`
-    - [ ] `check-update`
-    - [ ] `upgrade`
-    - [ ] `compile`
-  - [ ] Implement `pkg_run()` with subcommand dispatch
-  - [ ] Implement `pkg_print_usage()`
-  - [ ] Define `cmd_pkg_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_pkg_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Skeleton `build_pkg_argtable()` with subcommands:
+  - [x] `list --json`
+  - [x] `info NAME --json`
+  - [x] `search NAME --json`
+  - [x] `install NAME`
+  - [x] `remove NAME`
+  - [x] `build`
+  - [x] `check-update`
+  - [x] `upgrade`
+  - [x] `compile`
+  - [x] Implement `pkg_run()` with subcommand dispatch
+  - [x] Implement `pkg_print_usage()`
+  - [x] Define `cmd_pkg_spec` with `.type = CMD_EXTERNAL`
+  - [x] Implement `jshell_register_pkg_command()`
+- [x] Update `jshell_register_externals.h` and `.c`
+- [x] Create `tests/apps/pkg/test_pkg.py`
+
+### 9.2 Implement pkg list (FUTURE)
+- [ ] Implement package registry/database
+- [ ] Read installed packages from registry
+- [ ] Output package list in human and JSON format
+
+### 9.3 Implement pkg info (FUTURE)
+- [ ] Read package metadata from registry
+- [ ] Output package info in human and JSON format
+
+### 9.4 Implement pkg search (FUTURE)
+- [ ] Connect to remote package registry
+- [ ] Search and filter packages
+- [ ] Output results in human and JSON format
+
+### 9.5 Implement pkg install (FUTURE)
+- [ ] Download package from registry
+- [ ] Extract and install files
+- [ ] Update local registry
+
+### 9.6 Implement pkg remove (FUTURE)
+- [ ] Remove installed files
+- [ ] Update local registry
+
+### 9.7 Implement pkg build (FUTURE)
+- [ ] Read pkg.json from current directory
+- [ ] Build package archive
+
+### 9.8 Implement pkg check-update (FUTURE)
+- [ ] Compare installed versions with registry
+- [ ] List available updates
+
+### 9.9 Implement pkg upgrade (FUTURE)
+- [ ] Download and install updates
+
+### 9.10 Implement pkg compile (FUTURE)
+- [ ] Compile source packages
 
 ---
 
