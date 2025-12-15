@@ -3,12 +3,12 @@
 PYTHON ?= python
 PROJECT_ROOT := ..
 
-.PHONY: all apps builtins grammar ls stat cat head tail rg \
+.PHONY: all apps builtins grammar ls stat cat head tail rg less \
         edit-replace-line edit-insert-line edit-delete-line edit-replace clean
 
 all: apps builtins
 
-apps: ls stat cat head tail rg
+apps: ls stat cat head tail rg less
 
 builtins: edit-replace-line edit-insert-line edit-delete-line edit-replace
 
@@ -32,6 +32,9 @@ tail:
 
 rg:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.rg.test_rg -v
+
+less:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.less.test_less -v
 
 edit-replace-line:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.builtins.test_edit_replace_line -v

@@ -674,16 +674,31 @@ Help should print all registered commands.
 - [x] Update `jshell_register_builtins.h` and `.c`
 - [x] Create `src/jshell/jshell_history.h` and `.c` for history storage
 
-### 7.9 less - Pager (Optional, Complex)
+### 7.9 less - Pager ✅ COMPLETED
 **External App** (`src/apps/less/`)
 
-- [ ] Create `src/apps/less/less.c`:
-  - [ ] Implement basic pager functionality
-  - [ ] Support `-N` (line numbers)
-  - [ ] Support `-h, --help`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/less/test_less.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/apps/less/cmd_less.h`:
+  - [x] Declare `extern jshell_cmd_spec_t cmd_less_spec;`
+  - [x] Declare `void jshell_register_less_command(void);`
+- [x] Create `src/apps/less/cmd_less.c`:
+  - [x] Implement `build_less_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-N` (show line numbers)
+    - [x] `[FILE]` (optional file argument)
+  - [x] Implement `less_run()`:
+    - [x] Read file content into memory
+    - [x] Set terminal to raw mode for keyboard input
+    - [x] Display content page by page
+    - [x] Handle navigation: j/k/arrows, space/b, g/G, q, /pattern, n/N
+  - [x] Implement `less_print_usage()`
+  - [x] Define `cmd_less_spec` with `.type = CMD_EXTERNAL`
+  - [x] Implement `jshell_register_less_command()`
+- [x] Create `src/apps/less/less_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/less/test_less.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add less test target
 
 ### 7.10 vi - Text Editor (Optional, Very Complex)
 **External App** (`src/apps/vi/`)
@@ -779,7 +794,7 @@ Help should print all registered commands.
 - cp, mv, rm, mkdir, rmdir, touch (file manipulation)
 - rg (search)
 - pwd, env (read-only environment)
-- echo, printf, sleep, date, true, false (utilities)
+- echo, sleep, date (utilities)
 - less, vi (interactive tools)
 - http-get, http-post (networking)
 
