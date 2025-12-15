@@ -14,6 +14,7 @@
 #include "jshell_register_builtins.h"
 #include "jshell_register_externals.h"
 #include "jshell_path.h"
+#include "jshell_signals.h"
 #include "utils/jbox_utils.h"
 #include "jshell.h"
 
@@ -73,6 +74,7 @@ void jshell_print_usage(FILE *out) {
 int jshell_exec_string(const char *cmd_string) {
   Input parse_tree;
 
+  jshell_init_signals();
   jshell_init_path();
   jshell_init_job_control();
   jshell_register_all_builtin_commands();
@@ -103,6 +105,7 @@ static int jshell_interactive(void) {
 
   Input parse_tree;
 
+  jshell_init_signals();
   jshell_init_path();
   jshell_init_job_control();
   jshell_history_init();
@@ -110,11 +113,39 @@ static int jshell_interactive(void) {
   jshell_register_all_external_commands();
 
   while (true) {
+    /* Check for termination signals */
+    if (jshell_should_terminate() || jshell_should_hangup()) {
+      DPRINT("Received termination signal, exiting");
+      break;
+    }
+
     jshell_check_background_jobs();
 
-    printf("(jsh)>");
+    /* Clear any pending interrupt before prompting */
+    jshell_clear_interrupted();
 
-    if (fgets(line, sizeof(line), stdin) == NULL) break;
+    printf("(jsh)>");
+    fflush(stdout);
+
+    if (fgets(line, sizeof(line), stdin) == NULL) {
+      /* Check if fgets was interrupted by SIGINT */
+      if (jshell_check_interrupted()) {
+        printf("\n");  /* Move to new line after ^C */
+        full_line[0] = '\0';  /* Clear any partial input */
+        clearerr(stdin);  /* Clear EOF flag set by interrupted read */
+        continue;
+      }
+      /* Actual EOF (Ctrl+D) */
+      printf("\n");
+      break;
+    }
+
+    /* Check if we were interrupted during input */
+    if (jshell_check_interrupted()) {
+      printf("\n");
+      full_line[0] = '\0';
+      continue;
+    }
 
     size_t len = strlen(line);
 
@@ -130,6 +161,11 @@ static int jshell_interactive(void) {
     }
 
     strcat(full_line, line);
+
+    /* Skip empty lines */
+    if (strlen(full_line) == 0) {
+      continue;
+    }
 
     jshell_history_add(full_line);
 

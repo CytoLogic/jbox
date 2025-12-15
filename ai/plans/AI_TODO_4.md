@@ -40,8 +40,8 @@ The shell has:
 
 | Phase | Status | Commit | Tests |
 |-------|--------|--------|-------|
-| Phase 1: Core Signal Infrastructure | ✅ COMPLETED | - | - |
-| Phase 2: Shell Signal Handlers | PENDING | - | - |
+| Phase 1: Core Signal Infrastructure | ✅ COMPLETED | 5b49766 | - |
+| Phase 2: Shell Signal Handlers | ✅ COMPLETED | - | - |
 | Phase 3: Child Process Signal Reset | PENDING | - | - |
 | Phase 4: External App Signal Handling | PENDING | - | - |
 | Phase 5: Interactive App Signals | PENDING | - | - |
@@ -112,47 +112,47 @@ The shell has:
 
 ---
 
-## Phase 2: Shell Signal Handlers
+## Phase 2: Shell Signal Handlers ✅ COMPLETED
 
-### 2.1 Update Shell Initialization
+### 2.1 Update Shell Initialization ✅
 **File**: `src/jshell/jshell.c`
 
-- [ ] Add `#include "jshell_signals.h"`
-- [ ] Call `jshell_init_signals()` early in `jshell_main()` and `jshell_exec_string()`
-- [ ] In `jshell_interactive()`:
-  - [ ] Check `jshell_interrupted` after `fgets()` returns
-  - [ ] Clear `jshell_interrupted` flag after checking
-  - [ ] Print newline if interrupted to reset prompt position
-- [ ] Add graceful shutdown:
-  - [ ] Check `jshell_received_sigterm` and `jshell_received_sighup` in main loop
-  - [ ] Call cleanup function before exit
-  - [ ] Save history on SIGHUP/SIGTERM
+- [x] Add `#include "jshell_signals.h"`
+- [x] Call `jshell_init_signals()` early in `jshell_exec_string()` and `jshell_interactive()`
+- [x] In `jshell_interactive()`:
+  - [x] Check `jshell_interrupted` after `fgets()` returns
+  - [x] Clear `jshell_interrupted` flag after checking
+  - [x] Print newline if interrupted to reset prompt position
+- [x] Add graceful shutdown:
+  - [x] Check `jshell_should_terminate()` and `jshell_should_hangup()` in main loop
+  - [x] Break out of loop on termination signal
+  - Note: History save deferred (no persistent history yet)
 
 ### 2.2 Create Shell Cleanup Function
 **File**: `src/jshell/jshell.c`
 
-- [ ] Implement `jshell_cleanup(void)`:
-  - [ ] Save command history via `jshell_history_save()`
-  - [ ] Send SIGHUP to all background jobs (optional, discuss)
-  - [ ] Clean up any allocated resources
+- [x] N/A - Deferred until persistent history is implemented
+  - Note: Currently history is in-memory only, no `jshell_history_save()` exists
 
-### 2.3 Update Interactive Loop for SIGINT
+### 2.3 Update Interactive Loop for SIGINT ✅
 **File**: `src/jshell/jshell.c`
 
-- [ ] Modify `jshell_interactive()`:
-  - [ ] Handle SIGINT during command input:
+- [x] Modify `jshell_interactive()`:
+  - [x] Handle SIGINT during command input:
     ```c
     if (fgets(line, sizeof(line), stdin) == NULL) {
-      if (jshell_interrupted) {
-        jshell_interrupted = 0;
+      if (jshell_check_interrupted()) {
         printf("\n");  // Move to new line
         full_line[0] = '\0';
+        clearerr(stdin);  // Clear EOF flag
         continue;  // Re-prompt
       }
       break;  // EOF
     }
     ```
-  - [ ] Clear interrupted flag before executing each command
+  - [x] Clear interrupted flag before prompting
+  - [x] Skip empty lines
+  - [x] Flush stdout after printing prompt
 
 ---
 
