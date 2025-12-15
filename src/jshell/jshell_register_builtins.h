@@ -13,6 +13,12 @@ void jshell_register_edit_replace_line_command(void);
 void jshell_register_edit_insert_line_command(void);
 void jshell_register_edit_delete_line_command(void);
 void jshell_register_edit_replace_command(void);
+void jshell_register_cd_command(void);
+void jshell_register_pwd_command(void);
+void jshell_register_env_command(void);
+void jshell_register_export_command(void);
+void jshell_register_unset_command(void);
+void jshell_register_type_command(void);
 
 
 #endif

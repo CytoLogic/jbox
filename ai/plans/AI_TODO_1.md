@@ -496,100 +496,102 @@ These commands are **Builtins** because they need access to shell internal state
 
 ---
 
-## Phase 6: Shell and Environment (MEDIUM PRIORITY)
+## Phase 6: Shell and Environment (MEDIUM PRIORITY) ✅ COMPLETED
 
-Commands that modify shell state are **Builtins**. Others can be **External Apps**.
+All shell and environment commands are implemented as **Builtins** for consistency.
 
-### 6.1 cd - Change Directory
+### 6.1 cd - Change Directory ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Must be builtin to change shell's working directory
 
-- [ ] Create `src/jshell/builtins/cmd_cd.h`
-- [ ] Create `src/jshell/builtins/cmd_cd.c`:
-  - [ ] Implement `build_cd_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `[DIR]` (optional, defaults to HOME)
-  - [ ] Implement `cd_run()`
-  - [ ] Implement `cd_print_usage()`
-  - [ ] Define `cmd_cd_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_cd_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_cd.h`
+- [x] Create `src/jshell/builtins/cmd_cd.c`:
+  - [x] Implement `build_cd_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `[DIR]` (optional, defaults to HOME)
+  - [x] Implement `cd_run()`
+  - [x] Implement `cd_print_usage()`
+  - [x] Define `cmd_cd_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_cd_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_cd.py`
 
-### 6.2 pwd - Print Working Directory
-**External App** (`src/apps/pwd/`)
+### 6.2 pwd - Print Working Directory ✅ COMPLETED
+**Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/apps/pwd/cmd_pwd.h`
-- [ ] Create `src/apps/pwd/cmd_pwd.c`:
-  - [ ] Implement `build_pwd_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-  - [ ] Implement `pwd_run()`
-  - [ ] Implement `pwd_print_usage()`
-  - [ ] Define `cmd_pwd_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/pwd/pwd_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/pwd/test_pwd.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/jshell/builtins/cmd_pwd.h`
+- [x] Create `src/jshell/builtins/cmd_pwd.c`:
+  - [x] Implement `build_pwd_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+  - [x] Implement `pwd_run()`
+  - [x] Implement `pwd_print_usage()`
+  - [x] Define `cmd_pwd_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_pwd_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_pwd.py`
 
-### 6.3 env - List Environment Variables
-**External App** (`src/apps/env/`)
+### 6.3 env - List Environment Variables ✅ COMPLETED
+**Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/apps/env/cmd_env.h`
-- [ ] Create `src/apps/env/cmd_env.c`:
-  - [ ] Implement `build_env_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-  - [ ] Implement `env_run()`
-  - [ ] Implement `env_print_usage()`
-  - [ ] Define `cmd_env_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/env/env_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/env/test_env.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/jshell/builtins/cmd_env.h`
+- [x] Create `src/jshell/builtins/cmd_env.c`:
+  - [x] Implement `build_env_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+  - [x] Implement `env_run()`
+  - [x] Implement `env_print_usage()`
+  - [x] Define `cmd_env_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_env_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_env.py`
 
-### 6.4 export - Set Environment Variable
+### 6.4 export - Set Environment Variable ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Must be builtin to modify shell's environment
 
-- [ ] Create `src/jshell/builtins/cmd_export.h`
-- [ ] Create `src/jshell/builtins/cmd_export.c`:
-  - [ ] Implement `build_export_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<KEY=VALUE>` (one or more)
-  - [ ] Implement `export_run()`
-  - [ ] Implement `export_print_usage()`
-  - [ ] Define `cmd_export_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_export_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_export.h`
+- [x] Create `src/jshell/builtins/cmd_export.c`:
+  - [x] Implement `build_export_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<KEY=VALUE>` (one or more)
+  - [x] Implement `export_run()`
+  - [x] Implement `export_print_usage()`
+  - [x] Define `cmd_export_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_export_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_export.py`
 
-### 6.5 unset - Unset Environment Variable
+### 6.5 unset - Unset Environment Variable ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Must be builtin to modify shell's environment
 
-- [ ] Create `src/jshell/builtins/cmd_unset.h`
-- [ ] Create `src/jshell/builtins/cmd_unset.c`:
-  - [ ] Implement `build_unset_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<KEY>` (one or more)
-  - [ ] Implement `unset_run()`
-  - [ ] Implement `unset_print_usage()`
-  - [ ] Define `cmd_unset_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_unset_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_unset.h`
+- [x] Create `src/jshell/builtins/cmd_unset.c`:
+  - [x] Implement `build_unset_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<KEY>` (one or more)
+  - [x] Implement `unset_run()`
+  - [x] Implement `unset_print_usage()`
+  - [x] Define `cmd_unset_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_unset_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_unset.py`
 
-### 6.6 type - Show How Name is Resolved
+### 6.6 type - Show How Name is Resolved ✅ COMPLETED
 **Builtin** (`src/jshell/builtins/`) - Needs access to shell's command registry
 
-- [ ] Create `src/jshell/builtins/cmd_type.h`
-- [ ] Create `src/jshell/builtins/cmd_type.c`:
-  - [ ] Implement `build_type_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<NAME>` (required)
-  - [ ] Implement `type_run()`
-  - [ ] Implement `type_print_usage()`
-  - [ ] Define `cmd_type_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_type_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `src/jshell/builtins/cmd_type.h`
+- [x] Create `src/jshell/builtins/cmd_type.c`:
+  - [x] Implement `build_type_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<NAME>` (required)
+  - [x] Implement `type_run()`
+  - [x] Implement `type_print_usage()`
+  - [x] Define `cmd_type_spec` with `.type = CMD_BUILTIN`
+  - [x] Implement `jshell_register_type_command()`
+- [x] Update `jshell_register_builtins.h` and `.c`
+- [x] Create `tests/jshell/builtins/test_type.py`
 
 ---
 

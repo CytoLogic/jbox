@@ -46,7 +46,13 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_replace_line.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_insert_line.c \
 				$(SRC_DIR)/jshell/builtins/cmd_edit_delete_line.c \
-				$(SRC_DIR)/jshell/builtins/cmd_edit_replace.c
+				$(SRC_DIR)/jshell/builtins/cmd_edit_replace.c \
+				$(SRC_DIR)/jshell/builtins/cmd_cd.c \
+				$(SRC_DIR)/jshell/builtins/cmd_pwd.c \
+				$(SRC_DIR)/jshell/builtins/cmd_env.c \
+				$(SRC_DIR)/jshell/builtins/cmd_export.c \
+				$(SRC_DIR)/jshell/builtins/cmd_unset.c \
+				$(SRC_DIR)/jshell/builtins/cmd_type.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \

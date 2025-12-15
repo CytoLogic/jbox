@@ -10,4 +10,10 @@ void jshell_register_all_builtin_commands(void) {
   jshell_register_edit_insert_line_command();
   jshell_register_edit_delete_line_command();
   jshell_register_edit_replace_command();
+  jshell_register_cd_command();
+  jshell_register_pwd_command();
+  jshell_register_env_command();
+  jshell_register_export_command();
+  jshell_register_unset_command();
+  jshell_register_type_command();
 }
