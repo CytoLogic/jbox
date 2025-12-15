@@ -3,11 +3,14 @@
 PYTHON ?= python
 PROJECT_ROOT := ..
 
-.PHONY: all apps builtins jshell grammar ls stat cat head tail rg less vi \
+.PHONY: all apps builtins jshell signals grammar ls stat cat head tail rg less vi \
         edit-replace-line edit-insert-line edit-delete-line edit-replace \
-        jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec jshell-session pkg-srv clean
+        jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec jshell-session \
+        jshell-signals app-signals vi-signals less-signals pkg-srv clean
 
 all: apps builtins jshell
+
+signals: jshell-signals app-signals vi-signals less-signals
 
 apps: ls stat cat head tail rg less vi
 
@@ -71,6 +74,18 @@ jshell-ast-exec:
 
 jshell-session:
 	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.test_session -v
+
+jshell-signals:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.jshell.test_signals -v
+
+app-signals:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.test_signals -v
+
+vi-signals:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.vi.test_vi_signals -v
+
+less-signals:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.apps.less.test_less_signals -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
