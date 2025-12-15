@@ -750,7 +750,7 @@ static int pkg_upgrade(int json_output) {
 
 
 static int pkg_compile(const char *app_name, int json_output) {
-  char apps_dir[4096];
+  char apps_dir[8192];
   char cwd[4096];
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
@@ -780,7 +780,7 @@ static int pkg_compile(const char *app_name, int json_output) {
   }
 
   if (app_name != NULL) {
-    char app_dir[4096];
+    char app_dir[8448];
     snprintf(app_dir, sizeof(app_dir), "%s/%s", apps_dir, app_name);
 
     if (stat(app_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
@@ -793,7 +793,7 @@ static int pkg_compile(const char *app_name, int json_output) {
       return 1;
     }
 
-    char makefile_path[4096];
+    char makefile_path[8512];
     snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", app_dir);
 
     if (stat(makefile_path, &st) != 0) {
@@ -852,12 +852,12 @@ static int pkg_compile(const char *app_name, int json_output) {
   while ((entry = readdir(dir)) != NULL) {
     if (entry->d_name[0] == '.') continue;
 
-    char app_dir[4096];
+    char app_dir[8448];
     snprintf(app_dir, sizeof(app_dir), "%s/%s", apps_dir, entry->d_name);
 
     if (stat(app_dir, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
 
-    char makefile_path[4096];
+    char makefile_path[8512];
     snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", app_dir);
 
     if (stat(makefile_path, &st) != 0) continue;

@@ -10,7 +10,7 @@
 
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr);
 
-void jshell_exec_job(JShellExecJob* job);
+int jshell_exec_job(JShellExecJob* job);
 
 void jshell_cleanup_job(JShellExecJob* job);
 

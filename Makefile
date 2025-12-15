@@ -83,7 +83,10 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/date/cmd_date.c \
 					 $(SRC_DIR)/apps/less/cmd_less.c \
 					 $(SRC_DIR)/apps/vi/cmd_vi.c \
-				 $(SRC_DIR)/apps/pkg/cmd_pkg.c
+					 $(SRC_DIR)/apps/pkg/cmd_pkg.c \
+					 $(SRC_DIR)/apps/pkg/pkg_utils.c \
+					 $(SRC_DIR)/apps/pkg/pkg_db.c \
+					 $(SRC_DIR)/apps/pkg/pkg_json.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -120,6 +123,7 @@ $(BNFC_OBJS): bnfc
 jbox: $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LIB)
 	mkdir -p bin/
 	$(COMPILE) $(CURL_CFLAGS) src/jbox.c $(JSHELL_SRCS) $(BUILTIN_SRCS) $(EXTERNAL_CMD_SRCS) $(AST_SRCS) $(BNFC_OBJS) $(ARGTABLE3_OBJ) $(CURL_LDFLAGS) $(LDFLAGS) -o $(BIN_DIR)/jbox
+	ln -sf jbox $(BIN_DIR)/jshell
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
@@ -170,6 +174,7 @@ standalone:
 
 clean:
 	rm -rf $(BIN_DIR)/*
+	rm -f $(BIN_DIR)/jshell
 	rm -rf $(ARGTABLE3_DIST)
 	rm -rf $(CURL_BUILD)
 	rm -rf $(BNFC_GEN)/*

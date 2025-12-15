@@ -438,27 +438,31 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
 }
 
 
-void jshell_exec_job(JShellExecJob* job) {
+int jshell_exec_job(JShellExecJob* job) {
   DPRINT("jshell_exec_job called");
-  
+
   if (job == NULL || job->jshell_cmd_vector_ptr == NULL) {
-    return;
+    return -1;
   }
-  
-  DPRINT("Job type: %d, cmd_count: %zu", 
-         job->exec_job_type, 
+
+  DPRINT("Job type: %d, cmd_count: %zu",
+         job->exec_job_type,
          job->jshell_cmd_vector_ptr->cmd_count);
-  
+
   int result;
   if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
     result = jshell_exec_single_cmd(job);
   } else {
     result = jshell_exec_pipeline(job);
   }
-  
+
+  jshell_set_last_exit_status(result);
+
   if (result != 0) {
     DPRINT("Command execution failed with status %d", result);
   }
+
+  return result;
 }
 
 

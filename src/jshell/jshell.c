@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "argtable3.h"
 
 #include "Parser.h"
 #include "Absyn.h"
@@ -10,9 +14,88 @@
 #include "jshell_register_builtins.h"
 #include "jshell_register_externals.h"
 #include "utils/jbox_utils.h"
+#include "jshell.h"
 
 
-int jshell_main(void) {
+static int g_last_exit_status = 0;
+
+
+int jshell_get_last_exit_status(void) {
+  return g_last_exit_status;
+}
+
+
+void jshell_set_last_exit_status(int status) {
+  g_last_exit_status = status;
+}
+
+
+typedef struct {
+  struct arg_lit *help;
+  struct arg_str *cmd;
+  struct arg_end *end;
+  void *argtable[4];
+} jshell_args_t;
+
+
+static void build_jshell_argtable(jshell_args_t *args) {
+  args->help = arg_lit0("h", "help", "display this help and exit");
+  args->cmd  = arg_str0("c", NULL, "COMMAND", "execute command and exit");
+  args->end  = arg_end(20);
+
+  args->argtable[0] = args->help;
+  args->argtable[1] = args->cmd;
+  args->argtable[2] = args->end;
+  args->argtable[3] = NULL;
+}
+
+
+static void cleanup_jshell_argtable(jshell_args_t *args) {
+  arg_freetable(args->argtable,
+                sizeof(args->argtable) / sizeof(args->argtable[0]));
+}
+
+
+void jshell_print_usage(FILE *out) {
+  jshell_args_t args;
+  build_jshell_argtable(&args);
+  fprintf(out, "Usage: jshell");
+  arg_print_syntax(out, args.argtable, "\n");
+  fprintf(out, "\njshell - the jbox shell\n\n");
+  fprintf(out, "Options:\n");
+  arg_print_glossary(out, args.argtable, "  %-20s %s\n");
+  fprintf(out, "\nWhen invoked without -c, runs in interactive mode.\n");
+  cleanup_jshell_argtable(&args);
+}
+
+
+int jshell_exec_string(const char *cmd_string) {
+  Input parse_tree;
+
+  jshell_init_job_control();
+  jshell_register_all_builtin_commands();
+  jshell_register_all_external_commands();
+
+  g_last_exit_status = 0;
+
+  parse_tree = psInput(cmd_string);
+
+  if (parse_tree == NULL) {
+    fprintf(stderr, "jshell: parse error\n");
+    return 1;
+  }
+
+  DPRINT("%s", showInput(parse_tree));
+
+  interpretInput(parse_tree);
+
+  free_Input(parse_tree);
+
+  return g_last_exit_status;
+}
+
+
+static int jshell_interactive(void) {
   char line[1024];
   char full_line[4096] = "";
 
@@ -25,32 +108,30 @@ int jshell_main(void) {
 
   while (true) {
     jshell_check_background_jobs();
-    
+
     printf("(jsh)>");
 
     if (fgets(line, sizeof(line), stdin) == NULL) break;
 
-    size_t len = strlen(line); 
+    size_t len = strlen(line);
 
-    // Remove trailing newline
     if (len > 0 && line[len - 1] == '\n') {
       line[--len] = '\0';
-    } 
-
-    // handle backslash continuation
-    if (len > 0 && line[len - 1] == '\\') {
-      line[len - 1] = '\0'; // Remove the backslash
-      strcat(full_line, line); // Append to full_line
-      strcat(full_line, " ");  // Add space
-      continue;  // Read next line
     }
 
-    strcat(full_line, line); // append final or sole line
+    if (len > 0 && line[len - 1] == '\\') {
+      line[len - 1] = '\0';
+      strcat(full_line, line);
+      strcat(full_line, " ");
+      continue;
+    }
+
+    strcat(full_line, line);
 
     jshell_history_add(full_line);
 
     parse_tree = psInput(full_line);
-    
+
     DPRINT("%s", showInput(parse_tree));
 
     interpretInput(parse_tree);
@@ -61,4 +142,35 @@ int jshell_main(void) {
   }
 
   return 0;
+}
+
+
+int jshell_main(int argc, char **argv) {
+  jshell_args_t args;
+  build_jshell_argtable(&args);
+
+  int nerrors = arg_parse(argc, argv, args.argtable);
+
+  if (args.help->count > 0) {
+    jshell_print_usage(stdout);
+    cleanup_jshell_argtable(&args);
+    return 0;
+  }
+
+  if (nerrors > 0) {
+    arg_print_errors(stderr, args.end, "jshell");
+    fprintf(stderr, "Try 'jshell --help' for more information.\n");
+    cleanup_jshell_argtable(&args);
+    return 1;
+  }
+
+  if (args.cmd->count > 0) {
+    int status = jshell_exec_string(args.cmd->sval[0]);
+    cleanup_jshell_argtable(&args);
+    return status;
+  }
+
+  cleanup_jshell_argtable(&args);
+
+  return jshell_interactive();
 }
