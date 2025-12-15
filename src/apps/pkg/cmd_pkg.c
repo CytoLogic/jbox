@@ -1184,54 +1184,155 @@ static int pkg_upgrade(int json_output) {
 }
 
 
-static int pkg_compile(const char *app_name, int json_output) {
-  char apps_dir[8192];
-  char cwd[4096];
+// Helper: compile a package from a directory with Makefile
+static int compile_package_dir(const char *name, const char *dir,
+                               int json_output, int verbose) {
+  struct stat st;
+  char makefile_path[4096];
+  snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", dir);
 
-  if (getcwd(cwd, sizeof(cwd)) == NULL) {
-    if (json_output) {
-      printf("{\"status\": \"error\", "
-             "\"message\": \"failed to get current directory\"}\n");
-    } else {
-      fprintf(stderr, "pkg compile: failed to get current directory\n");
-    }
-    return 1;
+  if (stat(makefile_path, &st) != 0) {
+    return -1;  // No Makefile
   }
 
-  snprintf(apps_dir, sizeof(apps_dir), "%s/src/apps", cwd);
+  if (verbose && !json_output) {
+    printf("Compiling %s... ", name);
+    fflush(stdout);
+  }
+
+  char *make_argv[] = {"make", "-C", (char *)dir, NULL};
+  int result = pkg_run_command(make_argv);
+
+  if (verbose && !json_output) {
+    printf("%s\n", result == 0 ? "ok" : "FAILED");
+  }
+
+  return result;
+}
+
+
+// Helper: get installed package directory path
+static char *get_installed_pkg_dir(const char *name) {
+  PkgDb *db = pkg_db_load();
+  if (db == NULL) return NULL;
+
+  PkgDbEntry *entry = pkg_db_find(db, name);
+  if (entry == NULL) {
+    pkg_db_free(db);
+    return NULL;
+  }
+
+  char *pkgs_dir = pkg_get_pkgs_dir();
+  if (pkgs_dir == NULL) {
+    pkg_db_free(db);
+    return NULL;
+  }
+
+  size_t path_len = strlen(pkgs_dir) + strlen(name) + strlen(entry->version) + 3;
+  char *pkg_dir = malloc(path_len);
+  if (pkg_dir != NULL) {
+    snprintf(pkg_dir, path_len, "%s/%s-%s", pkgs_dir, name, entry->version);
+  }
+
+  free(pkgs_dir);
+  pkg_db_free(db);
+  return pkg_dir;
+}
+
+
+// Helper: update symlink for compiled binary
+static int update_pkg_symlink(const char *name, const char *pkg_dir) {
+  char *bin_dir = pkg_get_bin_dir();
+  if (bin_dir == NULL) return -1;
+
+  // Look for binary in bin/ subdirectory of package
+  char src_path[4096];
+  snprintf(src_path, sizeof(src_path), "%s/bin/%s", pkg_dir, name);
 
   struct stat st;
-  if (stat(apps_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
-    snprintf(apps_dir, sizeof(apps_dir), "../src/apps");
-    if (stat(apps_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
-      if (json_output) {
-        printf("{\"status\": \"error\", "
-               "\"message\": \"src/apps directory not found\"}\n");
-      } else {
-        fprintf(stderr, "pkg compile: src/apps directory not found\n");
-      }
-      return 1;
+  if (stat(src_path, &st) != 0) {
+    // Try direct binary in package dir
+    snprintf(src_path, sizeof(src_path), "%s/%s", pkg_dir, name);
+    if (stat(src_path, &st) != 0) {
+      free(bin_dir);
+      return -1;
     }
   }
 
-  if (app_name != NULL) {
-    char app_dir[8448];
-    snprintf(app_dir, sizeof(app_dir), "%s/%s", apps_dir, app_name);
+  char link_path[4096];
+  snprintf(link_path, sizeof(link_path), "%s/%s", bin_dir, name);
 
-    if (stat(app_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+  // Remove old symlink and create new one
+  unlink(link_path);
+  int result = symlink(src_path, link_path);
+
+  free(bin_dir);
+  return result;
+}
+
+
+static int pkg_compile(const char *app_name, int json_output) {
+  struct stat st;
+
+  // If specific app name given, try installed package first, then src/apps
+  if (app_name != NULL) {
+    // Try installed package first
+    char *pkg_dir = get_installed_pkg_dir(app_name);
+    if (pkg_dir != NULL) {
+      int result = compile_package_dir(app_name, pkg_dir, json_output, 1);
+      if (result >= 0) {
+        // Found and attempted compile
+        if (result == 0) {
+          // Update symlink
+          update_pkg_symlink(app_name, pkg_dir);
+          if (json_output) {
+            printf("{\"status\": \"ok\", \"name\": \"%s\", "
+                   "\"source\": \"installed\", \"path\": \"%s\"}\n",
+                   app_name, pkg_dir);
+          }
+        } else {
+          if (json_output) {
+            printf("{\"status\": \"error\", \"name\": \"%s\", "
+                   "\"source\": \"installed\", \"message\": \"compilation failed\"}\n",
+                   app_name);
+          }
+        }
+        free(pkg_dir);
+        return result;
+      }
+      free(pkg_dir);
+      // No Makefile in installed package, try src/apps
+    }
+
+    // Try src/apps directory
+    char apps_dir[8192];
+    char cwd[4096];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
       if (json_output) {
-        printf("{\"status\": \"error\", \"message\": \"app not found\", "
-               "\"name\": \"%s\"}\n", app_name);
+        printf("{\"status\": \"error\", "
+               "\"message\": \"failed to get current directory\"}\n");
       } else {
-        fprintf(stderr, "pkg compile: app '%s' not found\n", app_name);
+        fprintf(stderr, "pkg compile: failed to get current directory\n");
       }
       return 1;
     }
 
-    char makefile_path[8512];
-    snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", app_dir);
+    snprintf(apps_dir, sizeof(apps_dir), "%s/src/apps/%s", cwd, app_name);
+    if (stat(apps_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+      snprintf(apps_dir, sizeof(apps_dir), "../src/apps/%s", app_name);
+      if (stat(apps_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        if (json_output) {
+          printf("{\"status\": \"error\", \"message\": \"app not found\", "
+                 "\"name\": \"%s\"}\n", app_name);
+        } else {
+          fprintf(stderr, "pkg compile: app '%s' not found\n", app_name);
+        }
+        return 1;
+      }
+    }
 
-    if (stat(makefile_path, &st) != 0) {
+    int result = compile_package_dir(app_name, apps_dir, json_output, 1);
+    if (result < 0) {
       if (json_output) {
         printf("{\"status\": \"error\", "
                "\"message\": \"Makefile not found\", \"app\": \"%s\"}\n",
@@ -1242,110 +1343,173 @@ static int pkg_compile(const char *app_name, int json_output) {
       return 1;
     }
 
-    if (!json_output) {
-      printf("Compiling %s... ", app_name);
-      fflush(stdout);
-    }
-
-    char *make_argv[] = {"make", "-C", app_dir, NULL};
-    int result = pkg_run_command(make_argv);
-
     if (json_output) {
       if (result == 0) {
-        printf("{\"status\": \"ok\", \"name\": \"%s\"}\n", app_name);
+        printf("{\"status\": \"ok\", \"name\": \"%s\", "
+               "\"source\": \"src/apps\"}\n", app_name);
       } else {
         printf("{\"status\": \"error\", \"name\": \"%s\", "
-               "\"message\": \"compilation failed\"}\n", app_name);
+               "\"source\": \"src/apps\", \"message\": \"compilation failed\"}\n",
+               app_name);
       }
-    } else {
-      printf("%s\n", result == 0 ? "ok" : "FAILED");
     }
-
     return result;
   }
 
-  DIR *dir = opendir(apps_dir);
-  if (dir == NULL) {
-    if (json_output) {
-      printf("{\"status\": \"error\", "
-             "\"message\": \"failed to open apps directory\"}\n");
-    } else {
-      fprintf(stderr, "pkg compile: failed to open apps directory\n");
-    }
-    return 1;
-  }
+  // No app name - compile all installed packages that have source,
+  // then fall back to src/apps
 
   int success_count = 0;
   int total_count = 0;
+  int skipped_count = 0;
 
   char **results_names = NULL;
+  char **results_sources = NULL;
   int *results_status = NULL;
   int results_count = 0;
   int results_capacity = 0;
 
-  struct dirent *entry;
-  while ((entry = readdir(dir)) != NULL) {
-    if (entry->d_name[0] == '.') continue;
-
-    char app_dir[8448];
-    snprintf(app_dir, sizeof(app_dir), "%s/%s", apps_dir, entry->d_name);
-
-    if (stat(app_dir, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
-
-    char makefile_path[8512];
-    snprintf(makefile_path, sizeof(makefile_path), "%s/Makefile", app_dir);
-
-    if (stat(makefile_path, &st) != 0) continue;
-
-    total_count++;
-
+  // First, compile installed packages
+  PkgDb *db = pkg_db_load();
+  if (db != NULL && db->count > 0) {
     if (!json_output) {
-      printf("Compiling %s... ", entry->d_name);
-      fflush(stdout);
+      printf("Compiling installed packages...\n");
     }
 
-    char *make_argv[] = {"make", "-C", app_dir, NULL};
-    int result = pkg_run_command(make_argv);
+    for (int i = 0; i < db->count; i++) {
+      char *pkg_dir = get_installed_pkg_dir(db->entries[i].name);
+      if (pkg_dir == NULL) continue;
 
-    if (result == 0) {
-      success_count++;
-    }
-
-    if (!json_output) {
-      printf("%s\n", result == 0 ? "ok" : "FAILED");
-    }
-
-    if (json_output) {
-      if (results_count >= results_capacity) {
-        results_capacity = results_capacity == 0 ? 16 : results_capacity * 2;
-        results_names = realloc(results_names,
-                                (size_t)results_capacity * sizeof(char *));
-        results_status = realloc(results_status,
-                                 (size_t)results_capacity * sizeof(int));
+      int result = compile_package_dir(db->entries[i].name, pkg_dir,
+                                       json_output, 1);
+      if (result < 0) {
+        // No Makefile, skip
+        skipped_count++;
+        free(pkg_dir);
+        continue;
       }
-      results_names[results_count] = strdup(entry->d_name);
-      results_status[results_count] = result;
-      results_count++;
+
+      total_count++;
+      if (result == 0) {
+        success_count++;
+        update_pkg_symlink(db->entries[i].name, pkg_dir);
+      }
+
+      if (json_output) {
+        if (results_count >= results_capacity) {
+          results_capacity = results_capacity == 0 ? 16 : results_capacity * 2;
+          results_names = realloc(results_names,
+                                  (size_t)results_capacity * sizeof(char *));
+          results_sources = realloc(results_sources,
+                                    (size_t)results_capacity * sizeof(char *));
+          results_status = realloc(results_status,
+                                   (size_t)results_capacity * sizeof(int));
+        }
+        results_names[results_count] = strdup(db->entries[i].name);
+        results_sources[results_count] = strdup("installed");
+        results_status[results_count] = result;
+        results_count++;
+      }
+
+      free(pkg_dir);
+    }
+
+    pkg_db_free(db);
+  }
+
+  // If no installed packages were compiled, try src/apps
+  if (total_count == 0) {
+    char apps_dir[8192];
+    char cwd[4096];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+      snprintf(apps_dir, sizeof(apps_dir), "%s/src/apps", cwd);
+      if (stat(apps_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        snprintf(apps_dir, sizeof(apps_dir), "../src/apps");
+      }
+
+      DIR *dir = opendir(apps_dir);
+      if (dir != NULL) {
+        if (!json_output) {
+          printf("Compiling apps from source...\n");
+        }
+
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL) {
+          if (entry->d_name[0] == '.') continue;
+
+          char app_dir[8448];
+          snprintf(app_dir, sizeof(app_dir), "%s/%s", apps_dir, entry->d_name);
+
+          if (stat(app_dir, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
+
+          int result = compile_package_dir(entry->d_name, app_dir,
+                                           json_output, 1);
+          if (result < 0) continue;  // No Makefile
+
+          total_count++;
+          if (result == 0) {
+            success_count++;
+          }
+
+          if (json_output) {
+            if (results_count >= results_capacity) {
+              results_capacity = results_capacity == 0 ? 16 :
+                                 results_capacity * 2;
+              results_names = realloc(results_names,
+                                      (size_t)results_capacity * sizeof(char *));
+              results_sources = realloc(results_sources,
+                                        (size_t)results_capacity * sizeof(char *));
+              results_status = realloc(results_status,
+                                       (size_t)results_capacity * sizeof(int));
+            }
+            results_names[results_count] = strdup(entry->d_name);
+            results_sources[results_count] = strdup("src/apps");
+            results_status[results_count] = result;
+            results_count++;
+          }
+        }
+        closedir(dir);
+      }
     }
   }
 
-  closedir(dir);
+  if (total_count == 0) {
+    if (json_output) {
+      printf("{\"status\": \"ok\", \"results\": [], \"message\": "
+             "\"no packages with source found\"}\n");
+    } else {
+      printf("No packages with source code found.\n");
+    }
+    return 0;
+  }
 
   if (json_output) {
     printf("{\"status\": \"%s\", \"results\": [",
            success_count == total_count ? "ok" : "partial");
     for (int i = 0; i < results_count; i++) {
       if (i > 0) printf(", ");
-      printf("{\"name\": \"%s\", \"status\": \"%s\"}",
-             results_names[i], results_status[i] == 0 ? "ok" : "error");
+      printf("{\"name\": \"%s\", \"source\": \"%s\", \"status\": \"%s\"}",
+             results_names[i], results_sources[i],
+             results_status[i] == 0 ? "ok" : "error");
       free(results_names[i]);
+      free(results_sources[i]);
     }
-    printf("], \"success_count\": %d, \"total_count\": %d}\n",
+    printf("], \"success_count\": %d, \"total_count\": %d",
            success_count, total_count);
+    if (skipped_count > 0) {
+      printf(", \"skipped_count\": %d", skipped_count);
+    }
+    printf("}\n");
     free(results_names);
+    free(results_sources);
     free(results_status);
   } else {
-    printf("\nCompiled %d/%d apps successfully.\n", success_count, total_count);
+    printf("\nCompiled %d/%d package(s) successfully.\n",
+           success_count, total_count);
+    if (skipped_count > 0) {
+      printf("Skipped %d package(s) without source code.\n", skipped_count);
+    }
   }
 
   return success_count == total_count ? 0 : 1;
