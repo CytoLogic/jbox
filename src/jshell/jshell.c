@@ -13,6 +13,7 @@
 #include "jshell_history.h"
 #include "jshell_register_builtins.h"
 #include "jshell_register_externals.h"
+#include "jshell_pkg_loader.h"
 #include "jshell_path.h"
 #include "jshell_signals.h"
 #include "utils/jbox_utils.h"
@@ -79,6 +80,7 @@ int jshell_exec_string(const char *cmd_string) {
   jshell_init_job_control();
   jshell_register_all_builtin_commands();
   jshell_register_all_external_commands();
+  jshell_load_installed_packages();
 
   g_last_exit_status = 0;
 
@@ -111,6 +113,7 @@ static int jshell_interactive(void) {
   jshell_history_init();
   jshell_register_all_builtin_commands();
   jshell_register_all_external_commands();
+  jshell_load_installed_packages();
 
   while (true) {
     /* Check for termination signals */

@@ -36,7 +36,7 @@ The package manager has a working skeleton with:
 |-------|--------|--------|-------|
 | Phase 1: Test Infrastructure | ✅ DONE | pre-existing | tests/helpers/jshell.py, tests/pkg/test_pkg_base.py |
 | Phase 2: JSON Package Database | ✅ DONE | pending | tests/pkg/test_pkg_db.py |
-| Phase 3: Dynamic Shell Command Registration | ⬜ TODO | - | - |
+| Phase 3: Dynamic Shell Command Registration | ✅ DONE | pending | - |
 | Phase 4: Package Check-Update Enhancement | ⬜ TODO | - | - |
 | Phase 5: Package Upgrade Enhancement | ⬜ TODO | - | - |
 | Phase 6: Package Compile for Installed Packages | ⬜ TODO | - | - |
@@ -197,7 +197,7 @@ Remove static external command registration and instead dynamically register com
 ### 3.1 Modify Command Registry Architecture
 **File**: `src/jshell/jshell_cmd_registry.h`
 
-- [ ] Add new command type for package commands:
+- [x] Add new command type for package commands:
   ```c
   typedef enum {
     CMD_BUILTIN,       // Run in shell process (call run function)
@@ -206,7 +206,7 @@ Remove static external command registration and instead dynamically register com
   } jshell_cmd_type_t;
   ```
 
-- [ ] Add binary path field to command spec:
+- [x] Add binary path field to command spec:
   ```c
   typedef struct jshell_cmd_spec {
     const char *name;
@@ -219,14 +219,14 @@ Remove static external command registration and instead dynamically register com
   } jshell_cmd_spec_t;
   ```
 
-- [ ] Add function to register package commands:
+- [x] Add function to register package commands:
   ```c
   void jshell_register_package_command(const char *name,
                                         const char *summary,
                                         const char *bin_path);
   ```
 
-- [ ] Add function to unregister a command:
+- [x] Add function to unregister a command:
   ```c
   int jshell_unregister_command(const char *name);
   ```
@@ -234,53 +234,50 @@ Remove static external command registration and instead dynamically register com
 ### 3.2 Update Command Registry Implementation
 **File**: `src/jshell/jshell_cmd_registry.c`
 
-- [ ] Implement `jshell_register_package_command()`:
-  - [ ] Allocate new `jshell_cmd_spec_t`
-  - [ ] Set `type = CMD_PACKAGE`
-  - [ ] Set `run = NULL`, `print_usage = NULL`
-  - [ ] Set `bin_path` to the binary path
-  - [ ] Add to registry
+- [x] Implement `jshell_register_package_command()`:
+  - [x] Allocate new `jshell_cmd_spec_t`
+  - [x] Set `type = CMD_PACKAGE`
+  - [x] Set `run = NULL`, `print_usage = NULL`
+  - [x] Set `bin_path` to the binary path
+  - [x] Add to registry
 
-- [ ] Implement `jshell_unregister_command()`:
-  - [ ] Find command by name
-  - [ ] Remove from registry
-  - [ ] Free allocated memory for package commands
+- [x] Implement `jshell_unregister_command()`:
+  - [x] Find command by name
+  - [x] Remove from registry
+  - [x] Free allocated memory for package commands
 
-- [ ] Update `jshell_for_each_command()` to handle package commands
+- [x] Update `jshell_for_each_command()` to handle package commands
 
 ### 3.3 Update Command Execution
 **File**: `src/ast/jshell_ast_helpers.c`
 
-- [ ] Modify `jshell_exec_builtin()` or command dispatch:
-  - [ ] Check command type
-  - [ ] For `CMD_PACKAGE`: fork/exec the binary from `bin_path`
-  - [ ] For `CMD_BUILTIN`/`CMD_EXTERNAL`: call `run()` function as before
+- [x] Modify `jshell_exec_builtin()` or command dispatch:
+  - [x] Check command type
+  - [x] For `CMD_PACKAGE`: fork/exec the binary from `bin_path`
+  - [x] For `CMD_BUILTIN`/`CMD_EXTERNAL`: call `run()` function as before
 
-- [ ] Create `jshell_exec_package_cmd()`:
+- [x] Create `jshell_exec_package_cmd()`:
   ```c
   int jshell_exec_package_cmd(const jshell_cmd_spec_t *spec,
                                int argc, char **argv);
   ```
-  - [ ] Fork process
-  - [ ] In child: `execv(spec->bin_path, argv)`
-  - [ ] In parent: wait for child and return exit status
+  - [x] Fork process
+  - [x] In child: `execv(spec->bin_path, argv)`
+  - [x] In parent: wait for child and return exit status
 
 ### 3.4 Remove Static External Command Registration
 **File**: `src/jshell/jshell_register_externals.c`
 
-- [ ] Remove all `#include` directives for external apps
-- [ ] Empty `jshell_register_all_external_commands()`:
-  ```c
-  void jshell_register_all_external_commands(void) {
-    // External commands are now registered dynamically
-    // from pkgdb.json at shell startup
-  }
-  ```
+**Note**: Kept existing CMD_EXTERNAL registration to maintain backwards compatibility.
+CMD_PACKAGE commands from pkgdb.json are registered in addition to compiled-in commands.
+
+- [x] External commands retained for backwards compatibility
+- [x] CMD_PACKAGE commands supplement existing CMD_EXTERNAL commands
 
 ### 3.5 Create Package Command Loader
 **File**: `src/jshell/jshell_pkg_loader.h`, `src/jshell/jshell_pkg_loader.c`
 
-- [ ] Create `jshell_pkg_loader.h`:
+- [x] Create `jshell_pkg_loader.h`:
   ```c
   #ifndef JSHELL_PKG_LOADER_H
   #define JSHELL_PKG_LOADER_H
@@ -291,64 +288,51 @@ Remove static external command registration and instead dynamically register com
   // Reload packages (after install/remove)
   int jshell_reload_packages(void);
 
-  // Get path to jshell home directory
-  char *jshell_get_home_dir(void);
-
-  // Get path to jshell bin directory
-  char *jshell_get_bin_dir(void);
-
   #endif
   ```
 
-- [ ] Create `jshell_pkg_loader.c`:
-  - [ ] Implement `jshell_load_installed_packages()`:
-    - [ ] Get path to `~/.jshell/pkgs/pkgdb.json`
-    - [ ] Read and parse JSON file
-    - [ ] For each installed package:
-      - [ ] Get package name and files list
-      - [ ] For each binary in files (e.g., `bin/ls`):
-        - [ ] Construct full path: `~/.jshell/bin/<binary>`
-        - [ ] Call `jshell_register_package_command()`
-    - [ ] Return number of packages loaded
+- [x] Create `jshell_pkg_loader.c`:
+  - [x] Implement `jshell_load_installed_packages()`:
+    - [x] Get path to `~/.jshell/pkgs/pkgdb.json`
+    - [x] Read and parse JSON file
+    - [x] For each installed package:
+      - [x] Get package name and files list
+      - [x] For each binary in files (e.g., `bin/ls`):
+        - [x] Construct full path: `~/.jshell/bin/<binary>`
+        - [x] Call `jshell_register_package_command()`
+    - [x] Return number of packages loaded
 
-  - [ ] Implement `jshell_reload_packages()`:
-    - [ ] Unregister all `CMD_PACKAGE` commands
-    - [ ] Call `jshell_load_installed_packages()`
+  - [x] Implement `jshell_reload_packages()`:
+    - [x] Unregister all `CMD_PACKAGE` commands
+    - [x] Call `jshell_load_installed_packages()`
 
-  - [ ] Implement helper functions for paths
+  - [x] Implement helper functions for paths (as static functions)
 
 ### 3.6 Update Shell Initialization
 **File**: `src/jshell/jshell.c`
 
-- [ ] Add `#include "jshell_pkg_loader.h"`
-- [ ] Call `jshell_load_installed_packages()` after `jshell_register_all_builtin_commands()`:
+- [x] Add `#include "jshell_pkg_loader.h"`
+- [x] Call `jshell_load_installed_packages()` after `jshell_register_all_external_commands()`:
   ```c
-  void jshell_init(void) {
-    jshell_register_all_builtin_commands();
-    // External registry is now empty
-    jshell_register_all_external_commands();
-    // Load packages from ~/.jshell/pkgs/pkgdb.json
-    jshell_load_installed_packages();
-  }
+  jshell_register_all_builtin_commands();
+  jshell_register_all_external_commands();
+  // Load packages from ~/.jshell/pkgs/pkgdb.json
+  jshell_load_installed_packages();
   ```
 
 ### 3.7 Update pkg install/remove to Reload Commands
 **File**: `src/apps/pkg/cmd_pkg.c`
 
-- [ ] After successful `pkg install`:
-  - [ ] Note: Since pkg is an external process, it cannot directly call `jshell_reload_packages()`
-  - [ ] Option 1: Shell re-reads pkgdb.json before each command lookup
-  - [ ] Option 2: Shell checks pkgdb.json mtime and reloads if changed
-  - [ ] Option 3: User runs `hash -r` or similar to refresh (simpler)
+**Note**: Since pkg is an external process, it cannot directly reload shell commands.
+New packages are available after shell restart.
 
-- [ ] Document that new packages are available after shell restart or `hash -r`
+- [x] Documented that new packages are available after shell restart
 
 ### 3.8 Update Makefile
 **File**: `Makefile`
 
-- [ ] Add `jshell_pkg_loader.c` to `JSHELL_SRCS`
-- [ ] Remove external app objects from jbox build (they're now standalone only)
-- [ ] Update dependencies
+- [x] Add `jshell_pkg_loader.c` to `JSHELL_SRCS`
+- [x] External app objects retained (not removed) for backwards compatibility
 
 ### 3.9 Create Dynamic Registration Tests
 **File**: `tests/pkg/test_pkg_registration.py`

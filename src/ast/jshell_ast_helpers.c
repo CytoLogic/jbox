@@ -266,6 +266,21 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
       close(pipes[i][1]);
     }
 
+    // Check if this is a package command
+    const jshell_cmd_spec_t* cmd_spec = jshell_find_command(cmd_params->argv[0]);
+    if (cmd_spec != NULL && cmd_spec->type == CMD_PACKAGE
+        && cmd_spec->bin_path != NULL) {
+      execv(cmd_spec->bin_path, cmd_params->argv);
+      if (errno == EACCES) {
+        fprintf(stderr, "jshell: %s: Permission denied\n",
+                cmd_params->argv[0]);
+        exit(126);
+      }
+      fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0],
+              strerror(errno));
+      exit(127);
+    }
+
     char* resolved_path = jshell_resolve_command(cmd_params->argv[0]);
     if (resolved_path != NULL) {
       execv(resolved_path, cmd_params->argv);
@@ -372,19 +387,80 @@ static char* jshell_build_cmd_string(JShellCmdVector* cmd_vector) {
 }
 
 
+// Execute a package command by fork/exec
+static int jshell_exec_package_cmd(const jshell_cmd_spec_t* spec,
+                                   JShellCmdParams* cmd_params,
+                                   JShellExecJob* job) {
+  DPRINT("Executing package command: %s -> %s", spec->name, spec->bin_path);
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    perror("fork");
+    return -1;
+  }
+
+  if (pid == 0) {
+    jshell_reset_signals_for_child();
+
+    if (jshell_setup_input_redir(job->input_fd) == -1) {
+      exit(EXIT_FAILURE);
+    }
+
+    if (jshell_setup_output_redir(job->output_fd) == -1) {
+      exit(EXIT_FAILURE);
+    }
+
+    execv(spec->bin_path, cmd_params->argv);
+    if (errno == EACCES) {
+      fprintf(stderr, "jshell: %s: Permission denied\n", cmd_params->argv[0]);
+      exit(126);
+    }
+    fprintf(stderr, "jshell: %s: %s\n", cmd_params->argv[0], strerror(errno));
+    exit(127);
+  }
+
+  if (job->input_fd != -1) {
+    close(job->input_fd);
+  }
+  if (job->output_fd != -1) {
+    close(job->output_fd);
+  }
+
+  if (job->exec_job_type == BG_JOB) {
+    char* cmd_string = jshell_build_cmd_string(job->jshell_cmd_vector_ptr);
+    jshell_add_background_job(&pid, 1, cmd_string);
+    if (cmd_string != NULL) {
+      free(cmd_string);
+    }
+    return 0;
+  }
+
+  int status;
+  waitpid(pid, &status, 0);
+  if (WIFEXITED(status)) {
+    return WEXITSTATUS(status);
+  }
+  return -1;
+}
+
+
 static int jshell_exec_single_cmd(JShellExecJob* job) {
   DPRINT("jshell_exec_single_cmd called");
-  
-  JShellCmdParams* cmd_params = 
+
+  JShellCmdParams* cmd_params =
     &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[0];
-  
-  const jshell_cmd_spec_t* builtin = jshell_find_builtin(cmd_params->argv[0]);
-  if (builtin != NULL) {
-    DPRINT("Command is builtin: %s", builtin->name);
-    return jshell_exec_builtin(builtin, cmd_params, 
+
+  const jshell_cmd_spec_t* cmd_spec = jshell_find_builtin(cmd_params->argv[0]);
+  if (cmd_spec != NULL) {
+    if (cmd_spec->type == CMD_PACKAGE) {
+      DPRINT("Command is package: %s", cmd_spec->name);
+      return jshell_exec_package_cmd(cmd_spec, cmd_params, job);
+    }
+    DPRINT("Command is builtin: %s", cmd_spec->name);
+    return jshell_exec_builtin(cmd_spec, cmd_params,
                                 job->input_fd, job->output_fd);
   }
-  
+
   pid_t pid = fork();
   if (pid == -1) {
     perror("fork");
