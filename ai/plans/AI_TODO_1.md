@@ -614,24 +614,7 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [ ] Create `tests/apps/echo/test_echo.py`:
   - [ ] Implement unit tests using Python unittest framework
 
-### 7.2 printf - Formatted Output
-**External App** (`src/apps/printf/`)
-
-- [ ] Create `src/apps/printf/cmd_printf.h`
-- [ ] Create `src/apps/printf/cmd_printf.c`:
-  - [ ] Implement `build_printf_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `<FORMAT>` (required)
-    - [ ] `<ARGS...>` (optional)
-  - [ ] Implement `printf_run()`
-  - [ ] Implement `printf_print_usage()`
-  - [ ] Define `cmd_printf_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/printf/printf_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/printf/test_printf.py`:
-  - [ ] Implement unit tests using Python unittest framework
-
-### 7.3 sleep - Delay
+### 7.2 sleep - Delay
 **External App** (`src/apps/sleep/`)
 
 - [ ] Create `src/apps/sleep/cmd_sleep.h`
@@ -647,7 +630,7 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [ ] Create `tests/apps/sleep/test_sleep.py`:
   - [ ] Implement unit tests using Python unittest framework
 
-### 7.4 date - Show System Time
+### 7.3 date - Show System Time
 **External App** (`src/apps/date/`)
 
 - [ ] Create `src/apps/date/cmd_date.h`
@@ -662,38 +645,9 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [ ] Create `tests/apps/date/test_date.py`:
   - [ ] Implement unit tests using Python unittest framework
 
-### 7.5 true - Do Nothing, Succeed
-**External App** (`src/apps/true/`)
-
-- [ ] Create `src/apps/true/cmd_true.h`
-- [ ] Create `src/apps/true/cmd_true.c`:
-  - [ ] Implement `build_true_argtable()` with:
-    - [ ] `-h, --help`
-  - [ ] Implement `true_run()`
-  - [ ] Implement `true_print_usage()`
-  - [ ] Define `cmd_true_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/true/true_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/true/test_true.py`:
-  - [ ] Implement unit tests using Python unittest framework
-
-### 7.6 false - Do Nothing, Fail
-**External App** (`src/apps/false/`)
-
-- [ ] Create `src/apps/false/cmd_false.h`
-- [ ] Create `src/apps/false/cmd_false.c`:
-  - [ ] Implement `build_false_argtable()` with:
-    - [ ] `-h, --help`
-  - [ ] Implement `false_run()`
-  - [ ] Implement `false_print_usage()`
-  - [ ] Define `cmd_false_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/false/false_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/false/test_false.py`:
-  - [ ] Implement unit tests using Python unittest framework
-
-### 7.7 help - Shell Built-in Help
+### 7.4 help - Shell Built-in Help
 **Builtin** (`src/jshell/builtins/`) - Needs access to command registry
+Help should print all registered commands.
 
 - [ ] Create `src/jshell/builtins/cmd_help.h`
 - [ ] Create `src/jshell/builtins/cmd_help.c`:
@@ -719,35 +673,7 @@ All shell and environment commands are implemented as **Builtins** for consisten
   - [ ] Implement `jshell_register_history_command()`
 - [ ] Update `jshell_register_builtins.h` and `.c`
 
-### 7.9 alias - Manage Aliases
-**Builtin** (`src/jshell/builtins/`) - Needs access to shell's alias table
-
-- [ ] Create `src/jshell/builtins/cmd_alias.h`
-- [ ] Create `src/jshell/builtins/cmd_alias.c`:
-  - [ ] Implement `build_alias_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `[NAME=VALUE]` (optional)
-  - [ ] Implement `alias_run()`
-  - [ ] Implement `alias_print_usage()`
-  - [ ] Define `cmd_alias_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_alias_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
-
-### 7.10 unalias - Remove Alias
-**Builtin** (`src/jshell/builtins/`) - Needs access to shell's alias table
-
-- [ ] Create `src/jshell/builtins/cmd_unalias.h`
-- [ ] Create `src/jshell/builtins/cmd_unalias.c`:
-  - [ ] Implement `build_unalias_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `<NAME>` (required)
-  - [ ] Implement `unalias_run()`
-  - [ ] Implement `unalias_print_usage()`
-  - [ ] Define `cmd_unalias_spec` with `.type = CMD_BUILTIN`
-  - [ ] Implement `jshell_register_unalias_command()`
-- [ ] Update `jshell_register_builtins.h` and `.c`
-
-### 7.11 less - Pager (Optional, Complex)
+### 7.9 less - Pager (Optional, Complex)
 **External App** (`src/apps/less/`)
 
 - [ ] Create `src/apps/less/less.c`:
@@ -758,7 +684,7 @@ All shell and environment commands are implemented as **Builtins** for consisten
 - [ ] Create `tests/apps/less/test_less.py`:
   - [ ] Implement unit tests using Python unittest framework
 
-### 7.12 vi - Text Editor (Optional, Very Complex)
+### 7.10 vi - Text Editor (Optional, Very Complex)
 **External App** (`src/apps/vi/`)
 
 - [ ] Consider using existing minimal vi implementation or deferring
