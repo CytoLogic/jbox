@@ -437,31 +437,247 @@ class TestPkgCommand(unittest.TestCase):
         finally:
             shutil.rmtree(pkg_dir.parent)
 
-    # Search tests (future - should return not implemented)
-    def test_search_not_implemented(self):
-        """Test search returns not implemented."""
-        result = self.run_pkg("search", "test")
+    # Search tests (require registry server)
+    def test_search_requires_query(self):
+        """Test search requires query argument."""
+        result = self.run_pkg("search")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("not yet implemented", result.stderr)
+        self.assertIn("search term required", result.stderr)
 
-    # Check-update tests (future - should return not implemented)
-    def test_check_update_not_implemented(self):
-        """Test check-update returns not implemented."""
+    # Check-update tests (no packages installed)
+    def test_check_update_no_packages(self):
+        """Test check-update with no packages installed."""
         result = self.run_pkg("check-update")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("not yet implemented", result.stderr)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No packages installed", result.stdout)
 
-    # Upgrade tests (future - should return not implemented)
-    def test_upgrade_not_implemented(self):
-        """Test upgrade returns not implemented."""
+    def test_check_update_no_packages_json(self):
+        """Test check-update --json with no packages installed."""
+        result = self.run_pkg("check-update", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertEqual(output["updates"], [])
+
+    # Upgrade tests (no packages installed)
+    def test_upgrade_no_packages(self):
+        """Test upgrade with no packages installed."""
         result = self.run_pkg("upgrade")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("not yet implemented", result.stderr)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No packages installed", result.stdout)
+
+    def test_upgrade_no_packages_json(self):
+        """Test upgrade --json with no packages installed."""
+        result = self.run_pkg("upgrade", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertEqual(output["upgraded"], [])
 
     def test_unknown_command(self):
         """Test unknown subcommand shows error."""
         result = self.run_pkg("unknown")
         self.assertNotEqual(result.returncode, 0)
+
+
+class TestPkgRegistry(unittest.TestCase):
+    """Test cases for pkg registry commands (require registry server)."""
+
+    PKG_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "pkg"
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+    START_SCRIPT = PROJECT_ROOT / "scripts" / "start-pkg-server.sh"
+    SHUTDOWN_SCRIPT = PROJECT_ROOT / "scripts" / "shutdown-pkg-server.sh"
+    JSHELL_HOME = Path.home() / ".jshell"
+    BASE_URL = "http://localhost:3000"
+    server_process = None
+
+    @classmethod
+    def setUpClass(cls):
+        """Start the registry server before running tests."""
+        if not cls.PKG_BIN.exists():
+            raise unittest.SkipTest(f"pkg binary not found at {cls.PKG_BIN}")
+        if not cls.START_SCRIPT.exists():
+            raise unittest.SkipTest(f"start script not found at {cls.START_SCRIPT}")
+        if not cls.SHUTDOWN_SCRIPT.exists():
+            raise unittest.SkipTest(f"shutdown script not found at {cls.SHUTDOWN_SCRIPT}")
+
+        # Backup existing .jshell if it exists
+        cls.backup_dir = None
+        if cls.JSHELL_HOME.exists():
+            cls.backup_dir = cls.JSHELL_HOME.parent / ".jshell.backup"
+            if cls.backup_dir.exists():
+                shutil.rmtree(cls.backup_dir)
+            shutil.move(cls.JSHELL_HOME, cls.backup_dir)
+
+        # Start the server
+        cls.server_process = subprocess.Popen(
+            ["bash", str(cls.START_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, "PORT": "3000"}
+        )
+
+        # Wait for server to be ready
+        cls._wait_for_server()
+
+    @classmethod
+    def _wait_for_server(cls, timeout=10):
+        """Wait for the server to be ready."""
+        import time
+        from urllib.request import urlopen
+        from urllib.error import URLError
+
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                urlopen(f"{cls.BASE_URL}/packages", timeout=1)
+                return  # Server is ready
+            except (URLError, ConnectionRefusedError):
+                time.sleep(0.1)
+
+        # Check if process died
+        if cls.server_process.poll() is not None:
+            stdout, stderr = cls.server_process.communicate()
+            raise unittest.SkipTest(
+                f"Server process died. stdout: {stdout.decode()}, "
+                f"stderr: {stderr.decode()}"
+            )
+
+        raise unittest.SkipTest(f"Server did not start within {timeout} seconds")
+
+    @classmethod
+    def tearDownClass(cls):
+        """Stop the registry server after tests."""
+        subprocess.run(
+            ["bash", str(cls.SHUTDOWN_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
+            capture_output=True,
+            env={**os.environ, "PORT": "3000"}
+        )
+        if cls.server_process:
+            try:
+                cls.server_process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+
+        # Restore .jshell
+        if cls.JSHELL_HOME.exists():
+            shutil.rmtree(cls.JSHELL_HOME)
+        if cls.backup_dir and cls.backup_dir.exists():
+            shutil.move(cls.backup_dir, cls.JSHELL_HOME)
+
+    def setUp(self):
+        """Clean up .jshell before each test."""
+        if self.JSHELL_HOME.exists():
+            shutil.rmtree(self.JSHELL_HOME)
+
+    def run_pkg(self, *args):
+        """Run the pkg command with given arguments and return result."""
+        cmd = [str(self.PKG_BIN)] + list(args)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"}
+        )
+        return result
+
+    # Search tests
+    def test_search_returns_results(self):
+        """Test search returns matching packages."""
+        result = self.run_pkg("search", "ls")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("ls", result.stdout)
+
+    def test_search_json(self):
+        """Test search --json returns valid JSON."""
+        result = self.run_pkg("search", "cat", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertIn("results", output)
+        self.assertTrue(any(r["name"] == "cat" for r in output["results"]))
+
+    def test_search_no_results(self):
+        """Test search with no matches."""
+        result = self.run_pkg("search", "nonexistent-package-xyz")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No packages found", result.stdout)
+
+    def test_search_no_results_json(self):
+        """Test search --json with no matches."""
+        result = self.run_pkg("search", "nonexistent-package-xyz", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertEqual(output["results"], [])
+
+    def test_search_description_match(self):
+        """Test search matches package descriptions."""
+        result = self.run_pkg("search", "directory")
+        self.assertEqual(result.returncode, 0)
+        # ls and mkdir both mention directory in description
+        self.assertTrue("ls" in result.stdout or "mkdir" in result.stdout)
+
+    # Check-update tests with registry
+    def test_check_update_all_up_to_date(self):
+        """Test check-update when installed package is up to date."""
+        # First install a package at the registry version
+        tarball = self.PROJECT_ROOT / "srv" / "pkg_repository" / "downloads" / "ls-0.0.1.tar.gz"
+        if not tarball.exists():
+            self.skipTest("ls tarball not found in downloads")
+
+        result = self.run_pkg("install", str(tarball))
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_pkg("check-update")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("up to date", result.stdout)
+
+    def test_check_update_all_up_to_date_json(self):
+        """Test check-update --json when all packages are up to date."""
+        tarball = self.PROJECT_ROOT / "srv" / "pkg_repository" / "downloads" / "cat-0.0.1.tar.gz"
+        if not tarball.exists():
+            self.skipTest("cat tarball not found in downloads")
+
+        result = self.run_pkg("install", str(tarball))
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_pkg("check-update", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertEqual(output["updates"], [])
+
+    # Upgrade tests with registry
+    def test_upgrade_all_up_to_date(self):
+        """Test upgrade when all packages are up to date."""
+        tarball = self.PROJECT_ROOT / "srv" / "pkg_repository" / "downloads" / "head-0.0.1.tar.gz"
+        if not tarball.exists():
+            self.skipTest("head tarball not found in downloads")
+
+        result = self.run_pkg("install", str(tarball))
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_pkg("upgrade")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("up to date", result.stdout)
+
+    def test_upgrade_all_up_to_date_json(self):
+        """Test upgrade --json when all packages are up to date."""
+        tarball = self.PROJECT_ROOT / "srv" / "pkg_repository" / "downloads" / "tail-0.0.1.tar.gz"
+        if not tarball.exists():
+            self.skipTest("tail tarball not found in downloads")
+
+        result = self.run_pkg("install", str(tarball))
+        self.assertEqual(result.returncode, 0)
+
+        result = self.run_pkg("upgrade", "--json")
+        self.assertEqual(result.returncode, 0)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["status"], "ok")
+        self.assertEqual(output["upgraded"], [])
 
 
 if __name__ == "__main__":

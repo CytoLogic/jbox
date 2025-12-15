@@ -11,6 +11,7 @@
 #include "pkg_utils.h"
 #include "pkg_json.h"
 #include "pkg_db.h"
+#include "pkg_registry.h"
 
 
 typedef enum {
@@ -69,13 +70,16 @@ static void pkg_print_usage(FILE *out) {
   fprintf(out, "Commands:\n");
   fprintf(out, "  list                      list installed packages\n");
   fprintf(out, "  info NAME                 show information about a package\n");
-  fprintf(out, "  search NAME               search for packages (future)\n");
+  fprintf(out, "  search QUERY              search registry for packages\n");
   fprintf(out, "  install <tarball>         install package from tarball\n");
   fprintf(out, "  remove NAME               remove an installed package\n");
   fprintf(out, "  build <src> <out.tar.gz>  build a package for distribution\n");
-  fprintf(out, "  check-update              check for updates (future)\n");
-  fprintf(out, "  upgrade                   upgrade packages (future)\n");
+  fprintf(out, "  check-update              check for available updates\n");
+  fprintf(out, "  upgrade                   upgrade all packages with updates\n");
   fprintf(out, "  compile [name]            compile apps (all if name omitted)\n");
+  fprintf(out, "\nEnvironment:\n");
+  fprintf(out, "  JSHELL_PKG_REGISTRY       registry URL (default: %s)\n",
+          PKG_REGISTRY_DEFAULT_URL);
 }
 
 
@@ -237,8 +241,8 @@ static int pkg_info(const char *name, int json_output) {
 }
 
 
-static int pkg_search(const char *name, int json_output) {
-  if (name == NULL) {
+static int pkg_search(const char *query, int json_output) {
+  if (query == NULL) {
     if (json_output) {
       printf("{\"status\": \"error\", "
              "\"message\": \"search term required\"}\n");
@@ -247,14 +251,54 @@ static int pkg_search(const char *name, int json_output) {
     }
     return 1;
   }
-  if (json_output) {
-    printf("{\"status\": \"not_implemented\", "
-           "\"message\": \"pkg search not yet implemented\", "
-           "\"query\": \"%s\"}\n", name);
-  } else {
-    fprintf(stderr, "pkg search: not yet implemented\n");
+
+  PkgRegistryList *results = pkg_registry_search(query);
+  if (results == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to connect to registry\", "
+             "\"registry\": \"%s\"}\n", pkg_registry_get_url());
+    } else {
+      fprintf(stderr, "pkg search: failed to connect to registry at %s\n",
+              pkg_registry_get_url());
+    }
+    return 1;
   }
-  return 1;
+
+  if (json_output) {
+    printf("{\"status\": \"ok\", \"query\": \"%s\", \"results\": [", query);
+    for (int i = 0; i < results->count; i++) {
+      if (i > 0) printf(", ");
+      printf("{\"name\": \"%s\"", results->entries[i].name);
+      if (results->entries[i].latest_version) {
+        printf(", \"version\": \"%s\"", results->entries[i].latest_version);
+      }
+      if (results->entries[i].description) {
+        printf(", \"description\": \"%s\"", results->entries[i].description);
+      }
+      printf("}");
+    }
+    printf("]}\n");
+  } else {
+    if (results->count == 0) {
+      printf("No packages found matching '%s'.\n", query);
+    } else {
+      printf("Found %d package(s) matching '%s':\n\n", results->count, query);
+      for (int i = 0; i < results->count; i++) {
+        printf("  %-15s", results->entries[i].name);
+        if (results->entries[i].latest_version) {
+          printf(" %-10s", results->entries[i].latest_version);
+        }
+        if (results->entries[i].description) {
+          printf(" %s", results->entries[i].description);
+        }
+        printf("\n");
+      }
+    }
+  }
+
+  pkg_registry_list_free(results);
+  return 0;
 }
 
 
@@ -728,24 +772,306 @@ static int pkg_build(const char *src_dir, const char *output_tar,
 
 
 static int pkg_check_update(int json_output) {
-  if (json_output) {
-    printf("{\"status\": \"not_implemented\", "
-           "\"message\": \"pkg check-update not yet implemented\"}\n");
-  } else {
-    fprintf(stderr, "pkg check-update: not yet implemented\n");
+  PkgDb *db = pkg_db_load();
+  if (db == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to load package database\"}\n");
+    } else {
+      fprintf(stderr, "pkg check-update: failed to load package database\n");
+    }
+    return 1;
   }
-  return 1;
+
+  if (db->count == 0) {
+    if (json_output) {
+      printf("{\"status\": \"ok\", \"updates\": [], "
+             "\"message\": \"no packages installed\"}\n");
+    } else {
+      printf("No packages installed.\n");
+    }
+    pkg_db_free(db);
+    return 0;
+  }
+
+  typedef struct {
+    char *name;
+    char *installed;
+    char *available;
+  } update_entry_t;
+
+  update_entry_t *updates = NULL;
+  int update_count = 0;
+  int update_capacity = 0;
+  int checked = 0;
+  int errors = 0;
+
+  for (int i = 0; i < db->count; i++) {
+    PkgDbEntry *entry = &db->entries[i];
+    checked++;
+
+    PkgRegistryEntry *reg_entry = pkg_registry_fetch_package(entry->name);
+    if (reg_entry == NULL) {
+      errors++;
+      continue;
+    }
+
+    int cmp = pkg_version_compare(entry->version, reg_entry->latest_version);
+    if (cmp < 0) {
+      // Update available
+      if (update_count >= update_capacity) {
+        update_capacity = update_capacity == 0 ? 8 : update_capacity * 2;
+        updates = realloc(updates, (size_t)update_capacity * sizeof(update_entry_t));
+      }
+      updates[update_count].name = strdup(entry->name);
+      updates[update_count].installed = strdup(entry->version);
+      updates[update_count].available = strdup(reg_entry->latest_version);
+      update_count++;
+    }
+
+    pkg_registry_entry_free(reg_entry);
+  }
+
+  if (json_output) {
+    printf("{\"status\": \"ok\", \"checked\": %d, \"errors\": %d, ",
+           checked, errors);
+    printf("\"updates\": [");
+    for (int i = 0; i < update_count; i++) {
+      if (i > 0) printf(", ");
+      printf("{\"name\": \"%s\", \"installed\": \"%s\", \"available\": \"%s\"}",
+             updates[i].name, updates[i].installed, updates[i].available);
+    }
+    printf("]}\n");
+  } else {
+    if (errors > 0) {
+      fprintf(stderr, "Warning: could not check %d package(s) against registry\n",
+              errors);
+    }
+    if (update_count == 0) {
+      printf("All packages are up to date.\n");
+    } else {
+      printf("%d update(s) available:\n\n", update_count);
+      for (int i = 0; i < update_count; i++) {
+        printf("  %-15s %s -> %s\n",
+               updates[i].name, updates[i].installed, updates[i].available);
+      }
+      printf("\nRun 'pkg upgrade' to install updates.\n");
+    }
+  }
+
+  for (int i = 0; i < update_count; i++) {
+    free(updates[i].name);
+    free(updates[i].installed);
+    free(updates[i].available);
+  }
+  free(updates);
+  pkg_db_free(db);
+
+  return 0;
 }
 
 
 static int pkg_upgrade(int json_output) {
-  if (json_output) {
-    printf("{\"status\": \"not_implemented\", "
-           "\"message\": \"pkg upgrade not yet implemented\"}\n");
-  } else {
-    fprintf(stderr, "pkg upgrade: not yet implemented\n");
+  PkgDb *db = pkg_db_load();
+  if (db == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to load package database\"}\n");
+    } else {
+      fprintf(stderr, "pkg upgrade: failed to load package database\n");
+    }
+    return 1;
   }
-  return 1;
+
+  if (db->count == 0) {
+    if (json_output) {
+      printf("{\"status\": \"ok\", \"upgraded\": [], "
+             "\"message\": \"no packages installed\"}\n");
+    } else {
+      printf("No packages installed.\n");
+    }
+    pkg_db_free(db);
+    return 0;
+  }
+
+  // Collect packages that need updating
+  typedef struct {
+    char *name;
+    char *installed;
+    char *available;
+    char *download_url;
+  } upgrade_entry_t;
+
+  upgrade_entry_t *upgrades = NULL;
+  int upgrade_count = 0;
+  int upgrade_capacity = 0;
+
+  for (int i = 0; i < db->count; i++) {
+    PkgDbEntry *entry = &db->entries[i];
+
+    PkgRegistryEntry *reg_entry = pkg_registry_fetch_package(entry->name);
+    if (reg_entry == NULL) continue;
+
+    int cmp = pkg_version_compare(entry->version, reg_entry->latest_version);
+    if (cmp < 0) {
+      if (upgrade_count >= upgrade_capacity) {
+        upgrade_capacity = upgrade_capacity == 0 ? 8 : upgrade_capacity * 2;
+        upgrades = realloc(upgrades,
+                           (size_t)upgrade_capacity * sizeof(upgrade_entry_t));
+      }
+      upgrades[upgrade_count].name = strdup(entry->name);
+      upgrades[upgrade_count].installed = strdup(entry->version);
+      upgrades[upgrade_count].available = strdup(reg_entry->latest_version);
+      upgrades[upgrade_count].download_url = reg_entry->download_url ?
+                                             strdup(reg_entry->download_url) :
+                                             NULL;
+      upgrade_count++;
+    }
+
+    pkg_registry_entry_free(reg_entry);
+  }
+
+  pkg_db_free(db);
+
+  if (upgrade_count == 0) {
+    if (json_output) {
+      printf("{\"status\": \"ok\", \"upgraded\": [], "
+             "\"message\": \"all packages are up to date\"}\n");
+    } else {
+      printf("All packages are up to date.\n");
+    }
+    return 0;
+  }
+
+  // Perform upgrades
+  typedef struct {
+    char *name;
+    char *from;
+    char *to;
+    int success;
+  } upgrade_result_t;
+
+  upgrade_result_t *results = malloc((size_t)upgrade_count
+                                     * sizeof(upgrade_result_t));
+  int success_count = 0;
+  int fail_count = 0;
+
+  for (int i = 0; i < upgrade_count; i++) {
+    results[i].name = strdup(upgrades[i].name);
+    results[i].from = strdup(upgrades[i].installed);
+    results[i].to = strdup(upgrades[i].available);
+    results[i].success = 0;
+
+    if (!json_output) {
+      printf("Upgrading %s (%s -> %s)... ", upgrades[i].name,
+             upgrades[i].installed, upgrades[i].available);
+      fflush(stdout);
+    }
+
+    if (!upgrades[i].download_url) {
+      if (!json_output) printf("FAILED (no download URL)\n");
+      fail_count++;
+      continue;
+    }
+
+    // Download to temp file
+    char temp_path[] = "/tmp/pkg-upgrade-XXXXXX.tar.gz";
+    int fd = mkstemps(temp_path, 7);
+    if (fd < 0) {
+      if (!json_output) printf("FAILED (temp file)\n");
+      fail_count++;
+      continue;
+    }
+    close(fd);
+
+    if (pkg_registry_download(upgrades[i].download_url, temp_path) != 0) {
+      if (!json_output) printf("FAILED (download)\n");
+      remove(temp_path);
+      fail_count++;
+      continue;
+    }
+
+    // Remove old version (silently)
+    FILE *devnull = fopen("/dev/null", "w");
+    FILE *orig_stdout = stdout;
+    FILE *orig_stderr = stderr;
+    if (devnull) {
+      stdout = devnull;
+      stderr = devnull;
+    }
+
+    pkg_remove(upgrades[i].name, 0);
+
+    if (devnull) {
+      stdout = orig_stdout;
+      stderr = orig_stderr;
+      fclose(devnull);
+    }
+
+    // Install new version (silently)
+    devnull = fopen("/dev/null", "w");
+    if (devnull) {
+      stdout = devnull;
+      stderr = devnull;
+    }
+
+    int install_result = pkg_install(temp_path, 0);
+
+    if (devnull) {
+      stdout = orig_stdout;
+      stderr = orig_stderr;
+      fclose(devnull);
+    }
+
+    remove(temp_path);
+
+    if (install_result == 0) {
+      results[i].success = 1;
+      success_count++;
+      if (!json_output) printf("ok\n");
+    } else {
+      fail_count++;
+      if (!json_output) printf("FAILED (install)\n");
+    }
+  }
+
+  // Output results
+  if (json_output) {
+    printf("{\"status\": \"%s\", \"upgraded\": [",
+           fail_count == 0 ? "ok" : "partial");
+    int first = 1;
+    for (int i = 0; i < upgrade_count; i++) {
+      if (!first) printf(", ");
+      first = 0;
+      printf("{\"name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", "
+             "\"status\": \"%s\"}",
+             results[i].name, results[i].from, results[i].to,
+             results[i].success ? "ok" : "error");
+    }
+    printf("], \"success_count\": %d, \"fail_count\": %d}\n",
+           success_count, fail_count);
+  } else {
+    printf("\nUpgraded %d package(s)", success_count);
+    if (fail_count > 0) {
+      printf(", %d failed", fail_count);
+    }
+    printf(".\n");
+  }
+
+  // Cleanup
+  for (int i = 0; i < upgrade_count; i++) {
+    free(upgrades[i].name);
+    free(upgrades[i].installed);
+    free(upgrades[i].available);
+    free(upgrades[i].download_url);
+    free(results[i].name);
+    free(results[i].from);
+    free(results[i].to);
+  }
+  free(upgrades);
+  free(results);
+
+  return fail_count > 0 ? 1 : 0;
 }
 
 

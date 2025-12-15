@@ -412,33 +412,47 @@ Add Node.js-specific and build artifact entries to `.gitignore`.
 
 ---
 
-## Phase 7: Integration with pkg Command (FUTURE)
+## Phase 7: Integration with pkg Command ✅ COMPLETED
 
-These tasks connect the registry server to the pkg command and are tracked here for reference but may be implemented in a separate plan.
+These tasks connect the registry server to the pkg command.
 
-### 7.1 pkg search Implementation
-- [ ] Create `src/apps/pkg/pkg_registry.h`:
-  - [ ] Declare `int pkg_registry_search(const char *query, bool json_output);`
-  - [ ] Declare `int pkg_registry_get_package(const char *name, PkgRegistryEntry *out);`
-- [ ] Create `src/apps/pkg/pkg_registry.c`:
-  - [ ] Implement HTTP GET using libcurl or sockets
-  - [ ] Parse JSON response
-  - [ ] Implement `pkg_registry_search()`
-  - [ ] Implement `pkg_registry_get_package()`
-- [ ] Update `cmd_pkg.c` to use registry functions
+### 7.1 pkg search Implementation ✅ COMPLETED
+- [x] Create `src/apps/pkg/pkg_registry.h`:
+  - [x] Declare `PkgRegistryList *pkg_registry_search(const char *query);`
+  - [x] Declare `PkgRegistryEntry *pkg_registry_fetch_package(const char *name);`
+  - [x] Declare `int pkg_registry_download(const char *url, const char *dest_path);`
+  - [x] Declare `int pkg_version_compare(const char *v1, const char *v2);`
+- [x] Create `src/apps/pkg/pkg_registry.c`:
+  - [x] Implement HTTP GET using libcurl
+  - [x] Parse JSON response
+  - [x] Implement `pkg_registry_search()`
+  - [x] Implement `pkg_registry_fetch_package()`
+  - [x] Implement `pkg_registry_download()`
+- [x] Update `cmd_pkg.c` to use registry functions
+- [x] Update Makefile to link with libcurl
 
-### 7.2 pkg check-update Implementation
-- [ ] Implement `pkg_check_update()`:
-  - [ ] Load installed packages from database
-  - [ ] Query registry for each package
-  - [ ] Compare versions
-  - [ ] Report available updates
+### 7.2 pkg check-update Implementation ✅ COMPLETED
+- [x] Implement `pkg_check_update()`:
+  - [x] Load installed packages from database
+  - [x] Query registry for each package
+  - [x] Compare versions using `pkg_version_compare()`
+  - [x] Report available updates
+  - [x] Support `--json` output
 
-### 7.3 pkg upgrade Implementation
-- [ ] Implement `pkg_upgrade()`:
-  - [ ] Check for updates
-  - [ ] Download new versions
-  - [ ] Install upgrades
+### 7.3 pkg upgrade Implementation ✅ COMPLETED
+- [x] Implement `pkg_upgrade()`:
+  - [x] Check for updates
+  - [x] Download new versions from registry
+  - [x] Remove old versions
+  - [x] Install upgrades
+  - [x] Support `--json` output
+
+### 7.4 Tests ✅ COMPLETED
+- [x] Update `tests/apps/pkg/test_pkg.py`:
+  - [x] Add `TestPkgRegistry` class with server startup/shutdown
+  - [x] Test search functionality (returns results, JSON, no matches)
+  - [x] Test check-update with installed packages
+  - [x] Test upgrade with installed packages
 
 ---
 
