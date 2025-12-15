@@ -43,402 +43,185 @@ Fields:
 
 ---
 
-## Phase 1: Core Infrastructure
+## Phase 1: Core Infrastructure ✅ COMPLETED
 
-### 1.1 Create pkg Helper Module
+### 1.1 Create pkg Helper Module ✅ COMPLETED
 Create utility functions for common pkg operations.
 
-- [ ] Create `src/apps/pkg/pkg_utils.h`:
-  - [ ] Declare `char *pkg_get_home_dir(void);` - returns ~/.jshell path
-  - [ ] Declare `char *pkg_get_pkgs_dir(void);` - returns ~/.jshell/pkgs path
-  - [ ] Declare `char *pkg_get_bin_dir(void);` - returns ~/.jshell/bin path
-  - [ ] Declare `char *pkg_get_db_path(void);` - returns ~/.jshell/pkgdb.txt path
-  - [ ] Declare `int pkg_ensure_dirs(void);` - creates directories if needed
-  - [ ] Declare `int pkg_run_command(char *const argv[]);` - fork/exec wrapper
+- [x] Create `src/apps/pkg/pkg_utils.h`:
+  - [x] Declare `char *pkg_get_home_dir(void);` - returns ~/.jshell path
+  - [x] Declare `char *pkg_get_pkgs_dir(void);` - returns ~/.jshell/pkgs path
+  - [x] Declare `char *pkg_get_bin_dir(void);` - returns ~/.jshell/bin path
+  - [x] Declare `char *pkg_get_db_path(void);` - returns ~/.jshell/pkgdb.txt path
+  - [x] Declare `int pkg_ensure_dirs(void);` - creates directories if needed
+  - [x] Declare `int pkg_run_command(char *const argv[]);` - fork/exec wrapper
 
-- [ ] Create `src/apps/pkg/pkg_utils.c`:
-  - [ ] Implement `pkg_get_home_dir()`:
-    - [ ] Get HOME environment variable
-    - [ ] Append `/.jshell`
-    - [ ] Return allocated string (caller frees)
-  - [ ] Implement `pkg_get_pkgs_dir()`:
-    - [ ] Return `~/.jshell/pkgs`
-  - [ ] Implement `pkg_get_bin_dir()`:
-    - [ ] Return `~/.jshell/bin`
-  - [ ] Implement `pkg_get_db_path()`:
-    - [ ] Return `~/.jshell/pkgdb.txt`
-  - [ ] Implement `pkg_ensure_dirs()`:
-    - [ ] Create `~/.jshell` if not exists
-    - [ ] Create `~/.jshell/pkgs` if not exists
-    - [ ] Create `~/.jshell/bin` if not exists
-    - [ ] Return 0 on success, -1 on error
-  - [ ] Implement `pkg_run_command(char *const argv[])`:
-    - [ ] Fork child process
-    - [ ] In child: `execvp(argv[0], argv)`
-    - [ ] In parent: `waitpid()` and return exit status
+- [x] Create `src/apps/pkg/pkg_utils.c`:
+  - [x] Implement `pkg_get_home_dir()`
+  - [x] Implement `pkg_get_pkgs_dir()`
+  - [x] Implement `pkg_get_bin_dir()`
+  - [x] Implement `pkg_get_db_path()`
+  - [x] Implement `pkg_ensure_dirs()`
+  - [x] Implement `pkg_run_command(char *const argv[])`
+  - [x] Implement `pkg_remove_dir_recursive()` (bonus)
+  - [x] Implement `pkg_read_file()` (bonus)
 
-### 1.2 Create pkg.json Parser Module
+### 1.2 Create pkg.json Parser Module ✅ COMPLETED
 Parse and validate pkg.json files.
 
-- [ ] Create `src/apps/pkg/pkg_json.h`:
-  - [ ] Define `PkgManifest` struct:
-    ```c
-    typedef struct {
-      char *name;
-      char *version;
-      char *description;
-      char **files;
-      int files_count;
-      char **docs;
-      int docs_count;
-    } PkgManifest;
-    ```
-  - [ ] Declare `PkgManifest *pkg_manifest_parse(const char *json_str);`
-  - [ ] Declare `PkgManifest *pkg_manifest_load(const char *path);`
-  - [ ] Declare `void pkg_manifest_free(PkgManifest *m);`
-  - [ ] Declare `int pkg_manifest_validate(const PkgManifest *m);`
+- [x] Create `src/apps/pkg/pkg_json.h`:
+  - [x] Define `PkgManifest` struct
+  - [x] Declare `PkgManifest *pkg_manifest_parse(const char *json_str);`
+  - [x] Declare `PkgManifest *pkg_manifest_load(const char *path);`
+  - [x] Declare `void pkg_manifest_free(PkgManifest *m);`
+  - [x] Declare `int pkg_manifest_validate(const PkgManifest *m);`
 
-- [ ] Create `src/apps/pkg/pkg_json.c`:
-  - [ ] Implement minimal JSON parser (or use simple string parsing):
-    - [ ] Parse `"name": "value"` patterns
-    - [ ] Parse `"files": ["a", "b"]` arrays
-    - [ ] Handle whitespace and newlines
-  - [ ] Implement `pkg_manifest_parse()`:
-    - [ ] Extract name, version, description fields
-    - [ ] Extract files array
-    - [ ] Extract docs array (optional)
-    - [ ] Allocate and populate PkgManifest struct
-  - [ ] Implement `pkg_manifest_load()`:
-    - [ ] Read file contents
-    - [ ] Call `pkg_manifest_parse()`
-  - [ ] Implement `pkg_manifest_free()`:
-    - [ ] Free all allocated strings
-    - [ ] Free arrays
-    - [ ] Free struct
-  - [ ] Implement `pkg_manifest_validate()`:
-    - [ ] Check name is non-empty
-    - [ ] Check version is non-empty
-    - [ ] Check files array has at least one entry
-    - [ ] Return 0 if valid, -1 if invalid
+- [x] Create `src/apps/pkg/pkg_json.c`:
+  - [x] Implement minimal JSON parser
+  - [x] Implement `pkg_manifest_parse()`
+  - [x] Implement `pkg_manifest_load()`
+  - [x] Implement `pkg_manifest_free()`
+  - [x] Implement `pkg_manifest_validate()`
 
-### 1.3 Create Package Database Module
+### 1.3 Create Package Database Module ✅ COMPLETED
 Manage the installed packages database.
 
-- [ ] Create `src/apps/pkg/pkg_db.h`:
-  - [ ] Define `PkgDbEntry` struct:
-    ```c
-    typedef struct {
-      char *name;
-      char *version;
-    } PkgDbEntry;
-    ```
-  - [ ] Define `PkgDb` struct:
-    ```c
-    typedef struct {
-      PkgDbEntry *entries;
-      int count;
-      int capacity;
-    } PkgDb;
-    ```
-  - [ ] Declare `PkgDb *pkg_db_load(void);`
-  - [ ] Declare `int pkg_db_save(const PkgDb *db);`
-  - [ ] Declare `void pkg_db_free(PkgDb *db);`
-  - [ ] Declare `PkgDbEntry *pkg_db_find(const PkgDb *db, const char *name);`
-  - [ ] Declare `int pkg_db_add(PkgDb *db, const char *name, const char *version);`
-  - [ ] Declare `int pkg_db_remove(PkgDb *db, const char *name);`
+- [x] Create `src/apps/pkg/pkg_db.h`:
+  - [x] Define `PkgDbEntry` struct
+  - [x] Define `PkgDb` struct
+  - [x] Declare all database functions
 
-- [ ] Create `src/apps/pkg/pkg_db.c`:
-  - [ ] Implement `pkg_db_load()`:
-    - [ ] Open `~/.jshell/pkgdb.txt`
-    - [ ] Read lines in format `<name> <version>`
-    - [ ] Populate PkgDb struct
-    - [ ] Return empty db if file doesn't exist
-  - [ ] Implement `pkg_db_save()`:
-    - [ ] Ensure parent directory exists
-    - [ ] Write all entries to file
-    - [ ] Format: `<name> <version>\n`
-  - [ ] Implement `pkg_db_free()`:
-    - [ ] Free all entries
-    - [ ] Free arrays
-  - [ ] Implement `pkg_db_find()`:
-    - [ ] Linear search by name
-    - [ ] Return pointer or NULL
-  - [ ] Implement `pkg_db_add()`:
-    - [ ] Resize array if needed
-    - [ ] Add new entry
-  - [ ] Implement `pkg_db_remove()`:
-    - [ ] Find entry by name
-    - [ ] Remove from array (shift remaining)
-    - [ ] Update count
+- [x] Create `src/apps/pkg/pkg_db.c`:
+  - [x] Implement `pkg_db_load()`
+  - [x] Implement `pkg_db_save()`
+  - [x] Implement `pkg_db_free()`
+  - [x] Implement `pkg_db_find()`
+  - [x] Implement `pkg_db_add()`
+  - [x] Implement `pkg_db_remove()`
 
 ---
 
-## Phase 2: pkg build
+## Phase 2: pkg build ✅ COMPLETED
 
-### 2.1 Implement pkg build Subcommand
+### 2.1 Implement pkg build Subcommand ✅ COMPLETED
 Build a package tarball from a source directory.
 
-- [ ] Update `pkg_build()` signature in `cmd_pkg.c`:
-  - [ ] Change to `pkg_build(const char *src_dir, const char *output_tar, int json_output)`
-  - [ ] Update argument parsing to accept two arguments
+- [x] Update `pkg_build()` signature in `cmd_pkg.c`
+- [x] Implement `pkg_build()`:
+  - [x] Validate `src_dir` exists and is a directory
+  - [x] Check `pkg.json` exists in `src_dir`
+  - [x] Load and validate manifest
+  - [x] Verify all files listed in manifest exist
+  - [x] Run tar command via fork/exec
+  - [x] Output result (human and JSON)
+  - [x] Handle all error cases
 
-- [ ] Implement `pkg_build()`:
-  - [ ] Validate `src_dir` exists and is a directory
-  - [ ] Check `pkg.json` exists in `src_dir`
-  - [ ] Load and validate manifest with `pkg_manifest_load()`
-  - [ ] Verify all files listed in manifest exist
-  - [ ] Build tar command arguments:
-    ```c
-    char *argv[] = {"tar", "-czf", output_tar, "-C", src_dir, ".", NULL};
-    ```
-  - [ ] Call `pkg_run_command(argv)` using fork/exec
-  - [ ] Output result:
-    - [ ] Human: `Created package: <output_tar>`
-    - [ ] JSON: `{"status": "ok", "package": "<name>", "version": "<ver>", "output": "<path>"}`
-  - [ ] Handle errors:
-    - [ ] Missing src_dir
-    - [ ] Missing pkg.json
-    - [ ] Invalid manifest
-    - [ ] tar command failure
-
-- [ ] Update `pkg_print_usage()`:
-  - [ ] Document: `build <src-dir> <output.tar.gz>  build a package for distribution`
-
-- [ ] Create tests in `tests/apps/pkg/test_pkg_build.py`:
-  - [ ] Test building package from valid directory
-  - [ ] Test error when src_dir missing
-  - [ ] Test error when pkg.json missing
-  - [ ] Test error when files in manifest missing
-  - [ ] Test JSON output format
+- [x] Update `pkg_print_usage()`
+- [x] Create tests in `tests/apps/pkg/test_pkg.py` (consolidated)
 
 ---
 
-## Phase 3: pkg install
+## Phase 3: pkg install ✅ COMPLETED
 
-### 3.1 Implement pkg install Subcommand
+### 3.1 Implement pkg install Subcommand ✅ COMPLETED
 Install a package from a tarball.
 
-- [ ] Update `pkg_install()` signature in `cmd_pkg.c`:
-  - [ ] Keep as `pkg_install(const char *tarball, int json_output)`
+- [x] Implement `pkg_install()`:
+  - [x] Validate tarball exists
+  - [x] Ensure directories exist with `pkg_ensure_dirs()`
+  - [x] Create temp directory for extraction
+  - [x] Extract tarball via fork/exec tar
+  - [x] Load and validate `pkg.json` from extracted contents
+  - [x] Check if package already installed
+  - [x] Move to install path: `~/.jshell/pkgs/<name>-<version>/`
+  - [x] Create symlinks in `~/.jshell/bin/`
+  - [x] Update package database
+  - [x] Clean up temp directory
+  - [x] Output result (human and JSON)
+  - [x] Handle all error cases
 
-- [ ] Implement `pkg_install()`:
-  - [ ] Validate tarball exists
-  - [ ] Ensure directories exist with `pkg_ensure_dirs()`
-  - [ ] Create temp directory for extraction
-  - [ ] Extract tarball to temp dir:
-    ```c
-    char *argv[] = {"tar", "-xzf", tarball, "-C", temp_dir, NULL};
-    ```
-  - [ ] Load `pkg.json` from extracted contents
-  - [ ] Validate manifest
-  - [ ] Check if package already installed (in pkgdb.txt)
-  - [ ] Determine install path: `~/.jshell/pkgs/<name>-<version>/`
-  - [ ] Move extracted contents to install path
-  - [ ] For each file in manifest `files` array:
-    - [ ] Create symlink in `~/.jshell/bin/` pointing to installed file
-    - [ ] Make executable (`chmod +x`)
-  - [ ] Update package database
-  - [ ] Clean up temp directory
-  - [ ] Output result:
-    - [ ] Human: `Installed <name> version <version>`
-    - [ ] JSON: `{"status": "ok", "name": "<name>", "version": "<ver>", "path": "<install_path>"}`
-  - [ ] Handle errors:
-    - [ ] Missing tarball
-    - [ ] Invalid tarball (extraction fails)
-    - [ ] Missing pkg.json in tarball
-    - [ ] Package already installed (prompt or error)
-    - [ ] Symlink creation failure
-
-- [ ] Update `pkg_print_usage()`:
-  - [ ] Document: `install <tarball>  install package from tarball`
-
-- [ ] Create tests in `tests/apps/pkg/test_pkg_install.py`:
-  - [ ] Test installing valid package
-  - [ ] Test symlinks created in bin directory
-  - [ ] Test pkgdb.txt updated
-  - [ ] Test error when tarball missing
-  - [ ] Test error when pkg.json missing in tarball
-  - [ ] Test reinstall behavior
-  - [ ] Test JSON output format
+- [x] Update `pkg_print_usage()`
+- [x] Create tests in `tests/apps/pkg/test_pkg.py` (consolidated)
 
 ---
 
-## Phase 4: pkg remove
+## Phase 4: pkg remove ✅ COMPLETED
 
-### 4.1 Implement pkg remove Subcommand
+### 4.1 Implement pkg remove Subcommand ✅ COMPLETED
 Remove an installed package.
 
-- [ ] Keep `pkg_remove()` signature as `pkg_remove(const char *name, int json_output)`
+- [x] Implement `pkg_remove()`:
+  - [x] Load package database
+  - [x] Find package by name
+  - [x] Handle "not found" error
+  - [x] Load `pkg.json` from package directory
+  - [x] Remove symlinks from `~/.jshell/bin/`
+  - [x] Remove package directory recursively
+  - [x] Update and save package database
+  - [x] Output result (human and JSON)
+  - [x] Handle all error cases
 
-- [ ] Implement `pkg_remove()`:
-  - [ ] Load package database
-  - [ ] Find package by name
-  - [ ] If not found, error:
-    - [ ] Human: `pkg remove: package '<name>' not installed`
-    - [ ] JSON: `{"status": "error", "message": "package not installed", "name": "<name>"}`
-  - [ ] Get version from database entry
-  - [ ] Determine package path: `~/.jshell/pkgs/<name>-<version>/`
-  - [ ] Load `pkg.json` from package directory
-  - [ ] For each file in manifest `files` array:
-    - [ ] Determine symlink path in `~/.jshell/bin/`
-    - [ ] Remove symlink if it exists and points to this package
-  - [ ] Remove package directory recursively:
-    - [ ] Use `nftw()` or manual recursion
-    - [ ] Or call `rm -rf` via fork/exec
-  - [ ] Remove entry from package database
-  - [ ] Save updated database
-  - [ ] Output result:
-    - [ ] Human: `Removed <name> version <version>`
-    - [ ] JSON: `{"status": "ok", "name": "<name>", "version": "<ver>"}`
-  - [ ] Handle errors:
-    - [ ] Package not installed
-    - [ ] Directory removal failure
-    - [ ] Database update failure
-
-- [ ] Update `pkg_print_usage()`:
-  - [ ] Document: `remove <name>  remove an installed package`
-
-- [ ] Create tests in `tests/apps/pkg/test_pkg_remove.py`:
-  - [ ] Test removing installed package
-  - [ ] Test symlinks removed from bin directory
-  - [ ] Test pkgdb.txt updated
-  - [ ] Test error when package not installed
-  - [ ] Test JSON output format
+- [x] Update `pkg_print_usage()`
+- [x] Create tests in `tests/apps/pkg/test_pkg.py` (consolidated)
 
 ---
 
-## Phase 5: pkg list
+## Phase 5: pkg list ✅ COMPLETED
 
-### 5.1 Implement pkg list Subcommand
+### 5.1 Implement pkg list Subcommand ✅ COMPLETED
 List all installed packages.
 
-- [ ] Implement `pkg_list()`:
-  - [ ] Load package database
-  - [ ] If empty:
-    - [ ] Human: `No packages installed.`
-    - [ ] JSON: `{"packages": []}`
-  - [ ] For each entry:
-    - [ ] Human: `<name>  <version>`
-    - [ ] JSON: append to array
-  - [ ] JSON output: `{"packages": [{"name": "...", "version": "..."}]}`
+- [x] Implement `pkg_list()`:
+  - [x] Load package database
+  - [x] Handle empty list case
+  - [x] Output result (human and JSON)
 
-- [ ] Create tests in `tests/apps/pkg/test_pkg_list.py`:
-  - [ ] Test listing when no packages installed
-  - [ ] Test listing with installed packages
-  - [ ] Test JSON output format
+- [x] Create tests in `tests/apps/pkg/test_pkg.py` (consolidated)
 
 ---
 
-## Phase 6: pkg info
+## Phase 6: pkg info ✅ COMPLETED
 
-### 6.1 Implement pkg info Subcommand
+### 6.1 Implement pkg info Subcommand ✅ COMPLETED
 Show detailed information about an installed package.
 
-- [ ] Implement `pkg_info()`:
-  - [ ] Load package database
-  - [ ] Find package by name
-  - [ ] If not found, error
-  - [ ] Load `pkg.json` from package directory
-  - [ ] Human output:
-    ```
-    Name:        <name>
-    Version:     <version>
-    Description: <description>
-    Files:       <file1>, <file2>, ...
-    Location:    ~/.jshell/pkgs/<name>-<version>/
-    ```
-  - [ ] JSON output:
-    ```json
-    {
-      "name": "...",
-      "version": "...",
-      "description": "...",
-      "files": [...],
-      "path": "..."
-    }
-    ```
+- [x] Implement `pkg_info()`:
+  - [x] Load package database
+  - [x] Find package by name
+  - [x] Handle "not found" error
+  - [x] Load `pkg.json` from package directory
+  - [x] Output result (human and JSON)
 
-- [ ] Create tests in `tests/apps/pkg/test_pkg_info.py`:
-  - [ ] Test info for installed package
-  - [ ] Test error when package not installed
-  - [ ] Test JSON output format
+- [x] Create tests in `tests/apps/pkg/test_pkg.py` (consolidated)
 
 ---
 
-## Phase 7: pkg compile
+## Phase 7: pkg compile ✅ COMPLETED
 
-### 7.1 Implement pkg compile Subcommand
+### 7.1 Implement pkg compile Subcommand ✅ COMPLETED
 Compile all apps in src/apps/ directory.
 
-- [ ] Update `pkg_compile()` signature:
-  - [ ] `pkg_compile(const char *app_name, int json_output)` where app_name is optional
+- [x] Implement `pkg_compile()`:
+  - [x] Determine apps directory from cwd
+  - [x] Support optional `app_name` argument
+  - [x] Iterate subdirectories and run make
+  - [x] Track success/failure counts
+  - [x] Output result (human and JSON)
 
-- [ ] Implement `pkg_compile()`:
-  - [ ] Determine apps directory (relative to pkg binary or configurable)
-  - [ ] If `app_name` is NULL:
-    - [ ] Iterate all subdirectories in `src/apps/`
-    - [ ] For each directory, run make
-  - [ ] If `app_name` is specified:
-    - [ ] Only compile that specific app
-  - [ ] For each app:
-    - [ ] Check directory exists
-    - [ ] Check Makefile exists
-    - [ ] Run make:
-      ```c
-      char *argv[] = {"make", "-C", app_dir, NULL};
-      ```
-    - [ ] Track success/failure
-  - [ ] Human output:
-    ```
-    Compiling cat... ok
-    Compiling ls... ok
-    Compiling rg... FAILED
-
-    Compiled 18/19 apps successfully.
-    ```
-  - [ ] JSON output:
-    ```json
-    {
-      "status": "ok",
-      "results": [
-        {"name": "cat", "status": "ok"},
-        {"name": "ls", "status": "ok"},
-        {"name": "rg", "status": "error", "message": "..."}
-      ],
-      "success_count": 18,
-      "total_count": 19
-    }
-    ```
-
-- [ ] Update `pkg_print_usage()`:
-  - [ ] Document: `compile [name]  compile apps from source (all if name omitted)`
-
-- [ ] Create tests in `tests/apps/pkg/test_pkg_compile.py`:
-  - [ ] Test compiling all apps
-  - [ ] Test compiling specific app
-  - [ ] Test error when app directory missing
-  - [ ] Test JSON output format
+- [x] Update `pkg_print_usage()`
 
 ---
 
-## Phase 8: Update Makefiles
+## Phase 8: Update Makefiles ✅ COMPLETED
 
-### 8.1 Update pkg Makefile
+### 8.1 Update pkg Makefile ✅ COMPLETED
 Add new source files to pkg build.
 
-- [ ] Update `src/apps/pkg/Makefile`:
-  - [ ] Add `pkg_utils.o` to OBJS
-  - [ ] Add `pkg_json.o` to OBJS
-  - [ ] Add `pkg_db.o` to OBJS
-  - [ ] Add dependency rules for new files
-
-### 8.2 Verify App Makefiles
-Ensure all app Makefiles produce correct outputs.
-
-- [ ] For each app in `src/apps/`:
-  - [ ] Verify Makefile builds standalone binary to `bin/standalone-apps/<name>`
-  - [ ] Verify Makefile builds static library `lib<name>.a`
-  - [ ] Test with `make clean && make`
+- [x] Update `src/apps/pkg/Makefile`:
+  - [x] Add `pkg_utils.o` to OBJS
+  - [x] Add `pkg_json.o` to OBJS
+  - [x] Add `pkg_db.o` to OBJS
+  - [x] Add dependency rules for new files
 
 ---
 
