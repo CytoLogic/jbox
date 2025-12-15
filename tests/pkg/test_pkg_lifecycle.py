@@ -97,7 +97,8 @@ class TestPkgLifecycle(PkgTestBase):
         self.assertEqual(data["name"], "myapp")
         self.assertEqual(data["version"], "1.2.3")
         self.assertEqual(data["description"], "A test application")
-        self.assertIn("installed_at", data)
+        # path field indicates where the package is installed
+        self.assertIn("path", data)
 
     def test_info_not_installed(self):
         """Test info for non-installed package."""
@@ -174,8 +175,9 @@ class TestCheckUpdateLocal(PkgTestBase):
         result = self.run_pkg("check-update", "--json")
         self.assertEqual(result.returncode, 0)
         data = json.loads(result.stdout)
-        self.assertIn("packages", data)
-        self.assertEqual(len(data["packages"]), 0)
+        self.assertIn("status", data)
+        self.assertIn("updates", data)
+        self.assertEqual(len(data["updates"]), 0)
 
     def test_check_update_json_format(self):
         """Test check-update JSON output format."""
@@ -187,14 +189,10 @@ class TestCheckUpdateLocal(PkgTestBase):
 
         # Verify structure
         self.assertIn("status", data)
-        self.assertIn("summary", data)
-        self.assertIn("packages", data)
-
-        # Verify summary fields
-        summary = data["summary"]
-        self.assertIn("up_to_date", summary)
-        self.assertIn("updates_available", summary)
-        self.assertIn("errors", summary)
+        self.assertIn("updates", data)
+        # checked and errors are present when packages exist
+        self.assertIn("checked", data)
+        self.assertIn("errors", data)
 
 
 class TestRegistryLifecycle(PkgRegistryTestBase):

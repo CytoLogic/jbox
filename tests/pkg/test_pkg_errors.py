@@ -17,7 +17,8 @@ class TestInstallErrors(PkgTestBase):
         """Test installing from non-existent tarball."""
         result = self.run_pkg("install", "/nonexistent/path/pkg.tar.gz")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("error", result.stderr.lower())
+        # Error message should mention "not found" or similar
+        self.assertIn("not found", result.stderr.lower())
 
     def test_install_invalid_tarball(self):
         """Test installing from invalid/corrupted tarball."""
