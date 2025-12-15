@@ -37,8 +37,8 @@ The package manager has a working skeleton with:
 | Phase 1: Test Infrastructure | ✅ DONE | pre-existing | tests/helpers/jshell.py, tests/pkg/test_pkg_base.py |
 | Phase 2: JSON Package Database | ✅ DONE | pending | tests/pkg/test_pkg_db.py |
 | Phase 3: Dynamic Shell Command Registration | ✅ DONE | pending | - |
-| Phase 4: Package Check-Update Enhancement | ⬜ TODO | - | - |
-| Phase 5: Package Upgrade Enhancement | ⬜ TODO | - | - |
+| Phase 4: Package Check-Update Enhancement | ✅ DONE | pending | - |
+| Phase 5: Package Upgrade Enhancement | ✅ DONE | pending | - |
 | Phase 6: Package Compile for Installed Packages | ⬜ TODO | - | - |
 | Phase 7: Makefile Updates | ⬜ TODO | - | - |
 | Phase 8: Integration Tests | ⬜ TODO | - | - |
@@ -352,13 +352,13 @@ Improve `pkg check-update` output to be more user-friendly.
 ### 4.1 Update pkg_check_update Function
 **File**: `src/apps/pkg/cmd_pkg.c`
 
-- [ ] Modify `pkg_check_update()` output format:
-  - [ ] For each installed package:
-    - [ ] If up to date: `"ls is up to date (0.0.1)"`
-    - [ ] If update available: `"Update available for ls: 0.0.1 → 0.0.2"`
-  - [ ] Summary at end: `"2 packages up to date, 1 update available"`
+- [x] Modify `pkg_check_update()` output format:
+  - [x] For each installed package:
+    - [x] If up to date: `"ls is up to date (0.0.1)"`
+    - [x] If update available: `"Update available for ls: 0.0.1 → 0.0.2"`
+  - [x] Summary at end: `"2 packages up to date, 1 update available"`
 
-- [ ] Improve JSON output:
+- [x] Improve JSON output:
   ```json
   {
     "status": "ok",

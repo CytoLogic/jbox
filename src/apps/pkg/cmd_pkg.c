@@ -786,8 +786,8 @@ static int pkg_check_update(int json_output) {
 
   if (db->count == 0) {
     if (json_output) {
-      printf("{\"status\": \"ok\", \"updates\": [], "
-             "\"message\": \"no packages installed\"}\n");
+      printf("{\"status\": \"ok\", \"summary\": {\"up_to_date\": 0, "
+             "\"updates_available\": 0, \"errors\": 0}, \"packages\": []}\n");
     } else {
       printf("No packages installed.\n");
     }
@@ -795,21 +795,30 @@ static int pkg_check_update(int json_output) {
     return 0;
   }
 
+  // Track all packages with their status
   typedef struct {
     char *name;
     char *installed;
     char *available;
-  } update_entry_t;
+    int has_update;   // 1 = update available, 0 = up to date, -1 = error
+  } pkg_status_t;
 
-  update_entry_t *updates = NULL;
-  int update_count = 0;
-  int update_capacity = 0;
-  int checked = 0;
+  pkg_status_t *packages = malloc((size_t)db->count * sizeof(pkg_status_t));
+  if (packages == NULL) {
+    pkg_db_free(db);
+    return 1;
+  }
+
+  int up_to_date = 0;
+  int updates_available = 0;
   int errors = 0;
 
   for (int i = 0; i < db->count; i++) {
     PkgDbEntry *entry = &db->entries[i];
-    checked++;
+    packages[i].name = strdup(entry->name);
+    packages[i].installed = strdup(entry->version);
+    packages[i].available = NULL;
+    packages[i].has_update = -1;
 
     PkgRegistryEntry *reg_entry = pkg_registry_fetch_package(entry->name);
     if (reg_entry == NULL) {
@@ -817,55 +826,86 @@ static int pkg_check_update(int json_output) {
       continue;
     }
 
+    packages[i].available = strdup(reg_entry->latest_version);
+
     int cmp = pkg_version_compare(entry->version, reg_entry->latest_version);
     if (cmp < 0) {
-      // Update available
-      if (update_count >= update_capacity) {
-        update_capacity = update_capacity == 0 ? 8 : update_capacity * 2;
-        updates = realloc(updates, (size_t)update_capacity * sizeof(update_entry_t));
-      }
-      updates[update_count].name = strdup(entry->name);
-      updates[update_count].installed = strdup(entry->version);
-      updates[update_count].available = strdup(reg_entry->latest_version);
-      update_count++;
+      packages[i].has_update = 1;
+      updates_available++;
+    } else {
+      packages[i].has_update = 0;
+      up_to_date++;
     }
 
     pkg_registry_entry_free(reg_entry);
   }
 
   if (json_output) {
-    printf("{\"status\": \"ok\", \"checked\": %d, \"errors\": %d, ",
-           checked, errors);
-    printf("\"updates\": [");
-    for (int i = 0; i < update_count; i++) {
+    printf("{\"status\": \"ok\", \"summary\": {\"up_to_date\": %d, "
+           "\"updates_available\": %d, \"errors\": %d}, \"packages\": [",
+           up_to_date, updates_available, errors);
+    for (int i = 0; i < db->count; i++) {
       if (i > 0) printf(", ");
-      printf("{\"name\": \"%s\", \"installed\": \"%s\", \"available\": \"%s\"}",
-             updates[i].name, updates[i].installed, updates[i].available);
+      printf("{\"name\": \"%s\", \"installed\": \"%s\"",
+             packages[i].name, packages[i].installed);
+      if (packages[i].available) {
+        printf(", \"available\": \"%s\"", packages[i].available);
+      }
+      const char *status;
+      if (packages[i].has_update == 1) {
+        status = "update_available";
+      } else if (packages[i].has_update == 0) {
+        status = "up_to_date";
+      } else {
+        status = "error";
+      }
+      printf(", \"status\": \"%s\"}", status);
     }
     printf("]}\n");
   } else {
-    if (errors > 0) {
-      fprintf(stderr, "Warning: could not check %d package(s) against registry\n",
-              errors);
-    }
-    if (update_count == 0) {
-      printf("All packages are up to date.\n");
-    } else {
-      printf("%d update(s) available:\n\n", update_count);
-      for (int i = 0; i < update_count; i++) {
-        printf("  %-15s %s -> %s\n",
-               updates[i].name, updates[i].installed, updates[i].available);
+    // Print status for each package
+    printf("Checking %d package(s) for updates...\n\n", db->count);
+
+    for (int i = 0; i < db->count; i++) {
+      if (packages[i].has_update == 1) {
+        printf("  Update available for %s: %s \u2192 %s\n",
+               packages[i].name, packages[i].installed, packages[i].available);
+      } else if (packages[i].has_update == 0) {
+        printf("  %s is up to date (%s)\n",
+               packages[i].name, packages[i].installed);
+      } else {
+        printf("  %s: could not check (registry error)\n", packages[i].name);
       }
+    }
+
+    // Print summary
+    printf("\n");
+    if (updates_available > 0 && up_to_date > 0) {
+      printf("%d package(s) up to date, %d update(s) available\n",
+             up_to_date, updates_available);
+    } else if (updates_available > 0) {
+      printf("%d update(s) available\n", updates_available);
+    } else if (up_to_date > 0) {
+      printf("All %d package(s) are up to date.\n", up_to_date);
+    }
+
+    if (errors > 0) {
+      printf("Warning: could not check %d package(s) against registry\n",
+             errors);
+    }
+
+    if (updates_available > 0) {
       printf("\nRun 'pkg upgrade' to install updates.\n");
     }
   }
 
-  for (int i = 0; i < update_count; i++) {
-    free(updates[i].name);
-    free(updates[i].installed);
-    free(updates[i].available);
+  // Cleanup
+  for (int i = 0; i < db->count; i++) {
+    free(packages[i].name);
+    free(packages[i].installed);
+    free(packages[i].available);
   }
-  free(updates);
+  free(packages);
   pkg_db_free(db);
 
   return 0;
@@ -873,6 +913,10 @@ static int pkg_check_update(int json_output) {
 
 
 static int pkg_upgrade(int json_output) {
+  if (!json_output) {
+    printf("Checking for updates...\n");
+  }
+
   PkgDb *db = pkg_db_load();
   if (db == NULL) {
     if (json_output) {
@@ -886,8 +930,8 @@ static int pkg_upgrade(int json_output) {
 
   if (db->count == 0) {
     if (json_output) {
-      printf("{\"status\": \"ok\", \"upgraded\": [], "
-             "\"message\": \"no packages installed\"}\n");
+      printf("{\"status\": \"ok\", \"upgraded\": [], \"failed\": [], "
+             "\"up_to_date\": []}\n");
     } else {
       printf("No packages installed.\n");
     }
@@ -895,7 +939,7 @@ static int pkg_upgrade(int json_output) {
     return 0;
   }
 
-  // Collect packages that need updating
+  // Collect packages that need updating and up-to-date packages
   typedef struct {
     char *name;
     char *installed;
@@ -906,6 +950,10 @@ static int pkg_upgrade(int json_output) {
   upgrade_entry_t *upgrades = NULL;
   int upgrade_count = 0;
   int upgrade_capacity = 0;
+
+  char **up_to_date = NULL;
+  int up_to_date_count = 0;
+  int up_to_date_capacity = 0;
 
   for (int i = 0; i < db->count; i++) {
     PkgDbEntry *entry = &db->entries[i];
@@ -927,6 +975,16 @@ static int pkg_upgrade(int json_output) {
                                              strdup(reg_entry->download_url) :
                                              NULL;
       upgrade_count++;
+    } else {
+      // Track up-to-date packages
+      if (up_to_date_count >= up_to_date_capacity) {
+        up_to_date_capacity = up_to_date_capacity == 0 ? 8 :
+                              up_to_date_capacity * 2;
+        up_to_date = realloc(up_to_date,
+                             (size_t)up_to_date_capacity * sizeof(char *));
+      }
+      up_to_date[up_to_date_count] = strdup(entry->name);
+      up_to_date_count++;
     }
 
     pkg_registry_entry_free(reg_entry);
@@ -936,12 +994,24 @@ static int pkg_upgrade(int json_output) {
 
   if (upgrade_count == 0) {
     if (json_output) {
-      printf("{\"status\": \"ok\", \"upgraded\": [], "
-             "\"message\": \"all packages are up to date\"}\n");
+      printf("{\"status\": \"ok\", \"upgraded\": [], \"failed\": [], "
+             "\"up_to_date\": [");
+      for (int i = 0; i < up_to_date_count; i++) {
+        if (i > 0) printf(", ");
+        printf("\"%s\"", up_to_date[i]);
+      }
+      printf("]}\n");
     } else {
       printf("All packages are up to date.\n");
     }
+
+    for (int i = 0; i < up_to_date_count; i++) free(up_to_date[i]);
+    free(up_to_date);
     return 0;
+  }
+
+  if (!json_output) {
+    printf("Found %d update(s) available.\n\n", upgrade_count);
   }
 
   // Perform upgrades
@@ -950,6 +1020,7 @@ static int pkg_upgrade(int json_output) {
     char *from;
     char *to;
     int success;
+    char *error;
   } upgrade_result_t;
 
   upgrade_result_t *results = malloc((size_t)upgrade_count
@@ -962,15 +1033,17 @@ static int pkg_upgrade(int json_output) {
     results[i].from = strdup(upgrades[i].installed);
     results[i].to = strdup(upgrades[i].available);
     results[i].success = 0;
+    results[i].error = NULL;
 
     if (!json_output) {
-      printf("Upgrading %s (%s -> %s)... ", upgrades[i].name,
-             upgrades[i].installed, upgrades[i].available);
-      fflush(stdout);
+      printf("Downloading %s %s...\n", upgrades[i].name, upgrades[i].available);
     }
 
     if (!upgrades[i].download_url) {
-      if (!json_output) printf("FAILED (no download URL)\n");
+      if (!json_output) {
+        printf("  FAILED: no download URL\n");
+      }
+      results[i].error = strdup("no download URL");
       fail_count++;
       continue;
     }
@@ -979,17 +1052,27 @@ static int pkg_upgrade(int json_output) {
     char temp_path[] = "/tmp/pkg-upgrade-XXXXXX.tar.gz";
     int fd = mkstemps(temp_path, 7);
     if (fd < 0) {
-      if (!json_output) printf("FAILED (temp file)\n");
+      if (!json_output) {
+        printf("  FAILED: could not create temp file\n");
+      }
+      results[i].error = strdup("temp file creation failed");
       fail_count++;
       continue;
     }
     close(fd);
 
     if (pkg_registry_download(upgrades[i].download_url, temp_path) != 0) {
-      if (!json_output) printf("FAILED (download)\n");
+      if (!json_output) {
+        printf("  FAILED: download error\n");
+      }
+      results[i].error = strdup("download failed");
       remove(temp_path);
       fail_count++;
       continue;
+    }
+
+    if (!json_output) {
+      printf("Installing %s %s...\n", upgrades[i].name, upgrades[i].available);
     }
 
     // Remove old version (silently)
@@ -1029,10 +1112,16 @@ static int pkg_upgrade(int json_output) {
     if (install_result == 0) {
       results[i].success = 1;
       success_count++;
-      if (!json_output) printf("ok\n");
+      if (!json_output) {
+        printf("  Upgraded %s: %s \u2192 %s\n",
+               upgrades[i].name, upgrades[i].installed, upgrades[i].available);
+      }
     } else {
+      results[i].error = strdup("installation failed");
       fail_count++;
-      if (!json_output) printf("FAILED (install)\n");
+      if (!json_output) {
+        printf("  FAILED: installation error\n");
+      }
     }
   }
 
@@ -1042,21 +1131,37 @@ static int pkg_upgrade(int json_output) {
            fail_count == 0 ? "ok" : "partial");
     int first = 1;
     for (int i = 0; i < upgrade_count; i++) {
+      if (!results[i].success) continue;
+      if (!first) printf(", ");
+      first = 0;
+      printf("{\"name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}",
+             results[i].name, results[i].from, results[i].to);
+    }
+    printf("], \"failed\": [");
+    first = 1;
+    for (int i = 0; i < upgrade_count; i++) {
+      if (results[i].success) continue;
       if (!first) printf(", ");
       first = 0;
       printf("{\"name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", "
-             "\"status\": \"%s\"}",
+             "\"error\": \"%s\"}",
              results[i].name, results[i].from, results[i].to,
-             results[i].success ? "ok" : "error");
+             results[i].error ? results[i].error : "unknown");
     }
-    printf("], \"success_count\": %d, \"fail_count\": %d}\n",
-           success_count, fail_count);
+    printf("], \"up_to_date\": [");
+    for (int i = 0; i < up_to_date_count; i++) {
+      if (i > 0) printf(", ");
+      printf("\"%s\"", up_to_date[i]);
+    }
+    printf("]}\n");
   } else {
-    printf("\nUpgraded %d package(s)", success_count);
-    if (fail_count > 0) {
-      printf(", %d failed", fail_count);
+    printf("\n");
+    if (success_count > 0) {
+      printf("Upgraded %d package(s) successfully.\n", success_count);
     }
-    printf(".\n");
+    if (fail_count > 0) {
+      printf("%d package(s) failed to upgrade.\n", fail_count);
+    }
   }
 
   // Cleanup
@@ -1068,9 +1173,12 @@ static int pkg_upgrade(int json_output) {
     free(results[i].name);
     free(results[i].from);
     free(results[i].to);
+    free(results[i].error);
   }
   free(upgrades);
   free(results);
+  for (int i = 0; i < up_to_date_count; i++) free(up_to_date[i]);
+  free(up_to_date);
 
   return fail_count > 0 ? 1 : 0;
 }
