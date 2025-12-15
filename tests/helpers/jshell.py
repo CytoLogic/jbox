@@ -15,13 +15,15 @@ class JShellRunner:
 
     @classmethod
     def run(cls, command: str, env: Optional[dict] = None,
-            cwd: Optional[str] = None) -> subprocess.CompletedProcess:
+            cwd: Optional[str] = None,
+            timeout: Optional[int] = None) -> subprocess.CompletedProcess:
         """Run a command via jshell -c and return result.
 
         Args:
             command: The command string to execute
             env: Optional additional environment variables
             cwd: Optional working directory
+            timeout: Optional timeout in seconds
 
         Returns:
             CompletedProcess with stdout/stderr cleaned of debug output
@@ -35,7 +37,8 @@ class JShellRunner:
             capture_output=True,
             text=True,
             env=run_env,
-            cwd=cwd
+            cwd=cwd,
+            timeout=timeout
         )
 
         result.stdout = cls._clean_output(result.stdout)
@@ -45,13 +48,15 @@ class JShellRunner:
 
     @classmethod
     def run_json(cls, command: str, env: Optional[dict] = None,
-                 cwd: Optional[str] = None) -> dict:
+                 cwd: Optional[str] = None,
+                 timeout: Optional[int] = None) -> dict:
         """Run a command and parse JSON output.
 
         Args:
             command: The command string to execute (should produce JSON)
             env: Optional additional environment variables
             cwd: Optional working directory
+            timeout: Optional timeout in seconds
 
         Returns:
             Parsed JSON output as a dictionary
@@ -59,7 +64,7 @@ class JShellRunner:
         Raises:
             json.JSONDecodeError: If output is not valid JSON
         """
-        result = cls.run(command, env=env, cwd=cwd)
+        result = cls.run(command, env=env, cwd=cwd, timeout=timeout)
         return json.loads(result.stdout)
 
     @classmethod

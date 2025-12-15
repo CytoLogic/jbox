@@ -155,15 +155,15 @@ Implement helper functionality.
 ### 5.6 Update test_type.py ✅ COMPLETED
 - [x] Refactored to use `JShellRunner` helper
 
-### 5.7 Update Remaining Builtin Tests
+### 5.7 Update Remaining Builtin Tests ✅ COMPLETED
 - [x] `test_edit_replace_line.py` - Updated to use `JShellRunner`
-- [ ] `test_edit_insert_line.py` - Still uses old pattern (works)
-- [ ] `test_edit_delete_line.py` - Still uses old pattern (works)
-- [ ] `test_edit_replace.py` - Still uses old pattern (works)
-- [ ] `test_http_get.py` - Still uses old pattern (works)
-- [ ] `test_http_post.py` - Still uses old pattern (works)
+- [x] `test_edit_insert_line.py` - Updated to use `JShellRunner`
+- [x] `test_edit_delete_line.py` - Updated to use `JShellRunner`
+- [x] `test_edit_replace.py` - Updated to use `JShellRunner`
+- [x] `test_http_get.py` - Updated to use `JShellRunner`
+- [x] `test_http_post.py` - Updated to use `JShellRunner`
 
-Note: All 136 builtin tests pass. Remaining test files still work with old pattern.
+Note: All 136 builtin tests pass. All test files now use JShellRunner helper.
 
 ---
 
@@ -301,7 +301,7 @@ class JShellRunner:
 - [x] Implement JShellRunner class
 
 ### Phase 5: Update Tests ✅
-- [x] Update key builtin test files (7 updated, rest work with old pattern)
+- [x] Update all builtin test files (12 total updated)
 - [x] All 136 tests pass
 
 ### Phase 6: Documentation ✅
