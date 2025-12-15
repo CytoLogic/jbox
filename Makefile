@@ -45,7 +45,13 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \
 					 $(SRC_DIR)/apps/cat/cmd_cat.c \
 					 $(SRC_DIR)/apps/head/cmd_head.c \
-					 $(SRC_DIR)/apps/tail/cmd_tail.c
+					 $(SRC_DIR)/apps/tail/cmd_tail.c \
+					 $(SRC_DIR)/apps/cp/cmd_cp.c \
+					 $(SRC_DIR)/apps/mv/cmd_mv.c \
+					 $(SRC_DIR)/apps/rm/cmd_rm.c \
+					 $(SRC_DIR)/apps/mkdir/cmd_mkdir.c \
+					 $(SRC_DIR)/apps/rmdir/cmd_rmdir.c \
+					 $(SRC_DIR)/apps/touch/cmd_touch.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -61,7 +67,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app head-app tail-app
+apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -99,6 +105,42 @@ tail-app: $(ARGTABLE3_OBJ)
 	$(COMPILE) -I$(SRC_DIR)/apps/tail $(SRC_DIR)/apps/tail/tail_main.c \
 	           $(SRC_DIR)/apps/tail/cmd_tail.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/tail
+
+cp-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/cp $(SRC_DIR)/apps/cp/cp_main.c \
+	           $(SRC_DIR)/apps/cp/cmd_cp.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/cp
+
+mv-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/mv $(SRC_DIR)/apps/mv/mv_main.c \
+	           $(SRC_DIR)/apps/mv/cmd_mv.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/mv
+
+rm-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/rm $(SRC_DIR)/apps/rm/rm_main.c \
+	           $(SRC_DIR)/apps/rm/cmd_rm.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rm
+
+mkdir-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/mkdir $(SRC_DIR)/apps/mkdir/mkdir_main.c \
+	           $(SRC_DIR)/apps/mkdir/cmd_mkdir.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/mkdir
+
+rmdir-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/rmdir $(SRC_DIR)/apps/rmdir/rmdir_main.c \
+	           $(SRC_DIR)/apps/rmdir/cmd_rmdir.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rmdir
+
+touch-app: $(ARGTABLE3_OBJ)
+	mkdir -p bin/
+	$(COMPILE) -I$(SRC_DIR)/apps/touch $(SRC_DIR)/apps/touch/touch_main.c \
+	           $(SRC_DIR)/apps/touch/cmd_touch.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
+	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/touch
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 

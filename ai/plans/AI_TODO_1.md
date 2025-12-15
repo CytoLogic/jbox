@@ -182,127 +182,127 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
   - [x] Implement unit tests using Python unittest framework
 - [x] Update `tests/Makefile` to add tail test target
 
-### 2.6 cp - Copy Files/Directories
+### 2.6 cp - Copy Files/Directories ✅ COMPLETED
 **External App** (`src/apps/cp/`)
 
-- [ ] Create `src/apps/cp/cmd_cp.h`
-- [ ] Create `src/apps/cp/cmd_cp.c`:
-  - [ ] Implement `build_cp_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-r` (recursive)
-    - [ ] `-f` (force overwrite)
-    - [ ] `--json`
-    - [ ] `<SOURCE>` (required)
-    - [ ] `<DEST>` (required)
-  - [ ] Implement `cp_run()`
-  - [ ] Implement `cp_print_usage()`
-  - [ ] Define `cmd_cp_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/cp/cp_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/cp/test_cp.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add cp test target
+- [x] Create `src/apps/cp/cmd_cp.h`
+- [x] Create `src/apps/cp/cmd_cp.c`:
+  - [x] Implement `build_cp_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-r` (recursive)
+    - [x] `-f` (force overwrite)
+    - [x] `--json`
+    - [x] `<SOURCE>` (required)
+    - [x] `<DEST>` (required)
+  - [x] Implement `cp_run()`
+  - [x] Implement `cp_print_usage()`
+  - [x] Define `cmd_cp_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/cp/cp_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/cp/test_cp.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add cp test target
 
-### 2.7 mv - Move/Rename Files
+### 2.7 mv - Move/Rename Files ✅ COMPLETED
 **External App** (`src/apps/mv/`)
 
-- [ ] Create `src/apps/mv/cmd_mv.h`
-- [ ] Create `src/apps/mv/cmd_mv.c`:
-  - [ ] Implement `build_mv_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-f` (force)
-    - [ ] `--json`
-    - [ ] `<SOURCE>`
-    - [ ] `<DEST>`
-  - [ ] Implement `mv_run()`
-  - [ ] Implement `mv_print_usage()`
-  - [ ] Define `cmd_mv_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/mv/mv_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/mv/test_mv.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add mv test target
+- [x] Create `src/apps/mv/cmd_mv.h`
+- [x] Create `src/apps/mv/cmd_mv.c`:
+  - [x] Implement `build_mv_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-f` (force)
+    - [x] `--json`
+    - [x] `<SOURCE>`
+    - [x] `<DEST>`
+  - [x] Implement `mv_run()`
+  - [x] Implement `mv_print_usage()`
+  - [x] Define `cmd_mv_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/mv/mv_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/mv/test_mv.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add mv test target
 
-### 2.8 rm - Remove Files/Directories
+### 2.8 rm - Remove Files/Directories ✅ COMPLETED
 **External App** (`src/apps/rm/`)
 
-- [ ] Create `src/apps/rm/cmd_rm.h`
-- [ ] Create `src/apps/rm/cmd_rm.c`:
-  - [ ] Implement `build_rm_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-r` (recursive)
-    - [ ] `-f` (force, no prompt)
-    - [ ] `--json`
-    - [ ] `<FILE...>` (one or more files)
-  - [ ] Implement `rm_run()`
-  - [ ] Implement `rm_print_usage()`
-  - [ ] Define `cmd_rm_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/rm/rm_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/rm/test_rm.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add rm test target
+- [x] Create `src/apps/rm/cmd_rm.h`
+- [x] Create `src/apps/rm/cmd_rm.c`:
+  - [x] Implement `build_rm_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-r` (recursive)
+    - [x] `-f` (force, no prompt)
+    - [x] `--json`
+    - [x] `<FILE...>` (one or more files)
+  - [x] Implement `rm_run()`
+  - [x] Implement `rm_print_usage()`
+  - [x] Define `cmd_rm_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/rm/rm_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/rm/test_rm.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add rm test target
 
-### 2.9 mkdir - Create Directories
+### 2.9 mkdir - Create Directories ✅ COMPLETED
 **External App** (`src/apps/mkdir/`)
 
-- [ ] Create `src/apps/mkdir/cmd_mkdir.h`
-- [ ] Create `src/apps/mkdir/cmd_mkdir.c`:
-  - [ ] Implement `build_mkdir_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-p` (create parents)
-    - [ ] `--json`
-    - [ ] `<DIR...>` (one or more directories)
-  - [ ] Implement `mkdir_run()`
-  - [ ] Implement `mkdir_print_usage()`
-  - [ ] Define `cmd_mkdir_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/mkdir/mkdir_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/mkdir/test_mkdir.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add mkdir test target
+- [x] Create `src/apps/mkdir/cmd_mkdir.h`
+- [x] Create `src/apps/mkdir/cmd_mkdir.c`:
+  - [x] Implement `build_mkdir_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-p` (create parents)
+    - [x] `--json`
+    - [x] `<DIR...>` (one or more directories)
+  - [x] Implement `mkdir_run()`
+  - [x] Implement `mkdir_print_usage()`
+  - [x] Define `cmd_mkdir_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/mkdir/mkdir_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/mkdir/test_mkdir.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add mkdir test target
 
-### 2.10 rmdir - Remove Empty Directories
+### 2.10 rmdir - Remove Empty Directories ✅ COMPLETED
 **External App** (`src/apps/rmdir/`)
 
-- [ ] Create `src/apps/rmdir/cmd_rmdir.h`
-- [ ] Create `src/apps/rmdir/cmd_rmdir.c`:
-  - [ ] Implement `build_rmdir_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<DIR...>`
-  - [ ] Implement `rmdir_run()`
-  - [ ] Implement `rmdir_print_usage()`
-  - [ ] Define `cmd_rmdir_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/rmdir/rmdir_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/rmdir/test_rmdir.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add rmdir test target
+- [x] Create `src/apps/rmdir/cmd_rmdir.h`
+- [x] Create `src/apps/rmdir/cmd_rmdir.c`:
+  - [x] Implement `build_rmdir_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<DIR...>`
+  - [x] Implement `rmdir_run()`
+  - [x] Implement `rmdir_print_usage()`
+  - [x] Define `cmd_rmdir_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/rmdir/rmdir_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/rmdir/test_rmdir.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add rmdir test target
 
-### 2.11 touch - Create Empty File or Update Timestamps
+### 2.11 touch - Create Empty File or Update Timestamps ✅ COMPLETED
 **External App** (`src/apps/touch/`)
 
-- [ ] Create `src/apps/touch/cmd_touch.h`
-- [ ] Create `src/apps/touch/cmd_touch.c`:
-  - [ ] Implement `build_touch_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `--json`
-    - [ ] `<FILE...>`
-  - [ ] Implement `touch_run()`
-  - [ ] Implement `touch_print_usage()`
-  - [ ] Define `cmd_touch_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/touch/touch_main.c`
-- [ ] Update Makefile
-- [ ] Register in `jshell_register_externals.c`
-- [ ] Create `tests/apps/touch/test_touch.py`:
-  - [ ] Implement unit tests using Python unittest framework
-- [ ] Update `tests/Makefile` to add touch test target
+- [x] Create `src/apps/touch/cmd_touch.h`
+- [x] Create `src/apps/touch/cmd_touch.c`:
+  - [x] Implement `build_touch_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `--json`
+    - [x] `<FILE...>`
+  - [x] Implement `touch_run()`
+  - [x] Implement `touch_print_usage()`
+  - [x] Define `cmd_touch_spec` with `.type = CMD_EXTERNAL`
+- [x] Create `src/apps/touch/touch_main.c`
+- [x] Update Makefile
+- [x] Register in `jshell_register_externals.c`
+- [x] Create `tests/apps/touch/test_touch.py`:
+  - [x] Implement unit tests using Python unittest framework
+- [x] Update `tests/Makefile` to add touch test target
 
 ---
 
