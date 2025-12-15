@@ -22,6 +22,7 @@ void jshell_register_type_command(void);
 void jshell_register_help_command(void);
 void jshell_register_history_command(void);
 void jshell_register_http_get_command(void);
+void jshell_register_http_post_command(void);
 
 
 #endif

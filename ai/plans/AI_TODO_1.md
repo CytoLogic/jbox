@@ -748,24 +748,24 @@ Help should print all registered commands.
 - [x] Create `tests/jshell/builtins/test_http_get.py`:
   - [x] Implement unit tests using Python unittest framework
 
-### 8.2 http-post - POST to URL
-**External App** (`src/apps/http-post/`)
+### 8.2 http-post - POST to URL ✅ COMPLETED
+**Builtin** (`src/jshell/builtins/`) - Implemented as builtin using libcurl
 
-- [ ] Create `src/apps/http-post/cmd_http_post.h`
-- [ ] Create `src/apps/http-post/cmd_http_post.c`:
-  - [ ] Implement `build_http_post_argtable()` with:
-    - [ ] `-h, --help`
-    - [ ] `-H KEY:VALUE` (headers)
-    - [ ] `-d DATA` (body data)
-    - [ ] `--json`
-    - [ ] `<URL>` (required)
-  - [ ] Implement `http_post_run()`
-  - [ ] Implement `http_post_print_usage()`
-  - [ ] Define `cmd_http_post_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/http-post/http_post_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/http-post/test_http_post.py`:
-  - [ ] Implement unit tests using Python unittest framework
+- [x] Create `src/jshell/builtins/cmd_http_post.h`
+- [x] Create `src/jshell/builtins/cmd_http_post.c`:
+  - [x] Implement `build_http_post_argtable()` with:
+    - [x] `-h, --help`
+    - [x] `-H KEY:VALUE` (headers, repeatable)
+    - [x] `-d DATA` (body data)
+    - [x] `--json`
+    - [x] `<URL>` (required)
+  - [x] Implement `http_post_run()` using libcurl
+  - [x] Implement `http_post_print_usage()`
+  - [x] Define `cmd_http_post_spec` with `.type = CMD_BUILTIN`
+- [x] Update Makefile with libcurl linking
+- [x] Register in `jshell_register_builtins.c`
+- [x] Create `tests/jshell/builtins/test_http_post.py`:
+  - [x] Implement unit tests using Python unittest framework
 
 ---
 
@@ -803,6 +803,7 @@ Help should print all registered commands.
 - cd, export, unset (environment)
 - type, help, history, alias, unalias (shell introspection)
 - edit-replace-line, edit-insert-line, edit-delete-line, edit-replace (editing)
+- http-get, http-post (networking)
 - pkg (package manager)
 
 **External Apps** (fork/exec, standalone binaries):
@@ -812,7 +813,6 @@ Help should print all registered commands.
 - pwd, env (read-only environment)
 - echo, sleep, date (utilities)
 - less, vi (interactive tools)
-- http-get, http-post (networking)
 
 ### Command Anatomy Checklist
 

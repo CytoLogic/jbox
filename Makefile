@@ -63,7 +63,8 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_type.c \
 				$(SRC_DIR)/jshell/builtins/cmd_help.c \
 				$(SRC_DIR)/jshell/builtins/cmd_history.c \
-				$(SRC_DIR)/jshell/builtins/cmd_http_get.c
+				$(SRC_DIR)/jshell/builtins/cmd_http_get.c \
+				$(SRC_DIR)/jshell/builtins/cmd_http_post.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \
