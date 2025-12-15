@@ -22,7 +22,8 @@ static void build_edit_replace_line_argtable(edit_replace_line_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
   args->file = arg_file1(NULL, NULL, "FILE", "file to edit");
-  args->line_num = arg_int1(NULL, NULL, "LINE", "line number to replace (1-based)");
+  args->line_num = arg_int1(NULL, NULL, "LINE",
+                            "line number to replace (1-based)");
   args->text = arg_str1(NULL, NULL, "TEXT", "replacement text");
   args->end = arg_end(20);
 
@@ -282,7 +283,7 @@ const jshell_cmd_spec_t cmd_edit_replace_line_spec = {
   .summary = "replace a single line in a file",
   .long_help = "Replace the line at LINE in FILE with TEXT. "
                "Line numbers are 1-based.",
-  .type = CMD_EXTERNAL,
+  .type = CMD_BUILTIN,
   .run = edit_replace_line_run,
   .print_usage = edit_replace_line_print_usage
 };

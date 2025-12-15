@@ -341,11 +341,15 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
 
 ## Phase 4: Structured Editing Commands (Agent-Facing, HIGH PRIORITY)
 
-### 4.1 edit-replace-line - Replace Single Line
-**External App** (`src/apps/edit-replace-line/`)
+These commands are **Builtins** because they provide core file editing functionality that should be built into the shell.
 
-- [ ] Create `src/apps/edit-replace-line/cmd_edit_replace_line.h`
-- [ ] Create `src/apps/edit-replace-line/cmd_edit_replace_line.c`:
+### 4.1 edit-replace-line - Replace Single Line
+**Builtin** (`src/jshell/builtins/`)
+
+- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.h`:
+  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_line_spec;`
+  - [ ] Declare `void jshell_register_edit_replace_line_command(void);`
+- [ ] Create `src/jshell/builtins/cmd_edit_replace_line.c`:
   - [ ] Implement `build_edit_replace_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
@@ -354,17 +358,17 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
     - [ ] `<TEXT>` (required, replacement text)
   - [ ] Implement `edit_replace_line_run()`
   - [ ] Implement `edit_replace_line_print_usage()`
-  - [ ] Define `cmd_edit_replace_line_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/edit-replace-line/edit_replace_line_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/edit-replace-line/test_edit_replace_line.py`:
-  - [ ] Implement unit tests using Python unittest framework
+  - [ ] Define `cmd_edit_replace_line_spec` with `.type = CMD_BUILTIN`
+  - [ ] Implement `jshell_register_edit_replace_line_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 4.2 edit-insert-line - Insert Line Before Given Line
-**External App** (`src/apps/edit-insert-line/`)
+**Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/apps/edit-insert-line/cmd_edit_insert_line.h`
-- [ ] Create `src/apps/edit-insert-line/cmd_edit_insert_line.c`:
+- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.h`:
+  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_insert_line_spec;`
+  - [ ] Declare `void jshell_register_edit_insert_line_command(void);`
+- [ ] Create `src/jshell/builtins/cmd_edit_insert_line.c`:
   - [ ] Implement `build_edit_insert_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
@@ -373,17 +377,17 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
     - [ ] `<TEXT>`
   - [ ] Implement `edit_insert_line_run()`
   - [ ] Implement `edit_insert_line_print_usage()`
-  - [ ] Define `cmd_edit_insert_line_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/edit-insert-line/edit_insert_line_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/edit-insert-line/test_edit_insert_line.py`:
-  - [ ] Implement unit tests using Python unittest framework
+  - [ ] Define `cmd_edit_insert_line_spec` with `.type = CMD_BUILTIN`
+  - [ ] Implement `jshell_register_edit_insert_line_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 4.3 edit-delete-line - Delete Single Line
-**External App** (`src/apps/edit-delete-line/`)
+**Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/apps/edit-delete-line/cmd_edit_delete_line.h`
-- [ ] Create `src/apps/edit-delete-line/cmd_edit_delete_line.c`:
+- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.h`:
+  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_delete_line_spec;`
+  - [ ] Declare `void jshell_register_edit_delete_line_command(void);`
+- [ ] Create `src/jshell/builtins/cmd_edit_delete_line.c`:
   - [ ] Implement `build_edit_delete_line_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `--json`
@@ -391,17 +395,17 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
     - [ ] `<LINE_NUM>`
   - [ ] Implement `edit_delete_line_run()`
   - [ ] Implement `edit_delete_line_print_usage()`
-  - [ ] Define `cmd_edit_delete_line_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/edit-delete-line/edit_delete_line_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/edit-delete-line/test_edit_delete_line.py`:
-  - [ ] Implement unit tests using Python unittest framework
+  - [ ] Define `cmd_edit_delete_line_spec` with `.type = CMD_BUILTIN`
+  - [ ] Implement `jshell_register_edit_delete_line_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ### 4.4 edit-replace - Global Find/Replace with Regex
-**External App** (`src/apps/edit-replace/`)
+**Builtin** (`src/jshell/builtins/`)
 
-- [ ] Create `src/apps/edit-replace/cmd_edit_replace.h`
-- [ ] Create `src/apps/edit-replace/cmd_edit_replace.c`:
+- [ ] Create `src/jshell/builtins/cmd_edit_replace.h`:
+  - [ ] Declare `extern const jshell_cmd_spec_t cmd_edit_replace_spec;`
+  - [ ] Declare `void jshell_register_edit_replace_command(void);`
+- [ ] Create `src/jshell/builtins/cmd_edit_replace.c`:
   - [ ] Implement `build_edit_replace_argtable()` with:
     - [ ] `-h, --help`
     - [ ] `-i` (case-insensitive)
@@ -410,13 +414,14 @@ All filesystem tools are **External Apps** - built as standalone binaries and ex
     - [ ] `<FILE>`
     - [ ] `<PATTERN>` (regex or literal)
     - [ ] `<REPLACEMENT>`
-  - [ ] Implement `edit_replace_run()`
+  - [ ] Implement `edit_replace_run()`:
+    - [ ] Use POSIX regex (`regcomp`, `regexec`)
+    - [ ] Support `--fixed-strings` for literal matches
+    - [ ] Support `-i` for case-insensitive regex
   - [ ] Implement `edit_replace_print_usage()`
-  - [ ] Define `cmd_edit_replace_spec` with `.type = CMD_EXTERNAL`
-- [ ] Create `src/apps/edit-replace/edit_replace_main.c`
-- [ ] Update Makefile
-- [ ] Create `tests/apps/edit-replace/test_edit_replace.py`:
-  - [ ] Implement unit tests using Python unittest framework
+  - [ ] Define `cmd_edit_replace_spec` with `.type = CMD_BUILTIN`
+  - [ ] Implement `jshell_register_edit_replace_command()`
+- [ ] Update `jshell_register_builtins.h` and `.c`
 
 ---
 
@@ -833,12 +838,13 @@ Commands that modify shell state are **Builtins**. Others can be **External Apps
 - jobs, ps, kill, wait (job control)
 - cd, export, unset (environment)
 - type, help, history, alias, unalias (shell introspection)
+- edit-replace-line, edit-insert-line, edit-delete-line, edit-replace (editing)
 - pkg (package manager)
 
 **External Apps** (fork/exec, standalone binaries):
 - ls, stat, cat, head, tail (file viewing)
 - cp, mv, rm, mkdir, rmdir, touch (file manipulation)
-- rg, edit-* (search and editing)
+- rg (search)
 - pwd, env (read-only environment)
 - echo, printf, sleep, date, true, false (utilities)
 - less, vi (interactive tools)

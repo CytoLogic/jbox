@@ -39,7 +39,9 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_register_externals.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c
 
-BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c
+BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/jobs.c \
+				$(SRC_DIR)/jshell/builtins/cmd_edit_replace_line.c \
+				$(SRC_DIR)/jshell/builtins/cmd_edit_insert_line.c
 
 EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/stat/cmd_stat.c \
@@ -52,8 +54,7 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
 					 $(SRC_DIR)/apps/mkdir/cmd_mkdir.c \
 					 $(SRC_DIR)/apps/rmdir/cmd_rmdir.c \
 					 $(SRC_DIR)/apps/touch/cmd_touch.c \
-					 $(SRC_DIR)/apps/rg/cmd_rg.c \
-					 $(SRC_DIR)/apps/edit-replace-line/cmd_edit_replace_line.c
+					 $(SRC_DIR)/apps/rg/cmd_rg.c
 
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
@@ -69,7 +70,7 @@ test-apps: apps
 test-grammar:
 	$(MAKE) -C tests grammar
 
-apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app edit-replace-line-app
+apps: ls-app stat-app cat-app head-app tail-app cp-app mv-app rm-app mkdir-app rmdir-app touch-app rg-app
 
 $(ARGTABLE3_OBJ): $(ARGTABLE3_SRC) $(ARGTABLE3_HDR)
 	$(COMPILE) -c $(ARGTABLE3_SRC) -o $(ARGTABLE3_OBJ)
@@ -149,12 +150,6 @@ rg-app: $(ARGTABLE3_OBJ)
 	$(COMPILE) -I$(SRC_DIR)/apps/rg $(SRC_DIR)/apps/rg/rg_main.c \
 	           $(SRC_DIR)/apps/rg/cmd_rg.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
 	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/rg
-
-edit-replace-line-app: $(ARGTABLE3_OBJ)
-	mkdir -p bin/
-	$(COMPILE) -I$(SRC_DIR)/apps/edit-replace-line $(SRC_DIR)/apps/edit-replace-line/edit_replace_line_main.c \
-	           $(SRC_DIR)/apps/edit-replace-line/cmd_edit_replace_line.c $(SRC_DIR)/jshell/jshell_cmd_registry.c \
-	           $(ARGTABLE3_OBJ) $(LDFLAGS) -o $(BIN_DIR)/edit-replace-line
 
 $(ARGTABLE3_SRC) $(ARGTABLE3_HDR): argtable3-dist
 
