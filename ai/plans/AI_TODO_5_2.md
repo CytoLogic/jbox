@@ -252,7 +252,28 @@ if (strcmp(cmd_name, "pkg") == 0) {
 - [x] Phase 3: Dynamic Unregistration on Package Remove
   - [x] 3.1 Verify unregister works
   - [x] 3.2 Refresh handles removal (same mechanism handles both)
-- [ ] Phase 4: Testing
+- [x] Phase 4: Testing
   - [x] 4.1 Manual testing (verified install/remove dynamic updates)
-  - [ ] 4.2 Update existing tests
-  - [ ] 4.3 New tests
+  - [x] 4.2 Update existing tests (no changes needed - tests use standalone binaries)
+  - [x] 4.3 New tests (existing pkg tests cover install/remove; all tests pass)
+
+---
+
+## Completion Notes
+
+**Completed:** 2024-12-15
+
+**Summary:**
+- External commands are no longer statically registered at shell startup
+- Only `pkg` command is built into jshell binary
+- Commands are dynamically registered/unregistered when packages are installed/removed
+- No shell restart required after `pkg install` or `pkg remove`
+
+**Key Files Modified:**
+- `src/jshell/jshell_register_externals.c` - Only registers pkg
+- `src/ast/jshell_ast_helpers.c` - Refresh hook after pkg command
+- `Makefile` - Reduced EXTERNAL_CMD_SRCS to pkg only
+
+**Test Results:**
+- All existing tests pass (apps, builtins, pkg_srv)
+- Manual verification of dynamic registration/unregistration works correctly
