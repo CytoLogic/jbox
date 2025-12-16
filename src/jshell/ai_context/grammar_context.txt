@@ -1,0 +1,43 @@
+The jshell utilizes the following grammar. Use it to create your response:
+
+token AIQueryToken ('@' ( char - ('!') ) (char)* ) ;
+token AIExecToken (('@' '!' ) ( char )* ) ;
+token ExpansionStringToken ('"' ( (char - '"') | ('\\' '"') )* '"') ; 
+token LiteralStringToken ('\'' ( (char - '\'') | ('\\' '\'') )* '\'') ; 
+token VariableToken ('$' (char - ('$' | '"' | ' ' | '\t' | '\n' | '\r' | '=') )+ ) ;   
+-- wordexp() does not allow |,&,<,>, or \n unless it is in quotes
+token WordToken ( (char - ('|' | '&' | '<' | '>' | '$' | '=' | ';' | '"' | ' ' | '\t' | '\n' | '\r') )+ 
+    | ('\\' ( '$' | '=' | ';' | '"' | ' ' ) )+ )+ ;
+
+comment "/*" "*/" ;
+comment "//" "\n" ;
+
+separator nonempty Job ";" ;
+separator nonempty ShellToken " " ;
+
+entrypoints Input ;
+
+In. Input ::= [Job] ;
+
+AssigJob. Job ::= ShellToken "=" CommandLine ;
+AIChatJob. Job ::= AIQueryToken ;
+AIExecJob. Job ::= AIExecToken ;
+FGJob. Job ::= CommandLine ;
+BGJob. Job ::= CommandLine "&" ;
+
+CmdLine. CommandLine ::= CommandPart OptionalInputRedirection OptionalOutputRedirection ;
+
+SnglCmd. CommandPart ::= CommandUnit ;
+PipeCmd. CommandPart ::= CommandUnit "|" CommandPart ;
+
+NoInRedir. OptionalInputRedirection ::= ;
+InRedir. OptionalInputRedirection ::= "<" ShellToken ;
+NoOutRedir. OptionalOutputRedirection ::= ;
+OutRedir. OptionalOutputRedirection ::= ">" ShellToken ;
+
+CmdUnit. CommandUnit ::= [ShellToken] ;
+
+ExpStr. ShellToken ::= ExpansionStringToken ;
+LitStr. ShellToken ::= LiteralStringToken ;
+Var. ShellToken ::= VariableToken ;
+Wrd. ShellToken ::= WordToken ;

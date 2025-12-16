@@ -1,0 +1,441 @@
+=== jobs ===
+Usage: jobs [-h] [--json]
+List background jobs.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+
+=== ps ===
+Usage: ps [-h] [--json]
+List processes known to the shell.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+
+=== kill ===
+Usage: kill [-h] [-s SIGNAL] [--json] PID
+Send a signal to a process or job.
+
+Options:
+  -h, --help           display this help and exit
+  -s SIGNAL            signal to send (name or number, default: TERM)
+  --json               output in JSON format
+  PID                  process ID or job ID (use %N for job N)
+
+Signals:
+  TERM (15)  Terminate (default)
+  KILL (9)   Kill (cannot be caught)
+  INT (2)    Interrupt
+  HUP (1)    Hangup
+  STOP (19)  Stop process
+  CONT (18)  Continue stopped process
+
+=== wait ===
+Usage: wait [-h] [--json] [JOB_ID]
+Wait for a job to finish.
+
+If no JOB_ID is specified, waits for all background jobs.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  JOB_ID               job ID to wait for (use %N or just N)
+
+=== edit-replace-line ===
+Usage: edit-replace-line [-h] [--json] FILE LINE TEXT
+Replace a single line in a file.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 file to edit
+  LINE                 line number to replace (1-based)
+  TEXT                 replacement text
+
+=== edit-insert-line ===
+Usage: edit-insert-line [-h] [--json] FILE LINE TEXT
+Insert a line before a given line number in a file.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 file to edit
+  LINE                 line number to insert before (1-based)
+  TEXT                 text to insert
+
+=== edit-delete-line ===
+Usage: edit-delete-line [-h] [--json] FILE LINE
+Delete a single line from a file.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 file to edit
+  LINE                 line number to delete (1-based)
+
+=== edit-replace ===
+Usage: edit-replace [-hi] [--fixed-strings] [--json] FILE PATTERN REPLACEMENT
+Global find/replace with regex in a file.
+
+Options:
+  -h, --help           display this help and exit
+  -i                   case-insensitive matching
+  --fixed-strings      treat pattern as literal string
+  --json               output in JSON format
+  FILE                 file to edit
+  PATTERN              search pattern (regex)
+  REPLACEMENT          replacement text
+
+=== cd ===
+Usage: cd [-h] [DIR]
+Change the shell working directory.
+
+Change the current directory to DIR. If DIR is not supplied,
+the value of the HOME environment variable is used.
+
+Options:
+  -h, --help           display this help and exit
+  DIR                  directory to change to
+
+=== pwd ===
+Usage: pwd [-h] [--json]
+Print the current working directory.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+
+=== env ===
+Usage: env [-h] [--json]
+Print environment variables.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+
+=== export ===
+Usage: export [-h] [--json] [KEY=VALUE]...
+Set environment variables.
+
+Each argument should be in the form KEY=VALUE.
+The variable is set in the current shell environment.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  KEY=VALUE            environment variables to set
+
+=== unset ===
+Usage: unset [-h] [--json] KEY [KEY]...
+Unset environment variables.
+
+Remove the specified environment variables from the shell.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  KEY                  environment variable names to unset
+
+=== type ===
+Usage: type [-h] [--json] NAME [NAME]...
+Display information about command type.
+
+For each NAME, indicate how it would be interpreted if used
+as a command name.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  NAME                 command names to look up
+
+=== help ===
+Usage: help [-h] [COMMAND]
+Display help for shell commands.
+
+Without arguments, lists all available commands.
+With a COMMAND argument, shows detailed help for that command.
+
+Options:
+  -h, --help           display this help and exit
+  COMMAND              command to get help for
+
+=== history ===
+Usage: history [-h]
+Display command history.
+
+Shows a numbered list of commands that have been entered
+in the current shell session.
+
+Options:
+  -h, --help           display this help and exit
+
+=== http-get ===
+Usage: http-get [-h] [-H KEY:VALUE]... [--json] URL
+Fetch content from a URL using HTTP GET.
+
+Options:
+  -h, --help                display this help and exit
+  -H, --header=KEY:VALUE    add header to request (repeatable)
+  --json                    output response as JSON
+  URL                       URL to fetch
+
+Examples:
+  http-get https://example.com
+  http-get -H "Accept: application/json" https://api.example.com
+  http-get --json https://example.com
+
+=== http-post ===
+Usage: http-post [-h] [-H KEY:VALUE]... [-d DATA] [--json] URL
+Send HTTP POST request to a URL.
+
+Options:
+  -h, --help                display this help and exit
+  -H, --header=KEY:VALUE    add header to request (repeatable)
+  -d, --data=DATA           request body data
+  --json                    output response as JSON
+  URL                       URL to post to
+
+Examples:
+  http-post -d '{"key":"value"}' https://api.example.com
+  http-post -H "Content-Type: application/json" -d '{"name":"test"}' https://api.example.com
+  http-post --json -d 'data' https://example.com
+
+=== pkg ===
+Usage: pkg [OPTIONS] COMMAND [ARGS...]
+
+Manage jshell packages.
+
+Options:
+  -h, --help     display this help and exit
+  --json         output in JSON format (where applicable)
+
+Commands:
+  list                      list installed packages
+  info NAME                 show information about a package
+  search QUERY              search registry for packages
+  install <name|tarball>    install package by name or from tarball
+  install all               install all packages from registry
+  remove NAME               remove an installed package
+  build <src> <out.tar.gz>  build a package for distribution
+  check-update              check for available updates
+  upgrade                   upgrade all packages with updates
+  compile [name]            recompile installed package from source
+
+Environment:
+  JSHELL_PKG_REGISTRY       registry URL (default: http://localhost:3000)
+
+=== cp ===
+Usage: cp [-hrf] [--json] SOURCE DEST
+Copy SOURCE to DEST, or copy SOURCE into DEST directory.
+
+Options:
+  -h, --help           display this help and exit
+  -r, --recursive      copy directories recursively
+  -f, --force          overwrite existing files
+  --json               output in JSON format
+  SOURCE               source file or directory
+  DEST                 destination path
+
+=== date ===
+Usage: date [-h]
+Display the current date and time.
+
+Options:
+  -h, --help           display this help and exit
+
+=== head ===
+Usage: head [-h] [-n N] [--json] FILE
+Print the first N lines of FILE to standard output.
+
+Options:
+  -h, --help           display this help and exit
+  -n N                 output the first N lines (default 10)
+  --json               output in JSON format
+  FILE                 file to read
+
+=== less ===
+Usage: less [-hN] [FILE]
+View FILE contents with paging.
+
+Options:
+  -h, --help           display this help and exit
+  -N                   show line numbers
+  FILE                 file to view
+
+Navigation:
+  j, DOWN       Scroll down one line
+  k, UP         Scroll up one line
+  SPACE, f      Scroll down one page
+  b             Scroll up one page
+  g             Go to beginning
+  G             Go to end
+  /pattern      Search forward
+  n             Next search match
+  N             Previous search match
+  q             Quit
+
+=== ls ===
+Usage: ls [-hal] [--json] [PATH]...
+List directory contents.
+
+Options:
+  -h, --help           display this help and exit
+  -a                   do not ignore entries starting with .
+  -l                   use long listing format
+  --json               output in JSON format
+  PATH                 files or directories to list
+
+=== mkdir ===
+Usage: mkdir [-hp] [--json] DIR [DIR]...
+Create the DIRECTORY(ies), if they do not already exist.
+
+Options:
+  -h, --help           display this help and exit
+  -p, --parents        make parent directories as needed
+  --json               output in JSON format
+  DIR                  directories to create
+
+=== mv ===
+Usage: mv [-hf] [--json] SOURCE DEST
+Rename SOURCE to DEST, or move SOURCE into DEST directory.
+
+Options:
+  -h, --help           display this help and exit
+  -f, --force          overwrite existing files
+  --json               output in JSON format
+  SOURCE               source file or directory
+  DEST                 destination path
+
+=== cat ===
+Usage: cat [-h] [--json] FILE [FILE]...
+Concatenate FILE(s) to standard output.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 files to concatenate
+
+=== echo ===
+Usage: echo [-hn] [TEXT]...
+Display a line of text.
+
+Options:
+  -h, --help           display this help and exit
+  -n                   do not output trailing newline
+  TEXT                 text to print
+
+=== rg ===
+Usage: rg [-hniw] [-C N] [--fixed-strings] [--json] PATTERN [FILE]...
+Search for PATTERN in each FILE.
+
+Options:
+  -h, --help           display this help and exit
+  -n                   show line numbers
+  -i                   case-insensitive search
+  -w                   match whole words only
+  -C N                 show N lines of context
+  --fixed-strings      treat pattern as literal string
+  --json               output in JSON format
+  PATTERN              search pattern (regex)
+  FILE                 files to search
+
+=== rmdir ===
+Usage: rmdir [-h] [--json] DIR [DIR]...
+Remove the DIRECTORY(ies), if they are empty.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  DIR                  directories to remove
+
+=== rm ===
+Usage: rm [-hrf] [--json] FILE [FILE]...
+Remove (unlink) the FILE(s).
+
+Options:
+  -h, --help           display this help and exit
+  -r, --recursive      remove directories and their contents recursively
+  -f, --force          ignore nonexistent files, never prompt
+  --json               output in JSON format
+  FILE                 files or directories to remove
+
+=== sleep ===
+Usage: sleep [-h] SECONDS
+Pause for SECONDS.
+
+SECONDS may be a floating point number for fractional seconds.
+
+Options:
+  -h, --help           display this help and exit
+  SECONDS              pause for SECONDS (can be fractional)
+
+=== stat ===
+Usage: stat [-h] [--json] FILE
+Display file metadata.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 file to get metadata for
+
+=== tail ===
+Usage: tail [-h] [-n N] [--json] FILE
+Print the last N lines of FILE to standard output.
+
+Options:
+  -h, --help           display this help and exit
+  -n N                 output the last N lines (default 10)
+  --json               output in JSON format
+  FILE                 file to read
+
+=== touch ===
+Usage: touch [-h] [--json] FILE [FILE]...
+Update the access and modification times of each FILE to the current time.
+A FILE argument that does not exist is created empty.
+
+Options:
+  -h, --help           display this help and exit
+  --json               output in JSON format
+  FILE                 files to create or update
+
+=== vi ===
+Usage: vi [-h] [FILE]
+Edit FILE with vi-like interface.
+
+Options:
+  -h, --help           display this help and exit
+  FILE                 file to edit
+
+Normal mode commands:
+  h, LEFT       Move cursor left
+  j, DOWN       Move cursor down
+  k, UP         Move cursor up
+  l, RIGHT      Move cursor right
+  0             Move to beginning of line
+  $             Move to end of line
+  gg            Go to first line
+  G             Go to last line
+  w             Move forward by word
+  b             Move backward by word
+  i             Enter insert mode
+  a             Enter insert mode after cursor
+  o             Open line below
+  O             Open line above
+  x             Delete character under cursor
+  dd            Delete line
+  yy            Yank (copy) line
+  p             Paste after cursor/line
+  P             Paste before cursor/line
+  u             Undo (limited)
+  :             Enter command mode
+  /             Search forward
+
+Command mode:
+  :w            Write file
+  :q            Quit (fails if modified)
+  :q!           Quit without saving
+  :wq           Write and quit
+  :e FILE       Edit FILE
+
