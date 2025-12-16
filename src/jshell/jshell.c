@@ -185,6 +185,12 @@ static int jshell_interactive(void) {
 
     parse_tree = psInput(full_line);
 
+    if (parse_tree == NULL) {
+      fprintf(stderr, "\033[31mParse Error: Invalid Input!\033[0m\n");
+      full_line[0] = '\0';
+      continue;
+    }
+
     DPRINT("%s", showInput(parse_tree));
 
     interpretInput(parse_tree);
