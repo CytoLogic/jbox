@@ -7,7 +7,8 @@ PROJECT_ROOT := ..
         edit-replace-line edit-insert-line edit-delete-line edit-replace \
         jshell-path jshell-thread-exec jshell-pipes jshell-ast-exec jshell-session \
         jshell-signals app-signals vi-signals less-signals pkg-srv \
-        pkg pkg-db pkg-lifecycle pkg-errors pkg-shell pkg-integration clean
+        pkg pkg-db pkg-lifecycle pkg-errors pkg-shell pkg-integration \
+        ftpd clean
 
 all: apps builtins jshell
 
@@ -109,6 +110,10 @@ pkg-integration:
 		tests.pkg.test_pkg_lifecycle \
 		tests.pkg.test_pkg_errors \
 		tests.pkg.test_pkg_shell -v
+
+# FTP server tests
+ftpd:
+	cd $(PROJECT_ROOT) && $(PYTHON) -m unittest tests.ftpd.test_ftpd -v
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
