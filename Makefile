@@ -87,9 +87,18 @@ EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/pkg/cmd_pkg.c \
 AST_SRCS := $(SRC_DIR)/ast/jshell_ast_interpreter.c \
 			$(SRC_DIR)/ast/jshell_ast_helpers.c
 
-all: jbox apps packages
+# FTP server sources
+FTPD_DIR := $(SRC_DIR)/ftpd
+FTPD_SRCS := $(FTPD_DIR)/ftpd.c \
+			 $(FTPD_DIR)/ftpd_main.c \
+			 $(FTPD_DIR)/ftpd_client.c \
+			 $(FTPD_DIR)/ftpd_commands.c \
+			 $(FTPD_DIR)/ftpd_data.c \
+			 $(FTPD_DIR)/ftpd_path.c
 
-.PHONY: test test-apps test-builtins test-grammar test-pkg-srv apps clean-apps bnfc packages clean-packages clean-pkg-repository
+all: jbox apps packages ftpd
+
+.PHONY: test test-apps test-builtins test-grammar test-pkg-srv apps clean-apps bnfc packages clean-packages clean-pkg-repository ftpd clean-ftpd
 test: test-apps test-builtins test-pkg-srv
 
 test-apps: apps
@@ -192,7 +201,15 @@ standalone:
 
 
 
-clean: clean-pkg-repository
+# FTP server daemon
+ftpd: $(ARGTABLE3_OBJ)
+	mkdir -p $(BIN_DIR)
+	$(COMPILE) $(FTPD_SRCS) $(ARGTABLE3_OBJ) -lpthread $(LDFLAGS) -o $(BIN_DIR)/ftpd
+
+clean-ftpd:
+	rm -f $(BIN_DIR)/ftpd
+
+clean: clean-pkg-repository clean-ftpd
 	rm -rf $(BIN_DIR)/*
 	rm -f $(BIN_DIR)/jshell
 	rm -rf $(ARGTABLE3_DIST)

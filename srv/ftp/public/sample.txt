@@ -1,0 +1,6 @@
+This is a sample text file in the public directory.
+It demonstrates nested directory support in the FTP server.
+
+Line 1
+Line 2
+Line 3
