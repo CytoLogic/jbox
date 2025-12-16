@@ -76,7 +76,7 @@ static void pkg_print_usage(FILE *out) {
   fprintf(out, "  list                      list installed packages\n");
   fprintf(out, "  info NAME                 show information about a package\n");
   fprintf(out, "  search QUERY              search registry for packages\n");
-  fprintf(out, "  install <tarball>         install and compile package from tarball\n");
+  fprintf(out, "  install <name|tarball>    install package by name or from tarball\n");
   fprintf(out, "  remove NAME               remove an installed package\n");
   fprintf(out, "  build <src> <out.tar.gz>  build a package for distribution\n");
   fprintf(out, "  check-update              check for available updates\n");
@@ -307,28 +307,158 @@ static int pkg_search(const char *query, int json_output) {
 }
 
 
-static int pkg_install(const char *tarball, int json_output) {
-  if (tarball == NULL) {
+// Forward declaration for internal tarball install
+static int pkg_install_from_tarball(const char *tarball, int json_output);
+
+
+static int pkg_install(const char *arg, int json_output) {
+  if (arg == NULL) {
     if (json_output) {
       printf("{\"status\": \"error\", "
-             "\"message\": \"tarball path required\"}\n");
+             "\"message\": \"package name or tarball path required\"}\n");
     } else {
-      fprintf(stderr, "pkg install: tarball path required\n");
+      fprintf(stderr, "pkg install: package name or tarball path required\n");
     }
     return 1;
   }
 
   struct stat st;
-  if (stat(tarball, &st) != 0) {
+  // Check if arg is a local file
+  if (stat(arg, &st) == 0) {
+    // It's a local file, install directly
+    return pkg_install_from_tarball(arg, json_output);
+  }
+
+  // Not a local file - try to fetch from registry
+  // Parse package name (could be "echo" or "echo-0.0.1")
+  char *pkg_name = strdup(arg);
+  if (pkg_name == NULL) {
     if (json_output) {
-      printf("{\"status\": \"error\", "
-             "\"message\": \"tarball not found\", \"path\": \"%s\"}\n", tarball);
+      printf("{\"status\": \"error\", \"message\": \"memory allocation failed\"}\n");
     } else {
-      fprintf(stderr, "pkg install: tarball not found: %s\n", tarball);
+      fprintf(stderr, "pkg install: memory allocation failed\n");
     }
     return 1;
   }
 
+  // Check if version is specified (e.g., "echo-0.0.1")
+  // Find last dash followed by a digit
+  char *version_sep = NULL;
+  for (char *p = pkg_name + strlen(pkg_name) - 1; p > pkg_name; p--) {
+    if (*p == '-' && p[1] >= '0' && p[1] <= '9') {
+      version_sep = p;
+      break;
+    }
+  }
+
+  char *requested_version = NULL;
+  if (version_sep != NULL) {
+    *version_sep = '\0';
+    requested_version = version_sep + 1;
+  }
+
+  if (!json_output) {
+    if (requested_version) {
+      printf("Fetching %s version %s from registry...\n", pkg_name,
+             requested_version);
+    } else {
+      printf("Fetching %s from registry...\n", pkg_name);
+    }
+  }
+
+  // Query registry for package
+  PkgRegistryEntry *entry = pkg_registry_fetch_package(pkg_name);
+  if (entry == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"package not found in registry\", "
+             "\"name\": \"%s\"}\n", pkg_name);
+    } else {
+      fprintf(stderr, "pkg install: package '%s' not found in registry\n",
+              pkg_name);
+    }
+    free(pkg_name);
+    return 1;
+  }
+
+  // Check version if specified
+  if (requested_version != NULL &&
+      strcmp(requested_version, entry->latest_version) != 0) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"requested version not available\", "
+             "\"name\": \"%s\", \"requested\": \"%s\", "
+             "\"available\": \"%s\"}\n",
+             pkg_name, requested_version, entry->latest_version);
+    } else {
+      fprintf(stderr, "pkg install: version %s not available for '%s' "
+              "(available: %s)\n", requested_version, pkg_name,
+              entry->latest_version);
+    }
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+
+  if (entry->download_url == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"no download URL for package\", "
+             "\"name\": \"%s\"}\n", pkg_name);
+    } else {
+      fprintf(stderr, "pkg install: no download URL for '%s'\n", pkg_name);
+    }
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+
+  // Download to temp file
+  char temp_path[] = "/tmp/pkg-install-XXXXXX.tar.gz";
+  int fd = mkstemps(temp_path, 7);
+  if (fd < 0) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to create temp file\"}\n");
+    } else {
+      fprintf(stderr, "pkg install: failed to create temp file\n");
+    }
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+  close(fd);
+
+  if (!json_output) {
+    printf("Downloading %s...\n", entry->download_url);
+  }
+
+  if (pkg_registry_download(entry->download_url, temp_path) != 0) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"download failed\", "
+             "\"url\": \"%s\"}\n", entry->download_url);
+    } else {
+      fprintf(stderr, "pkg install: download failed from %s\n",
+              entry->download_url);
+    }
+    remove(temp_path);
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+
+  free(pkg_name);
+  pkg_registry_entry_free(entry);
+
+  // Install from downloaded tarball
+  int result = pkg_install_from_tarball(temp_path, json_output);
+  remove(temp_path);
+  return result;
+}
+
+
+static int pkg_install_from_tarball(const char *tarball, int json_output) {
   if (pkg_ensure_dirs() != 0) {
     if (json_output) {
       printf("{\"status\": \"error\", "
