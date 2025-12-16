@@ -44,6 +44,33 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb,
 }
 
 
+/* Spinner state */
+static const char *SPINNER_FRAMES[] = {"|", "/", "-", "\\"};
+static const int SPINNER_FRAME_COUNT = 4;
+static int g_spinner_frame = 0;
+static int g_spinner_active = 0;
+
+#define GREEN "\033[32m"
+#define RESET "\033[0m"
+
+
+static void spinner_start(void) {
+  g_spinner_frame = 0;
+  g_spinner_active = 1;
+  fprintf(stderr, "\r" GREEN "%s" RESET, SPINNER_FRAMES[0]);
+  fflush(stderr);
+}
+
+
+static void spinner_stop(void) {
+  if (g_spinner_active) {
+    fprintf(stderr, "\r \r");  /* Clear the spinner */
+    fflush(stderr);
+    g_spinner_active = 0;
+  }
+}
+
+
 static int progress_callback(void *clientp, curl_off_t dltotal,
                              curl_off_t dlnow, curl_off_t ultotal,
                              curl_off_t ulnow) {
@@ -54,8 +81,17 @@ static int progress_callback(void *clientp, curl_off_t dltotal,
   (void)ulnow;
 
   if (jshell_is_interrupted()) {
+    spinner_stop();
     return 1;
   }
+
+  /* Update spinner */
+  if (g_spinner_active) {
+    g_spinner_frame = (g_spinner_frame + 1) % SPINNER_FRAME_COUNT;
+    fprintf(stderr, "\r" GREEN "%s" RESET, SPINNER_FRAMES[g_spinner_frame]);
+    fflush(stderr);
+  }
+
   return 0;
 }
 
@@ -173,20 +209,18 @@ static char *build_request_json(const char *system_prompt,
 
 
 /**
- * Build the full API URL with model and API key.
+ * Build the full API URL with model.
  * Returns a newly allocated string that must be freed.
  */
-static char *build_api_url(const char *model, const char *api_key) {
-  /* URL format: BASE + model + ":generateContent?key=" + api_key */
-  size_t size = strlen(GEMINI_API_URL_BASE) + strlen(model) + 20
-                + strlen(api_key) + 1;
+static char *build_api_url(const char *model) {
+  /* URL format: BASE + model + ":generateContent" */
+  size_t size = strlen(GEMINI_API_URL_BASE) + strlen(model) + 20;
   char *url = malloc(size);
   if (!url) {
     return NULL;
   }
 
-  snprintf(url, size, "%s%s:generateContent?key=%s",
-           GEMINI_API_URL_BASE, model, api_key);
+  snprintf(url, size, "%s%s:generateContent", GEMINI_API_URL_BASE, model);
 
   return url;
 }
@@ -393,8 +427,8 @@ GeminiResponse jshell_gemini_request(
     return response;
   }
 
-  /* Build API URL with key parameter */
-  char *api_url = build_api_url(model, api_key);
+  /* Build API URL */
+  char *api_url = build_api_url(model);
   if (!api_url) {
     response.error = strdup("Failed to build API URL");
     curl_easy_cleanup(curl);
@@ -430,6 +464,12 @@ GeminiResponse jshell_gemini_request(
   struct curl_slist *headers = NULL;
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
+  /* Add API key header */
+  char api_key_header[256];
+  snprintf(api_key_header, sizeof(api_key_header), "X-goog-api-key: %s",
+           api_key);
+  headers = curl_slist_append(headers, api_key_header);
+
   /* Configure curl */
   curl_easy_setopt(curl, CURLOPT_URL, api_url);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -439,13 +479,15 @@ GeminiResponse jshell_gemini_request(
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, "jshell-ai/1.0");
 
-  /* Enable progress callback for signal interruption */
+  /* Enable progress callback for spinner and signal interruption */
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
   curl_easy_setopt(curl, CURLOPT_XFERINFODATA, NULL);
 
-  /* Perform request */
+  /* Start spinner and perform request */
+  spinner_start();
   CURLcode res = curl_easy_perform(curl);
+  spinner_stop();
 
   if (res == CURLE_ABORTED_BY_CALLBACK) {
     response.error = strdup("Request interrupted");
