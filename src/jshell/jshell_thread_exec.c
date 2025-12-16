@@ -9,12 +9,18 @@
 
 
 // List of builtin commands that must run in the main thread
-// These commands modify shell state and cannot be safely run in threads
+// These commands either modify shell state or are fast enough that
+// threading overhead isn't worth it
 static const char* MAIN_THREAD_BUILTINS[] = {
   "cd",
   "export",
   "unset",
   "wait",
+  "type",     // Fast lookup, avoids ASan thread inspection race
+  "help",     // Fast lookup
+  "pwd",      // Fast syscall
+  "env",      // Fast read
+  "history",  // Fast read
   NULL
 };
 
