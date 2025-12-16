@@ -3,12 +3,12 @@
 #include <string.h>
 #include <curl/curl.h>
 
-#include "jshell_ai_api.h"
+#include "jshell_gemini_api.h"
 #include "jshell_signals.h"
 
 
-#define ANTHROPIC_API_URL "https://api.anthropic.com/v1/messages"
-#define ANTHROPIC_VERSION "2023-06-01"
+#define GEMINI_API_URL_BASE \
+  "https://generativelanguage.googleapis.com/v1beta/models/"
 
 
 typedef struct {
@@ -123,10 +123,19 @@ static char *json_escape_string(const char *str) {
 
 
 /**
- * Build JSON request body for Anthropic API.
+ * Build JSON request body for Gemini API.
  * Returns a newly allocated string that must be freed.
+ *
+ * Gemini format:
+ * {
+ *   "contents": [
+ *     {"role": "user", "parts": [{"text": "..."}]}
+ *   ],
+ *   "systemInstruction": {"parts": [{"text": "..."}]},
+ *   "generationConfig": {"maxOutputTokens": N}
+ * }
  */
-static char *build_request_json(const char *model, const char *system_prompt,
+static char *build_request_json(const char *system_prompt,
                                 const char *user_message, int max_tokens) {
   char *escaped_system = json_escape_string(system_prompt);
   char *escaped_user = json_escape_string(user_message);
@@ -138,8 +147,7 @@ static char *build_request_json(const char *model, const char *system_prompt,
   }
 
   /* Calculate buffer size */
-  size_t size = strlen(model) + strlen(escaped_system) + strlen(escaped_user)
-                + 256;
+  size_t size = strlen(escaped_system) + strlen(escaped_user) + 512;
   char *json = malloc(size);
   if (!json) {
     free(escaped_system);
@@ -149,14 +157,13 @@ static char *build_request_json(const char *model, const char *system_prompt,
 
   snprintf(json, size,
     "{"
-      "\"model\":\"%s\","
-      "\"max_tokens\":%d,"
-      "\"system\":\"%s\","
-      "\"messages\":["
-        "{\"role\":\"user\",\"content\":\"%s\"}"
-      "]"
+      "\"contents\":["
+        "{\"role\":\"user\",\"parts\":[{\"text\":\"%s\"}]}"
+      "],"
+      "\"systemInstruction\":{\"parts\":[{\"text\":\"%s\"}]},"
+      "\"generationConfig\":{\"maxOutputTokens\":%d}"
     "}",
-    model, max_tokens, escaped_system, escaped_user);
+    escaped_user, escaped_system, max_tokens);
 
   free(escaped_system);
   free(escaped_user);
@@ -166,33 +173,59 @@ static char *build_request_json(const char *model, const char *system_prompt,
 
 
 /**
- * Extract content text from Anthropic API response.
- * Returns a newly allocated string that must be freed, or NULL on error.
+ * Build the full API URL with model and API key.
+ * Returns a newly allocated string that must be freed.
  */
-static char *extract_response_content(const char *json_response) {
-  /*
-   * Response format:
-   * {
-   *   "content": [
-   *     {
-   *       "type": "text",
-   *       "text": "..."
-   *     }
-   *   ],
-   *   ...
-   * }
-   */
-
-  /* Find "content" array */
-  const char *content_key = "\"content\"";
-  const char *content_start = strstr(json_response, content_key);
-  if (!content_start) {
+static char *build_api_url(const char *model, const char *api_key) {
+  /* URL format: BASE + model + ":generateContent?key=" + api_key */
+  size_t size = strlen(GEMINI_API_URL_BASE) + strlen(model) + 20
+                + strlen(api_key) + 1;
+  char *url = malloc(size);
+  if (!url) {
     return NULL;
   }
 
-  /* Find "text" key within content */
+  snprintf(url, size, "%s%s:generateContent?key=%s",
+           GEMINI_API_URL_BASE, model, api_key);
+
+  return url;
+}
+
+
+/**
+ * Extract content text from Gemini API response.
+ * Returns a newly allocated string that must be freed, or NULL on error.
+ *
+ * Response format:
+ * {
+ *   "candidates": [
+ *     {
+ *       "content": {
+ *         "parts": [{"text": "..."}],
+ *         "role": "model"
+ *       }
+ *     }
+ *   ]
+ * }
+ */
+static char *extract_response_content(const char *json_response) {
+  /* Find "candidates" array */
+  const char *candidates_key = "\"candidates\"";
+  const char *candidates_start = strstr(json_response, candidates_key);
+  if (!candidates_start) {
+    return NULL;
+  }
+
+  /* Find "parts" within candidates */
+  const char *parts_key = "\"parts\"";
+  const char *parts_start = strstr(candidates_start, parts_key);
+  if (!parts_start) {
+    return NULL;
+  }
+
+  /* Find "text" key within parts */
   const char *text_key = "\"text\"";
-  const char *text_start = strstr(content_start, text_key);
+  const char *text_start = strstr(parts_start, text_key);
   if (!text_start) {
     return NULL;
   }
@@ -275,20 +308,19 @@ static char *extract_response_content(const char *json_response) {
 
 
 /**
- * Extract error message from Anthropic API error response.
+ * Extract error message from Gemini API error response.
  * Returns a newly allocated string that must be freed, or NULL.
+ *
+ * Error format:
+ * {
+ *   "error": {
+ *     "code": 400,
+ *     "message": "...",
+ *     "status": "..."
+ *   }
+ * }
  */
 static char *extract_error_message(const char *json_response) {
-  /*
-   * Error format:
-   * {
-   *   "error": {
-   *     "type": "...",
-   *     "message": "..."
-   *   }
-   * }
-   */
-
   const char *error_key = "\"error\"";
   const char *error_start = strstr(json_response, error_key);
   if (!error_start) {
@@ -337,14 +369,14 @@ static char *extract_error_message(const char *json_response) {
 }
 
 
-AnthropicResponse jshell_anthropic_request(
+GeminiResponse jshell_gemini_request(
     const char *api_key,
     const char *model,
     const char *system_prompt,
     const char *user_message,
     int max_tokens) {
 
-  AnthropicResponse response = {
+  GeminiResponse response = {
     .content = NULL,
     .success = 0,
     .error = NULL
@@ -361,11 +393,20 @@ AnthropicResponse jshell_anthropic_request(
     return response;
   }
 
+  /* Build API URL with key parameter */
+  char *api_url = build_api_url(model, api_key);
+  if (!api_url) {
+    response.error = strdup("Failed to build API URL");
+    curl_easy_cleanup(curl);
+    return response;
+  }
+
   /* Build request JSON */
-  char *request_json = build_request_json(model, system_prompt ? system_prompt
-                                          : "", user_message, max_tokens);
+  char *request_json = build_request_json(system_prompt ? system_prompt : "",
+                                          user_message, max_tokens);
   if (!request_json) {
     response.error = strdup("Failed to build request JSON");
+    free(api_url);
     curl_easy_cleanup(curl);
     return response;
   }
@@ -379,6 +420,7 @@ AnthropicResponse jshell_anthropic_request(
   if (!resp_buf.data) {
     response.error = strdup("Failed to allocate response buffer");
     free(request_json);
+    free(api_url);
     curl_easy_cleanup(curl);
     return response;
   }
@@ -388,17 +430,8 @@ AnthropicResponse jshell_anthropic_request(
   struct curl_slist *headers = NULL;
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
-  char auth_header[256];
-  snprintf(auth_header, sizeof(auth_header), "x-api-key: %s", api_key);
-  headers = curl_slist_append(headers, auth_header);
-
-  char version_header[64];
-  snprintf(version_header, sizeof(version_header),
-           "anthropic-version: %s", ANTHROPIC_VERSION);
-  headers = curl_slist_append(headers, version_header);
-
   /* Configure curl */
-  curl_easy_setopt(curl, CURLOPT_URL, ANTHROPIC_API_URL);
+  curl_easy_setopt(curl, CURLOPT_URL, api_url);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_json);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -449,13 +482,14 @@ AnthropicResponse jshell_anthropic_request(
   curl_slist_free_all(headers);
   free(resp_buf.data);
   free(request_json);
+  free(api_url);
   curl_easy_cleanup(curl);
 
   return response;
 }
 
 
-void jshell_free_anthropic_response(AnthropicResponse *resp) {
+void jshell_free_gemini_response(GeminiResponse *resp) {
   if (resp) {
     free(resp->content);
     free(resp->error);

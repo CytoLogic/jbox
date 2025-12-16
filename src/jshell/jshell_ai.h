@@ -4,7 +4,7 @@
 /**
  * AI module for jshell
  *
- * Provides integration with Anthropic's Claude API for AI-assisted
+ * Provides integration with Google's Gemini API for AI-assisted
  * shell operations:
  * - @query: Simple chat query
  * - @!query: AI-generated command execution
@@ -12,7 +12,7 @@
 
 /**
  * Initialize AI context.
- * Must be called after jshell_load_env_file() so ANTHROPIC_API_KEY is available.
+ * Must be called after jshell_load_env_file() so GOOGLE_API_KEY is available.
  * Returns 0 on success, -1 if API key is not set.
  */
 int jshell_ai_init(void);

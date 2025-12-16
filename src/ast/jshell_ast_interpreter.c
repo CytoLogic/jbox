@@ -575,7 +575,9 @@ void visitAIQueryToken(AIQueryToken p)
   }
 
   if (!jshell_ai_available()) {
-    fprintf(stderr, "jshell: AI not available (ANTHROPIC_API_KEY not set)\n");
+    fprintf(stderr, "AI features require an API key.\n");
+    fprintf(stderr, "  Add GOOGLE_API_KEY=<your_key> to ~/.jshell/env\n");
+    jshell_set_last_exit_status(1);
     return;
   }
 
@@ -595,7 +597,9 @@ void visitAIExecToken(AIExecToken p)
   const char *query = p + 2;
 
   if (!jshell_ai_available()) {
-    fprintf(stderr, "jshell: AI not available (ANTHROPIC_API_KEY not set)\n");
+    fprintf(stderr, "AI features require an API key.\n");
+    fprintf(stderr, "  Add GOOGLE_API_KEY=<your_key> to ~/.jshell/env\n");
+    jshell_set_last_exit_status(1);
     return;
   }
 

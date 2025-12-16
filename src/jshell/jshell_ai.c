@@ -3,12 +3,12 @@
 #include <string.h>
 
 #include "jshell_ai.h"
-#include "jshell_ai_api.h"
+#include "jshell_gemini_api.h"
 #include "jshell_cmd_registry.h"
 #include "utils/jbox_utils.h"
 
 
-#define AI_MODEL "claude-3-haiku-20240307"
+#define AI_MODEL "gemini-2.5-flash"
 #define AI_CHAT_MAX_TOKENS 1024
 #define AI_EXEC_MAX_TOKENS 512
 
@@ -199,9 +199,9 @@ int jshell_ai_init(void) {
   }
 
   /* Get API key from environment */
-  const char *api_key = getenv("ANTHROPIC_API_KEY");
+  const char *api_key = getenv("GOOGLE_API_KEY");
   if (!api_key || api_key[0] == '\0') {
-    DPRINT("ANTHROPIC_API_KEY not set, AI features disabled");
+    DPRINT("GOOGLE_API_KEY not set, AI features disabled");
     return -1;
   }
 
@@ -236,14 +236,14 @@ int jshell_ai_available(void) {
 
 char *jshell_ai_chat(const char *query) {
   if (!jshell_ai_available()) {
-    return strdup("AI not available (ANTHROPIC_API_KEY not set)");
+    return strdup("AI not available (GOOGLE_API_KEY not set)");
   }
 
   if (!query || query[0] == '\0') {
     query = "Hi!";
   }
 
-  AnthropicResponse resp = jshell_anthropic_request(
+  GeminiResponse resp = jshell_gemini_request(
     g_ai_ctx.api_key,
     AI_MODEL,
     CHAT_SYSTEM_PROMPT,
@@ -265,7 +265,7 @@ char *jshell_ai_chat(const char *query) {
     result = strdup("AI error: Unknown error");
   }
 
-  jshell_free_anthropic_response(&resp);
+  jshell_free_gemini_response(&resp);
   return result;
 }
 
@@ -294,7 +294,7 @@ char *jshell_ai_execute_query(const char *query) {
     strbuf_append(&prompt_buf, g_ai_ctx.command_context);
   }
 
-  AnthropicResponse resp = jshell_anthropic_request(
+  GeminiResponse resp = jshell_gemini_request(
     g_ai_ctx.api_key,
     AI_MODEL,
     prompt_buf.data,
@@ -331,6 +331,6 @@ char *jshell_ai_execute_query(const char *query) {
     fprintf(stderr, "jshell: AI error: %s\n", resp.error);
   }
 
-  jshell_free_anthropic_response(&resp);
+  jshell_free_gemini_response(&resp);
   return result;
 }
