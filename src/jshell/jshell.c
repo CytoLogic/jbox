@@ -172,6 +172,11 @@ static int jshell_interactive(void) {
 
     jshell_history_add(full_line);
 
+    /* Handle exit command */
+    if (strcmp(full_line, "exit") == 0) {
+      exit(0);
+    }
+
     parse_tree = psInput(full_line);
 
     DPRINT("%s", showInput(parse_tree));
