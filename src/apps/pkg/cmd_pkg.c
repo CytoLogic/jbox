@@ -650,8 +650,38 @@ static int pkg_install_single(const char *arg, int json_output) {
     return 1;
   }
 
-  // Download to temp file
-  char temp_path[] = "/tmp/pkg-install-XXXXXX.tar.gz";
+  // Ensure temp directory exists
+  if (pkg_ensure_tmp_dir() != 0) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to create temp directory\"}\n");
+    } else {
+      fprintf(stderr, "pkg install: failed to create temp directory\n");
+    }
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+
+  // Download to temp file in ~/.jshell/pkgs/_tmp
+  char *tmp_dir = pkg_get_tmp_dir();
+  if (tmp_dir == NULL) {
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+
+  size_t temp_path_len = strlen(tmp_dir) + strlen("/XXXXXX.tar.gz") + 1;
+  char *temp_path = malloc(temp_path_len);
+  if (temp_path == NULL) {
+    free(tmp_dir);
+    free(pkg_name);
+    pkg_registry_entry_free(entry);
+    return 1;
+  }
+  snprintf(temp_path, temp_path_len, "%s/XXXXXX.tar.gz", tmp_dir);
+  free(tmp_dir);
+
   int fd = mkstemps(temp_path, 7);
   if (fd < 0) {
     if (json_output) {
@@ -660,6 +690,7 @@ static int pkg_install_single(const char *arg, int json_output) {
     } else {
       fprintf(stderr, "pkg install: failed to create temp file\n");
     }
+    free(temp_path);
     free(pkg_name);
     pkg_registry_entry_free(entry);
     return 1;
@@ -680,6 +711,7 @@ static int pkg_install_single(const char *arg, int json_output) {
               entry->download_url);
     }
     remove(temp_path);
+    free(temp_path);
     free(pkg_name);
     pkg_registry_entry_free(entry);
     return 1;
@@ -691,12 +723,13 @@ static int pkg_install_single(const char *arg, int json_output) {
   // Install from downloaded tarball
   int result = pkg_install_from_tarball(temp_path, json_output);
   remove(temp_path);
+  free(temp_path);
   return result;
 }
 
 
 static int pkg_install_from_tarball(const char *tarball, int json_output) {
-  if (pkg_ensure_dirs() != 0) {
+  if (pkg_ensure_tmp_dir() != 0) {
     if (json_output) {
       printf("{\"status\": \"error\", "
              "\"message\": \"failed to create package directories\"}\n");
@@ -706,7 +739,21 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     return 1;
   }
 
-  char temp_dir[] = "/tmp/pkg-install-XXXXXX";
+  // Create temp extraction dir in ~/.jshell/pkgs/_tmp
+  char *tmp_base = pkg_get_tmp_dir();
+  if (tmp_base == NULL) {
+    return 1;
+  }
+
+  size_t temp_dir_len = strlen(tmp_base) + strlen("/XXXXXX") + 1;
+  char *temp_dir = malloc(temp_dir_len);
+  if (temp_dir == NULL) {
+    free(tmp_base);
+    return 1;
+  }
+  snprintf(temp_dir, temp_dir_len, "%s/XXXXXX", tmp_base);
+  free(tmp_base);
+
   if (mkdtemp(temp_dir) == NULL) {
     if (json_output) {
       printf("{\"status\": \"error\", "
@@ -714,6 +761,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     } else {
       fprintf(stderr, "pkg install: failed to create temp directory\n");
     }
+    free(temp_dir);
     return 1;
   }
 
@@ -726,6 +774,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
       fprintf(stderr, "pkg install: failed to extract tarball\n");
     }
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -733,6 +782,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
   char *manifest_path = malloc(manifest_path_len);
   if (manifest_path == NULL) {
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
   snprintf(manifest_path, manifest_path_len, "%s/pkg.json", temp_dir);
@@ -748,6 +798,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
       fprintf(stderr, "pkg install: pkg.json not found in tarball\n");
     }
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -760,6 +811,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     }
     pkg_manifest_free(m);
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -767,6 +819,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
   if (db == NULL) {
     pkg_manifest_free(m);
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -784,6 +837,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     pkg_db_free(db);
     pkg_manifest_free(m);
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -792,6 +846,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     pkg_db_free(db);
     pkg_manifest_free(m);
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
 
@@ -803,6 +858,7 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
     pkg_db_free(db);
     pkg_manifest_free(m);
     pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
     return 1;
   }
   snprintf(install_path, install_path_len, "%s/%s-%s",
@@ -810,20 +866,27 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
   free(pkgs_dir);
 
   if (rename(temp_dir, install_path) != 0) {
-    char *mv_argv[] = {"mv", temp_dir, install_path, NULL};
-    if (pkg_run_command(mv_argv) != 0) {
+    // rename() fails across filesystems; use cp -r + rm -rf instead
+    char *cp_argv[] = {"cp", "-r", temp_dir, install_path, NULL};
+    if (pkg_run_command(cp_argv) != 0) {
       if (json_output) {
         printf("{\"status\": \"error\", "
-               "\"message\": \"failed to move package to install location\"}\n");
+               "\"message\": \"failed to copy package to install location\"}\n");
       } else {
-        fprintf(stderr, "pkg install: failed to move package\n");
+        fprintf(stderr, "pkg install: failed to copy package\n");
       }
       free(install_path);
       pkg_db_free(db);
       pkg_manifest_free(m);
       pkg_remove_dir_recursive(temp_dir);
+      free(temp_dir);
       return 1;
     }
+    pkg_remove_dir_recursive(temp_dir);
+    free(temp_dir);
+  } else {
+    // rename succeeded, temp_dir is now install_path
+    free(temp_dir);
   }
 
   // Compile package if it has a Makefile
