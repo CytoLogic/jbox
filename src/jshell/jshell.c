@@ -16,6 +16,7 @@
 #include "jshell_pkg_loader.h"
 #include "jshell_path.h"
 #include "jshell_signals.h"
+#include "jshell_env_loader.h"
 #include "utils/jbox_utils.h"
 #include "jshell.h"
 
@@ -77,6 +78,7 @@ int jshell_exec_string(const char *cmd_string) {
 
   jshell_init_signals();
   jshell_init_path();
+  jshell_load_env_file();
   jshell_init_job_control();
   jshell_register_all_builtin_commands();
   jshell_register_all_external_commands();
@@ -109,6 +111,7 @@ static int jshell_interactive(void) {
 
   jshell_init_signals();
   jshell_init_path();
+  jshell_load_env_file();
   jshell_init_job_control();
   jshell_history_init();
   jshell_register_all_builtin_commands();

@@ -48,6 +48,7 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_job_control.c \
 			   $(SRC_DIR)/jshell/jshell_history.c \
 			   $(SRC_DIR)/jshell/jshell_path.c \
+			   $(SRC_DIR)/jshell/jshell_env_loader.c \
 			   $(SRC_DIR)/jshell/jshell_thread_exec.c \
 			   $(SRC_DIR)/jshell/jshell_socketpair.c \
 			   $(SRC_DIR)/jshell/jshell_signals.c \
