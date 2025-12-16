@@ -89,7 +89,7 @@ A standalone FTP server daemon supporting:
 
 ### AI Integration
 
-Set `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` in `~/.jshell/env`:
+Set `GEMINI_API_KEY` in `~/.jshell/env`:
 
 ```bash
 # Chat with AI
@@ -406,48 +406,48 @@ PATH=$HOME/.jshell/bin:$PATH
 | pthreads | Threading |
 | BNFC | Parser generation (build-time) |
 
-## Implementation Status
+## Implementation Details
 
 The following major components have been implemented:
 
-### Phase 1: Core Infrastructure
+### Core Infrastructure
 - Command registry system
 - Builtin and external command registration
 - AST interpreter and execution helpers
 
-### Phase 2: Filesystem Tools
+### Filesystem Tools
 - ls, stat, cat, head, tail, cp, mv, rm, mkdir, rmdir, touch
 
-### Phase 3: Search and Text Tools
+### Search and Text Tools
 - rg (regex search with POSIX regex)
 
-### Phase 4: Structured Editing Commands
+### Structured Editing Commands
 - edit-replace-line, edit-insert-line, edit-delete-line, edit-replace
 
-### Phase 5: Process and Job Control
+### Process and Job Control
 - jobs, ps, kill, wait
 
-### Phase 6: Shell and Environment
+### Shell and Environment
 - cd, pwd, env, export, unset, type, help, history
 
-### Phase 7: Human-Facing Tools
+### Human-Facing Tools
 - echo, sleep, date, less, vi
 
-### Phase 8: Networking
+### Networking
 - http-get, http-post (using libcurl)
 
-### Phase 9: Package Manager
+### Package Manager
 - Full pkg command with JSON database, dynamic command registration
 
 ### Shell Execution Engine
-- Command path resolution (`~/.jshell/bin` priority)
+- External command registration system and Path resolution (`~/.jshell/bin` priority)
 - Threaded builtin execution
 - Socketpair pipes for builtins
 - Complete AST execution with pipes, redirection, background jobs
 - Signal handling (SIGINT, SIGTERM, SIGPIPE, etc.)
 
 ### AI Integration
-- Anthropic/Gemini API integration
+- Gemini API integration
 - `@query` chat mode
 - `@!query` command generation mode
 
