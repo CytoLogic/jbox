@@ -203,204 +203,92 @@ Implement a basic FTP server (`ftpd`) and client (`ftp`) for the jbox project. T
 
 ---
 
-## Phase 3: FTP Client Implementation (`src/apps/ftp/`)
+## Phase 3: FTP Client Implementation (`src/apps/ftp/`) ✅ COMPLETED
 
-### 3.1 Client Module Structure
+### 3.1 Client Module Structure ✅ COMPLETED
 
-#### `src/apps/ftp/cmd_ftp.h`
-```c
-#ifndef CMD_FTP_H
-#define CMD_FTP_H
+#### `src/apps/ftp/cmd_ftp.h` ✅ COMPLETED
+- [x] Define command spec declaration
+- [x] Declare registration function
 
-#include "jshell/jshell_cmd_registry.h"
-
-extern const jshell_cmd_spec_t cmd_ftp_spec;
-
-void jshell_register_ftp_command(void);
-
-#endif
-```
-
-#### `src/apps/ftp/cmd_ftp.c`
-- [ ] Implement argument structure:
-  ```c
-  typedef struct {
-    struct arg_lit *help;
-    struct arg_str *host;
-    struct arg_int *port;
-    struct arg_lit *json;
-    struct arg_end *end;
-    void *argtable[5];
-  } ftp_args_t;
-  ```
-
-- [ ] Implement `build_ftp_argtable()`:
+#### `src/apps/ftp/cmd_ftp.c` ✅ COMPLETED
+- [x] Implement `ftp_args_t` argument structure with:
   - `-h, --help` - Show usage
   - `-H, --host HOST` - Server hostname (default localhost)
   - `-p, --port PORT` - Server port (default 21021)
+  - `-u, --user USER` - Username (default anonymous)
   - `--json` - JSON output for operations
 
-- [ ] Implement `ftp_print_usage()`
+- [x] Implement `build_ftp_argtable()` - Build argument definitions
+- [x] Implement `ftp_print_usage()` - Print usage with argtable3
+- [x] Implement `ftp_run()` - Parse arguments, connect, and enter interactive mode
+- [x] Define `cmd_ftp_spec` with `.type = CMD_EXTERNAL`
 
-- [ ] Implement `ftp_run()`:
-  - Parse arguments
-  - Connect to server
-  - Enter interactive mode or execute single command
+### 3.2 FTP Client Core ✅ COMPLETED
 
-- [ ] Define `cmd_ftp_spec`:
-  ```c
-  const jshell_cmd_spec_t cmd_ftp_spec = {
-    .name = "ftp",
-    .summary = "FTP client",
-    .long_help = "Connect to FTP server for file transfer.",
-    .type = CMD_EXTERNAL,
-    .run = ftp_run,
-    .print_usage = ftp_print_usage,
-  };
-  ```
+#### `src/apps/ftp/ftp_client.h` ✅ COMPLETED
+- [x] Define `ftp_session_t` structure with:
+  - Control connection socket
+  - Data port listening socket
+  - Response buffer and code
+  - Connection state flags
 
-### 3.2 FTP Client Core
+#### `src/apps/ftp/ftp_client.c` ✅ COMPLETED
+- [x] Implement `ftp_session_init()` - Initialize session structure
+- [x] Implement `ftp_connect()` - Connect to server, read welcome
+- [x] Implement `ftp_login()` - Send USER command
+- [x] Implement `ftp_quit()` - Send QUIT and close
+- [x] Implement `ftp_close()` - Close without QUIT
+- [x] Implement `ftp_command()` - Send raw command
+- [x] Implement `ftp_list()` - Get directory listing via PORT/LIST
+- [x] Implement `ftp_get()` - Download file via PORT/RETR
+- [x] Implement `ftp_put()` - Upload file via PORT/STOR
+- [x] Implement `ftp_mkdir()` - Create directory via MKD
+- [x] Implement `ftp_pwd()` - Get current directory via PWD
+- [x] Implement `ftp_cd()` - Change directory via CWD
+- [x] Implement `ftp_last_response()` - Get last response string
+- [x] Implement `ftp_last_code()` - Get last response code
+- [x] Implement helper functions for PORT mode data transfers
 
-#### `src/apps/ftp/ftp_client.h`
-```c
-#ifndef FTP_CLIENT_H
-#define FTP_CLIENT_H
+### 3.3 Interactive Mode ✅ COMPLETED
 
-#include <stdint.h>
-#include <stdbool.h>
+#### `src/apps/ftp/ftp_interactive.h` ✅ COMPLETED
+- [x] Declare `ftp_interactive()` function
 
-typedef struct {
-  int ctrl_fd;
-  int data_listen_fd;
-  uint16_t data_port;
-  char last_response[512];
-  int last_code;
-} ftp_session_t;
-
-int ftp_connect(ftp_session_t *session, const char *host, uint16_t port);
-int ftp_login(ftp_session_t *session, const char *username);
-int ftp_quit(ftp_session_t *session);
-int ftp_list(ftp_session_t *session, char **output);
-int ftp_get(ftp_session_t *session, const char *remote, const char *local);
-int ftp_put(ftp_session_t *session, const char *local, const char *remote);
-int ftp_mkdir(ftp_session_t *session, const char *dirname);
-void ftp_close(ftp_session_t *session);
-
-#endif
-```
-
-#### `src/apps/ftp/ftp_client.c`
-- [ ] Implement `ftp_connect()`:
-  - Create socket
-  - Connect to server
-  - Read welcome message (220)
-
-- [ ] Implement `ftp_send_command()`:
-  - Send command string
-  - Append \r\n
-
-- [ ] Implement `ftp_read_response()`:
-  - Read response line
-  - Parse response code
-
-- [ ] Implement `ftp_setup_data_port()`:
-  - Bind to ephemeral port
-  - Listen for connection
-  - Send PORT command to server
-  - Store listen fd in session
-
-- [ ] Implement `ftp_accept_data()`:
-  - Accept connection on data_listen_fd
-  - Return data socket
-
-- [ ] Implement `ftp_login()`:
-  - Send USER command
-  - Check for 230 response
-
-- [ ] Implement `ftp_quit()`:
-  - Send QUIT command
-  - Check for 221 response
-
-- [ ] Implement `ftp_list()`:
-  - Setup data port
-  - Send LIST command
-  - Accept data connection
-  - Read directory listing
-  - Return allocated string
-
-- [ ] Implement `ftp_get()`:
-  - Setup data port
-  - Send RETR command
-  - Accept data connection
-  - Write to local file
-
-- [ ] Implement `ftp_put()`:
-  - Setup data port
-  - Send STOR command
-  - Accept data connection
-  - Send local file contents
-
-- [ ] Implement `ftp_mkdir()`:
-  - Send MKD command
-  - Check for 257 response
-
-### 3.3 Interactive Mode
-
-#### `src/apps/ftp/ftp_interactive.h`
-```c
-#ifndef FTP_INTERACTIVE_H
-#define FTP_INTERACTIVE_H
-
-#include "ftp_client.h"
-
-int ftp_interactive(ftp_session_t *session, bool json_output);
-
-#endif
-```
-
-#### `src/apps/ftp/ftp_interactive.c`
-- [ ] Implement `ftp_interactive()`:
-  - Read line from stdin
-  - Parse command (ls, get, put, mkdir, quit, help)
-  - Execute and display results
-  - Loop until quit
-
-- [ ] Implement command handlers:
-  - `ls` - Call ftp_list, display output
+#### `src/apps/ftp/ftp_interactive.c` ✅ COMPLETED
+- [x] Implement `ftp_interactive()` - Main command loop
+- [x] Implement command handlers:
+  - `ls [path]` - List directory contents
+  - `cd <path>` - Change directory
+  - `pwd` - Print working directory
   - `get <remote> [local]` - Download file
   - `put <local> [remote]` - Upload file
   - `mkdir <dir>` - Create directory
-  - `help` - Show commands
-  - `quit` - Exit
+  - `help` - Show available commands
+  - `quit/exit` - Disconnect and exit
+- [x] Implement JSON output for all commands
+- [x] Implement human-readable output format
 
-### 3.4 Client Main and Build
+### 3.4 Client Main and Build ✅ COMPLETED
 
-#### `src/apps/ftp/ftp_main.c`
-```c
-#include "cmd_ftp.h"
+#### `src/apps/ftp/ftp_main.c` ✅ COMPLETED
+- [x] Implement main() wrapper that calls cmd_ftp_spec.run()
 
-int main(int argc, char **argv) {
-  return cmd_ftp_spec.run(argc, argv);
-}
-```
+#### `src/apps/ftp/Makefile` ✅ COMPLETED
+- [x] Create Makefile following standard app template
+- [x] Support both source and installed build modes
+- [x] Include pkg.mk for package building
 
-#### `src/apps/ftp/Makefile`
-- [ ] Create Makefile following standard app template
+#### `src/apps/ftp/pkg.json` ✅ COMPLETED
+- [x] Create package metadata file with commands definition
 
-#### `src/apps/ftp/pkg.json`
-- [ ] Create package metadata file
+#### `src/apps/ftp/pkg.mk` ✅ COMPLETED
+- [x] Create package building rules
 
-### 3.5 Register in Build System
+### 3.5 Register in Build System ✅ COMPLETED
 
-- [ ] Update `Makefile` (root):
-  - Add `ftp` to `APP_DIRS`
-
-- [ ] Update `src/jshell/jshell_register_externals.c`:
-  - Include `apps/ftp/cmd_ftp.h`
-  - Add `jshell_register_ftp_command()` call
-
-- [ ] Update `src/jshell/jshell_register_externals.h`:
-  - Declare `void jshell_register_ftp_command(void);`
+- [x] Update `Makefile` (root): Add `ftp` to `APP_DIRS`
+- [x] FTP client registered as package (installed via pkg_registry dynamically)
 
 ---
 
@@ -457,36 +345,54 @@ int main(int argc, char **argv) {
 - [x] `test_path_traversal_cwd()` - CWD blocks path traversal
 - [x] `test_path_traversal_retr()` - RETR blocks path traversal
 
-### 5.2 Client Tests (`tests/apps/ftp/test_ftp.py`)
+### 5.2 Client Tests (`tests/apps/ftp/test_ftp.py`) ✅ COMPLETED
 
-#### Test Cases to Implement
-
-- [ ] `test_help_short()` - -h shows help
-- [ ] `test_help_long()` - --help shows help
-- [ ] `test_connect_success()` - Connects to server
-- [ ] `test_connect_failure()` - Handles connection failure gracefully
-- [ ] `test_login()` - USER command works
-- [ ] `test_list_command()` - ls command works
-- [ ] `test_get_command()` - get downloads file
-- [ ] `test_put_command()` - put uploads file
-- [ ] `test_mkdir_command()` - mkdir creates directory
-- [ ] `test_quit_command()` - quit exits cleanly
-- [ ] `test_json_output()` - --json produces valid JSON
+#### Test Cases Implemented (30 tests, all passing)
+- [x] `test_help_short()` - -h shows help
+- [x] `test_help_long()` - --help shows help
+- [x] `test_connect_default_host()` - Connects to localhost (default)
+- [x] `test_connect_explicit_host()` - Connects with explicit host argument
+- [x] `test_connect_json_output()` - JSON output on connection
+- [x] `test_connect_bad_port()` - Handles invalid port gracefully
+- [x] `test_pwd_command()` - pwd shows working directory
+- [x] `test_pwd_json()` - pwd with JSON output
+- [x] `test_ls_command()` - ls lists directory contents
+- [x] `test_ls_json()` - ls with JSON output
+- [x] `test_ls_subdir()` - ls with subdirectory path
+- [x] `test_cd_command()` - cd changes directory
+- [x] `test_cd_json()` - cd with JSON output
+- [x] `test_cd_missing_arg()` - cd without argument shows error
+- [x] `test_help_interactive()` - help shows commands
+- [x] `test_help_interactive_json()` - help with JSON output
+- [x] `test_get_command()` - get downloads file
+- [x] `test_get_json()` - get with JSON output
+- [x] `test_get_missing_arg()` - get without argument shows error
+- [x] `test_put_command()` - put uploads file
+- [x] `test_put_json()` - put with JSON output
+- [x] `test_put_missing_arg()` - put without argument shows error
+- [x] `test_mkdir_command()` - mkdir creates directory
+- [x] `test_mkdir_json()` - mkdir with JSON output
+- [x] `test_mkdir_missing_arg()` - mkdir without argument shows error
+- [x] `test_unknown_command()` - unknown command shows error
+- [x] `test_unknown_command_json()` - unknown command with JSON
+- [x] `test_quit_command()` - quit exits cleanly
+- [x] `test_exit_command()` - exit also exits cleanly
+- [x] `test_quit_json()` - quit with JSON output
 
 ### 5.3 Update Tests Makefile ✅ COMPLETED
 
 - [x] Add `ftpd` target to `tests/Makefile`
 - [x] Add `tests/ftpd/__init__.py`
 - [x] Add `tests/apps/ftp/__init__.py`
-- [ ] Add `ftp` target for client tests (when client is implemented)
+- [x] Add `tests/apps/ftp/test_ftp.py` with 30 tests
 
 ---
 
-## Phase 6: Documentation ✅ COMPLETED (Server)
+## Phase 6: Documentation ✅ COMPLETED
 
 ### 6.1 Doxygen Style Docstrings ✅ COMPLETED
 
-All server functions have docstrings in Doxygen format.
+All functions have docstrings in Doxygen format.
 
 ### 6.2 Files Documented
 
@@ -502,13 +408,13 @@ All server functions have docstrings in Doxygen format.
 - [x] `src/ftpd/ftpd_path.h` - Path utilities API
 - [x] `src/ftpd/ftpd_path.c` - Path utilities implementation
 
-#### Client Files (pending)
-- [ ] `src/apps/ftp/cmd_ftp.h` - Command spec
-- [ ] `src/apps/ftp/cmd_ftp.c` - Command implementation
-- [ ] `src/apps/ftp/ftp_client.h` - Client session API
-- [ ] `src/apps/ftp/ftp_client.c` - Client session implementation
-- [ ] `src/apps/ftp/ftp_interactive.h` - Interactive mode API
-- [ ] `src/apps/ftp/ftp_interactive.c` - Interactive mode implementation
+#### Client Files ✅ COMPLETED
+- [x] `src/apps/ftp/cmd_ftp.h` - Command spec
+- [x] `src/apps/ftp/cmd_ftp.c` - Command implementation
+- [x] `src/apps/ftp/ftp_client.h` - Client session API
+- [x] `src/apps/ftp/ftp_client.c` - Client session implementation
+- [x] `src/apps/ftp/ftp_interactive.h` - Interactive mode API
+- [x] `src/apps/ftp/ftp_interactive.c` - Interactive mode implementation
 
 ---
 
@@ -517,19 +423,20 @@ All server functions have docstrings in Doxygen format.
 ### Completed
 - ✅ Phase 1: Project Setup and Infrastructure
 - ✅ Phase 2: FTP Server Implementation
-- ✅ Phase 4: FTP Protocol Response Codes (server-side)
+- ✅ Phase 3: FTP Client Implementation
+- ✅ Phase 4: FTP Protocol Response Codes
 - ✅ Phase 5.1: Server Tests (22 tests passing)
-- ✅ Phase 5.3: Tests Makefile (server)
-- ✅ Phase 6: Documentation (server)
+- ✅ Phase 5.2: Client Tests (30 tests passing)
+- ✅ Phase 5.3: Tests Makefile
+- ✅ Phase 6: Documentation (server and client)
 
-### Pending
-- ⏳ Phase 3: FTP Client Implementation
-- ⏳ Phase 5.2: Client Tests
-- ⏳ Phase 6: Documentation (client)
+### All Phases Complete
 
 ### Git Commits
 1. `efd8bf4` - feat(ftpd): implement FTP server daemon
 2. `bbce2a4` - test(ftpd): add comprehensive FTP server tests
+3. `a94d7b2` - docs: update AI_TODO_7.md with FTP server progress
+4. `382bf64` - feat(ftp): implement FTP client
 
 ---
 
