@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "jshell_ai.h"
+#include "jshell_ai_context.h"
 #include "jshell_gemini_api.h"
-#include "jshell_cmd_registry.h"
 #include "utils/jbox_utils.h"
 
 
@@ -13,184 +13,22 @@
 #define AI_EXEC_MAX_TOKENS 512
 
 
-/* Shell grammar for AI context */
-static const char *SHELL_GRAMMAR =
-  "-- jshell grammar\n"
-  "\n"
-  "separator nonempty Job \";\" ;\n"
-  "separator nonempty ShellToken \" \" ;\n"
-  "\n"
-  "In. Input ::= [Job] ;\n"
-  "\n"
-  "AssigJob. Job ::= ShellToken \"=\" CommandLine ;\n"
-  "AIChatJob. Job ::= AIQueryToken ;     -- @query\n"
-  "AIExecJob. Job ::= AIExecToken ;      -- @!query\n"
-  "FGJob. Job ::= CommandLine ;\n"
-  "BGJob. Job ::= CommandLine \"&\" ;\n"
-  "\n"
-  "CmdLine. CommandLine ::= CommandPart OptionalInputRedirection "
-    "OptionalOutputRedirection ;\n"
-  "\n"
-  "SnglCmd. CommandPart ::= CommandUnit ;\n"
-  "PipeCmd. CommandPart ::= CommandUnit \"|\" CommandPart ;\n"
-  "\n"
-  "NoInRedir. OptionalInputRedirection ::= ;\n"
-  "InRedir. OptionalInputRedirection ::= \"<\" ShellToken ;\n"
-  "NoOutRedir. OptionalOutputRedirection ::= ;\n"
-  "OutRedir. OptionalOutputRedirection ::= \">\" ShellToken ;\n"
-  "\n"
-  "CmdUnit. CommandUnit ::= [ShellToken] ;\n"
-  "\n"
-  "-- Tokens: double-quoted strings expand variables, "
-    "single-quoted are literal\n"
-  "-- Variables: $NAME or $? for last exit status\n"
-  "-- Words: unquoted text (no pipes, redirects, etc.)\n";
-
-
-/* System prompts */
+/* System prompt for chat queries (no command context) */
 static const char *CHAT_SYSTEM_PROMPT =
   "You are a helpful assistant running inside jshell, a custom Unix-like "
-  "shell. Keep responses concise and focused. When discussing shell commands, "
-  "prefer jshell's available commands.";
-
-static const char *EXEC_SYSTEM_PROMPT_PREFIX =
-  "You are a shell command assistant for jshell. Your task is to produce a "
-  "single, valid jshell command to accomplish the user's request.\n"
-  "\n"
-  "IMPORTANT RULES:\n"
-  "1. Respond with ONLY the command - no explanations, no markdown, no code "
-  "blocks\n"
-  "2. Just output the raw command string that can be executed directly\n"
-  "3. Use only the available commands listed below\n"
-  "4. Use proper shell syntax (pipes |, redirects < >, background &)\n"
-  "\n"
-  "Shell grammar:\n";
+  "shell. Keep responses concise and focused.";
 
 
 /* Global AI context */
 typedef struct {
   char *api_key;
-  char *command_context;
   int initialized;
 } AIContext;
 
 static AIContext g_ai_ctx = {
   .api_key = NULL,
-  .command_context = NULL,
   .initialized = 0
 };
-
-
-/* Dynamic string buffer for building context */
-typedef struct {
-  char *data;
-  size_t size;
-  size_t capacity;
-} StringBuffer;
-
-
-static void strbuf_init(StringBuffer *buf) {
-  buf->data = malloc(4096);
-  buf->size = 0;
-  buf->capacity = 4096;
-  if (buf->data) {
-    buf->data[0] = '\0';
-  }
-}
-
-
-static void strbuf_free(StringBuffer *buf) {
-  free(buf->data);
-  buf->data = NULL;
-  buf->size = 0;
-  buf->capacity = 0;
-}
-
-
-static void strbuf_append(StringBuffer *buf, const char *str) {
-  if (!buf->data || !str) {
-    return;
-  }
-
-  size_t len = strlen(str);
-  if (buf->size + len >= buf->capacity) {
-    size_t new_capacity = buf->capacity * 2;
-    if (new_capacity < buf->size + len + 1) {
-      new_capacity = buf->size + len + 1;
-    }
-    char *new_data = realloc(buf->data, new_capacity);
-    if (!new_data) {
-      return;
-    }
-    buf->data = new_data;
-    buf->capacity = new_capacity;
-  }
-
-  memcpy(buf->data + buf->size, str, len);
-  buf->size += len;
-  buf->data[buf->size] = '\0';
-}
-
-
-/**
- * Callback to collect command help into a string buffer.
- */
-static void collect_command_help(const jshell_cmd_spec_t *spec, void *userdata)
-{
-  StringBuffer *buf = (StringBuffer *)userdata;
-
-  if (!spec || !spec->name) {
-    return;
-  }
-
-  /* Add command name and summary */
-  strbuf_append(buf, spec->name);
-  if (spec->summary) {
-    strbuf_append(buf, " - ");
-    strbuf_append(buf, spec->summary);
-  }
-  strbuf_append(buf, "\n");
-
-  /* Capture print_usage output if available */
-  if (spec->print_usage) {
-    char *usage_buf = NULL;
-    size_t usage_size = 0;
-    FILE *stream = open_memstream(&usage_buf, &usage_size);
-
-    if (stream) {
-      spec->print_usage(stream);
-      fclose(stream);
-
-      if (usage_buf && usage_size > 0) {
-        strbuf_append(buf, usage_buf);
-        strbuf_append(buf, "\n");
-      }
-      free(usage_buf);
-    }
-  }
-
-  strbuf_append(buf, "\n");
-}
-
-
-/**
- * Build command context from all registered commands.
- */
-static char *build_command_context(void) {
-  StringBuffer buf;
-  strbuf_init(&buf);
-
-  if (!buf.data) {
-    return NULL;
-  }
-
-  strbuf_append(&buf, "Available commands:\n\n");
-  jshell_for_each_command(collect_command_help, &buf);
-
-  char *result = buf.data;
-  buf.data = NULL;  /* Transfer ownership */
-  return result;
-}
 
 
 int jshell_ai_init(void) {
@@ -210,9 +48,6 @@ int jshell_ai_init(void) {
     return -1;
   }
 
-  /* Build command context */
-  g_ai_ctx.command_context = build_command_context();
-
   g_ai_ctx.initialized = 1;
   DPRINT("AI module initialized");
 
@@ -222,9 +57,7 @@ int jshell_ai_init(void) {
 
 void jshell_ai_cleanup(void) {
   free(g_ai_ctx.api_key);
-  free(g_ai_ctx.command_context);
   g_ai_ctx.api_key = NULL;
-  g_ai_ctx.command_context = NULL;
   g_ai_ctx.initialized = 0;
 }
 
@@ -242,6 +75,9 @@ char *jshell_ai_chat(const char *query) {
   if (!query || query[0] == '\0') {
     query = "Hi!";
   }
+
+  DPRINT("AI chat query: %s", query);
+  DPRINT("AI chat system prompt: %s", CHAT_SYSTEM_PROMPT);
 
   GeminiResponse resp = jshell_gemini_request(
     g_ai_ctx.api_key,
@@ -279,30 +115,37 @@ char *jshell_ai_execute_query(const char *query) {
     return NULL;
   }
 
-  /* Build execute system prompt with context */
-  StringBuffer prompt_buf;
-  strbuf_init(&prompt_buf);
+  /* Build system prompt from embedded context */
+  size_t prompt_size = strlen(EXEC_INSTRUCTIONS)
+                     + strlen(GRAMMAR_CONTEXT)
+                     + strlen(CMD_CONTEXT)
+                     + 128;  /* padding for separators */
 
-  if (!prompt_buf.data) {
+  char *system_prompt = malloc(prompt_size);
+  if (!system_prompt) {
     return NULL;
   }
 
-  strbuf_append(&prompt_buf, EXEC_SYSTEM_PROMPT_PREFIX);
-  strbuf_append(&prompt_buf, SHELL_GRAMMAR);
-  strbuf_append(&prompt_buf, "\n\n");
-  if (g_ai_ctx.command_context) {
-    strbuf_append(&prompt_buf, g_ai_ctx.command_context);
-  }
+  snprintf(system_prompt, prompt_size,
+           "%s\n\n"
+           "=== SHELL GRAMMAR ===\n%s\n\n"
+           "=== AVAILABLE COMMANDS ===\n%s",
+           EXEC_INSTRUCTIONS,
+           GRAMMAR_CONTEXT,
+           CMD_CONTEXT);
+
+  DPRINT("AI exec query: %s", query);
+  DPRINT("AI exec system prompt:\n%s", system_prompt);
 
   GeminiResponse resp = jshell_gemini_request(
     g_ai_ctx.api_key,
     AI_MODEL,
-    prompt_buf.data,
+    system_prompt,
     query,
     AI_EXEC_MAX_TOKENS
   );
 
-  strbuf_free(&prompt_buf);
+  free(system_prompt);
 
   char *result = NULL;
   if (resp.success && resp.content) {

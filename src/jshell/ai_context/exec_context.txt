@@ -1,0 +1,4 @@
+Generate a valid jshell command line based on the users request.
+The shell grammar and available commands are outlined below.
+Only reply with the command.
+This will be directly executed by the shell.
