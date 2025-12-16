@@ -12,7 +12,7 @@ from pathlib import Path
 class TestHeadCommand(unittest.TestCase):
     """Test cases for the head command."""
 
-    HEAD_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "head"
+    HEAD_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "head"
 
     @classmethod
     def setUpClass(cls):

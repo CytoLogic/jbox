@@ -12,7 +12,7 @@ from pathlib import Path
 class TestRmdirCommand(unittest.TestCase):
     """Test cases for the rmdir command."""
 
-    RMDIR_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "rmdir"
+    RMDIR_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "rmdir"
 
     @classmethod
     def setUpClass(cls):

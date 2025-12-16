@@ -12,7 +12,7 @@ from pathlib import Path
 class TestRgCommand(unittest.TestCase):
     """Test cases for the rg command."""
 
-    RG_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "rg"
+    RG_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "rg"
 
     @classmethod
     def setUpClass(cls):

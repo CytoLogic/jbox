@@ -12,7 +12,7 @@ from pathlib import Path
 class TestStatCommand(unittest.TestCase):
     """Test cases for the stat command."""
 
-    STAT_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "stat"
+    STAT_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "stat"
 
     @classmethod
     def setUpClass(cls):

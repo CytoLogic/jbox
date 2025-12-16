@@ -13,7 +13,7 @@ from pathlib import Path
 class TestTouchCommand(unittest.TestCase):
     """Test cases for the touch command."""
 
-    TOUCH_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "touch"
+    TOUCH_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "touch"
 
     @classmethod
     def setUpClass(cls):

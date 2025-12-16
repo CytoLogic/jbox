@@ -37,4 +37,4 @@ $(BIN_DIR):
 clean:
 	rm -f *.o $(BIN) $(LIB)
 
-include ../pkg.mk
+include pkg.mk

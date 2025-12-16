@@ -12,7 +12,7 @@ from pathlib import Path
 class TestCpCommand(unittest.TestCase):
     """Test cases for the cp command."""
 
-    CP_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "cp"
+    CP_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "cp"
 
     @classmethod
     def setUpClass(cls):

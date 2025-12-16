@@ -19,12 +19,14 @@ class TestPackageRegistryServer(unittest.TestCase):
     PROJECT_ROOT = Path(__file__).parent.parent.parent
     START_SCRIPT = PROJECT_ROOT / "scripts" / "start-pkg-server.sh"
     SHUTDOWN_SCRIPT = PROJECT_ROOT / "scripts" / "shutdown-pkg-server.sh"
+    BUILD_PACKAGES_SCRIPT = PROJECT_ROOT / "scripts" / "build-packages.sh"
+    GENERATE_MANIFEST_SCRIPT = PROJECT_ROOT / "scripts" / "generate-pkg-manifest.sh"
     BASE_URL = "http://localhost:3000"
     server_process = None
 
     @classmethod
     def setUpClass(cls):
-        """Start the server before running tests."""
+        """Build packages, generate manifest, and start the server."""
         # Check if scripts exist
         if not cls.START_SCRIPT.exists():
             raise unittest.SkipTest(
@@ -33,6 +35,39 @@ class TestPackageRegistryServer(unittest.TestCase):
         if not cls.SHUTDOWN_SCRIPT.exists():
             raise unittest.SkipTest(
                 f"shutdown script not found at {cls.SHUTDOWN_SCRIPT}"
+            )
+        if not cls.BUILD_PACKAGES_SCRIPT.exists():
+            raise unittest.SkipTest(
+                f"build-packages script not found at {cls.BUILD_PACKAGES_SCRIPT}"
+            )
+        if not cls.GENERATE_MANIFEST_SCRIPT.exists():
+            raise unittest.SkipTest(
+                f"generate-pkg-manifest script not found at "
+                f"{cls.GENERATE_MANIFEST_SCRIPT}"
+            )
+
+        # Build packages first
+        result = subprocess.run(
+            ["bash", str(cls.BUILD_PACKAGES_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            raise unittest.SkipTest(
+                f"Failed to build packages: {result.stderr}"
+            )
+
+        # Generate manifest
+        result = subprocess.run(
+            ["bash", str(cls.GENERATE_MANIFEST_SCRIPT)],
+            cwd=cls.PROJECT_ROOT,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            raise unittest.SkipTest(
+                f"Failed to generate manifest: {result.stderr}"
             )
 
         # Start the server using the script

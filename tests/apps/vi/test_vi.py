@@ -11,7 +11,7 @@ from pathlib import Path
 class TestViCommand(unittest.TestCase):
     """Test cases for the vi command."""
 
-    VI_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "vi"
+    VI_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "vi"
 
     @classmethod
     def setUpClass(cls):
@@ -101,7 +101,7 @@ class TestViCommand(unittest.TestCase):
 class TestViHelpContent(unittest.TestCase):
     """Test the content of vi help output in detail."""
 
-    VI_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "vi"
+    VI_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "vi"
 
     @classmethod
     def setUpClass(cls):

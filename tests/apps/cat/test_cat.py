@@ -12,7 +12,7 @@ from pathlib import Path
 class TestCatCommand(unittest.TestCase):
     """Test cases for the cat command."""
 
-    CAT_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "cat"
+    CAT_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "cat"
 
     @classmethod
     def setUpClass(cls):

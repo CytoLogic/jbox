@@ -12,7 +12,7 @@ from pathlib import Path
 class TestMvCommand(unittest.TestCase):
     """Test cases for the mv command."""
 
-    MV_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "mv"
+    MV_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "mv"
 
     @classmethod
     def setUpClass(cls):

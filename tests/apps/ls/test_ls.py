@@ -12,7 +12,7 @@ from pathlib import Path
 class TestLsCommand(unittest.TestCase):
     """Test cases for the ls command."""
 
-    LS_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "ls"
+    LS_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "ls"
 
     @classmethod
     def setUpClass(cls):

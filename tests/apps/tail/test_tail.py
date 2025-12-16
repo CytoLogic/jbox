@@ -12,7 +12,7 @@ from pathlib import Path
 class TestTailCommand(unittest.TestCase):
     """Test cases for the tail command."""
 
-    TAIL_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "tail"
+    TAIL_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "tail"
 
     @classmethod
     def setUpClass(cls):

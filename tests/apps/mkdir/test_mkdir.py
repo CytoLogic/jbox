@@ -12,7 +12,7 @@ from pathlib import Path
 class TestMkdirCommand(unittest.TestCase):
     """Test cases for the mkdir command."""
 
-    MKDIR_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "mkdir"
+    MKDIR_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "mkdir"
 
     @classmethod
     def setUpClass(cls):

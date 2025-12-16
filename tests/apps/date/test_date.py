@@ -7,7 +7,7 @@ import os
 import re
 from datetime import datetime
 
-BIN_PATH = os.path.join(os.path.dirname(__file__), '../../../bin/date')
+BIN_PATH = os.path.join(os.path.dirname(__file__), '../../../bin/standalone-apps/date')
 
 
 class TestDateHelp(unittest.TestCase):

@@ -10,7 +10,7 @@ from pathlib import Path
 class TestEchoCommand(unittest.TestCase):
     """Test cases for the echo command."""
 
-    ECHO_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "echo"
+    ECHO_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "echo"
 
     @classmethod
     def setUpClass(cls):

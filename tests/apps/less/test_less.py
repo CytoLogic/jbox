@@ -11,7 +11,7 @@ from pathlib import Path
 class TestLessCommand(unittest.TestCase):
     """Test cases for the less command."""
 
-    LESS_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "less"
+    LESS_BIN = Path(__file__).parent.parent.parent.parent / "bin" / "standalone-apps" / "less"
 
     @classmethod
     def setUpClass(cls):
