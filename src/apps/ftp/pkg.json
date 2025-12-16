@@ -1,0 +1,29 @@
+{
+  "name": "ftp",
+  "version": "1.0.0",
+  "description": "FTP client for file transfer",
+  "author": "jbox",
+  "license": "MIT",
+  "type": "app",
+  "binary": "ftp",
+  "dependencies": [],
+  "build": {
+    "sources": [
+      "cmd_ftp.c",
+      "ftp_client.c",
+      "ftp_interactive.c",
+      "ftp_main.c"
+    ],
+    "headers": [
+      "cmd_ftp.h",
+      "ftp_client.h",
+      "ftp_interactive.h"
+    ]
+  },
+  "commands": {
+    "ftp": {
+      "summary": "FTP client for file transfer",
+      "usage": "ftp [-H host] [-p port] [-u user] [--json]"
+    }
+  }
+}

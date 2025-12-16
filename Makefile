@@ -113,7 +113,7 @@ test-grammar:
 test-pkg-srv:
 	$(MAKE) -C tests pkg-srv
 
-APP_DIRS := cat cp date echo head less ls mkdir mv pkg rg rm rmdir sleep stat tail touch vi
+APP_DIRS := cat cp date echo ftp head less ls mkdir mv pkg rg rm rmdir sleep stat tail touch vi
 
 apps: $(ARGTABLE3_OBJ)
 	@for app in $(APP_DIRS); do \
