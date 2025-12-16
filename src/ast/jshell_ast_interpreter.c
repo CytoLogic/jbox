@@ -10,6 +10,9 @@
 
 #include "utils/jbox_utils.h"
 #include "jshell/jshell.h"
+#include "jshell/jshell_ai.h"
+#include "Parser.h"
+#include "Absyn.h"
 
 #include "jshell_ast_interpreter.h"
 #include "jshell_ast_helpers.h"
@@ -562,14 +565,80 @@ int visitWordToken(WordToken p, wordexp_t* word_vector_ptr)
 void visitAIQueryToken(AIQueryToken p)
 {
   DPRINT("visiting AIQueryToken: %s", p);
-  printf("AI Query: %s\n", p);
+
+  /* Extract query (skip the '@' prefix) */
+  const char *query = p + 1;
+
+  /* Default to "Hi!" if empty */
+  if (query[0] == '\0') {
+    query = "Hi!";
+  }
+
+  if (!jshell_ai_available()) {
+    fprintf(stderr, "jshell: AI not available (ANTHROPIC_API_KEY not set)\n");
+    return;
+  }
+
+  char *response = jshell_ai_chat(query);
+  if (response != NULL) {
+    printf("%s\n", response);
+    free(response);
+  }
 }
 
 
 void visitAIExecToken(AIExecToken p)
 {
   DPRINT("visiting AIExecToken: %s", p);
-  printf("AI Exec: %s\n", p);
+
+  /* Extract query (skip the '@!' prefix) */
+  const char *query = p + 2;
+
+  if (!jshell_ai_available()) {
+    fprintf(stderr, "jshell: AI not available (ANTHROPIC_API_KEY not set)\n");
+    return;
+  }
+
+  if (query[0] == '\0') {
+    fprintf(stderr, "jshell: AI execute requires a query\n");
+    return;
+  }
+
+  char *command = jshell_ai_execute_query(query);
+  if (command == NULL) {
+    fprintf(stderr, "jshell: AI failed to generate command\n");
+    return;
+  }
+
+  printf("Proposed command: %s\n", command);
+  printf("Execute? (Y/n): ");
+  fflush(stdout);
+
+  char response[16];
+  if (fgets(response, sizeof(response), stdin) == NULL) {
+    free(command);
+    return;
+  }
+
+  /* Accept Y, y, or empty (default yes) */
+  char c = response[0];
+  if (c == 'n' || c == 'N') {
+    printf("Cancelled.\n");
+    free(command);
+    return;
+  }
+
+  /* Parse and execute the command */
+  Input parse_tree = psInput(command);
+  if (parse_tree == NULL) {
+    fprintf(stderr, "jshell: AI generated invalid command: %s\n", command);
+    free(command);
+    return;
+  }
+
+  interpretInput(parse_tree);
+  free_Input(parse_tree);
+  free(command);
 }
 
 

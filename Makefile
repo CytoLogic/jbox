@@ -52,6 +52,8 @@ JSHELL_SRCS := $(SRC_DIR)/jshell/jshell.c \
 			   $(SRC_DIR)/jshell/jshell_thread_exec.c \
 			   $(SRC_DIR)/jshell/jshell_socketpair.c \
 			   $(SRC_DIR)/jshell/jshell_signals.c \
+			   $(SRC_DIR)/jshell/jshell_ai.c \
+			   $(SRC_DIR)/jshell/jshell_ai_api.c \
 			   $(SRC_DIR)/utils/jbox_signals.c
 
 BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \

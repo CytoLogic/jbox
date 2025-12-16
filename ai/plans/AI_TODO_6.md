@@ -1,6 +1,6 @@
 # AI Integration Implementation Plan
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Overview
 
@@ -55,10 +55,10 @@ void visitAIExecToken(AIExecToken p) {
 
 ## Phase 1: AI Module Infrastructure
 
-### 1.1 Create AI Module Header
+### 1.1 Create AI Module Header ✅
 **File**: `src/jshell/jshell_ai.h`
 
-- [ ] Define AI context structure:
+- [x] Define AI context structure:
   ```c
   typedef struct {
     char *api_key;
@@ -69,7 +69,7 @@ void visitAIExecToken(AIExecToken p) {
   } JShellAIContext;
   ```
 
-- [ ] Declare public functions:
+- [x] Declare public functions:
   ```c
   // Initialize AI context (call at shell startup)
   int jshell_ai_init(void);
@@ -87,37 +87,37 @@ void visitAIExecToken(AIExecToken p) {
   char *jshell_ai_execute_query(const char *query);
   ```
 
-### 1.2 Create AI Module Implementation
+### 1.2 Create AI Module Implementation ✅
 **File**: `src/jshell/jshell_ai.c`
 
-- [ ] Implement `jshell_ai_init()`:
-  - [ ] Read `ANTHROPIC_API_KEY` from environment
-  - [ ] Store in global AI context
-  - [ ] Set model to "claude-3-haiku-20240307"
-  - [ ] Build command context (help for all commands)
-  - [ ] Build grammar context (from Grammar.cf or hardcoded)
-  - [ ] Return 0 on success, -1 if no API key
+- [x] Implement `jshell_ai_init()`:
+  - [x] Read `ANTHROPIC_API_KEY` from environment
+  - [x] Store in global AI context
+  - [x] Set model to "claude-3-haiku-20240307"
+  - [x] Build command context (help for all commands)
+  - [x] Build grammar context (from Grammar.cf or hardcoded)
+  - [x] Return 0 on success, -1 if no API key
 
-- [ ] Implement `jshell_ai_cleanup()`:
-  - [ ] Free all allocated strings in context
+- [x] Implement `jshell_ai_cleanup()`:
+  - [x] Free all allocated strings in context
 
-- [ ] Implement `jshell_ai_available()`:
-  - [ ] Return 1 if API key is set, 0 otherwise
+- [x] Implement `jshell_ai_available()`:
+  - [x] Return 1 if API key is set, 0 otherwise
 
-- [ ] Implement helper function `build_command_context()`:
-  - [ ] Use `jshell_for_each_command()` to iterate all commands
-  - [ ] For each command, call `spec->print_usage()` to capture help
-  - [ ] Concatenate all help text into a single string
-  - [ ] Use a memory stream or buffer to capture `print_usage()` output
+- [x] Implement helper function `build_command_context()`:
+  - [x] Use `jshell_for_each_command()` to iterate all commands
+  - [x] For each command, call `spec->print_usage()` to capture help
+  - [x] Concatenate all help text into a single string
+  - [x] Use a memory stream or buffer to capture `print_usage()` output
 
-- [ ] Implement helper function `build_grammar_context()`:
-  - [ ] Include the shell grammar as a string constant
-  - [ ] Or read from Grammar.cf at runtime
+- [x] Implement helper function `build_grammar_context()`:
+  - [x] Include the shell grammar as a string constant
+  - [x] Or read from Grammar.cf at runtime
 
-### 1.3 Create Anthropic API Client
+### 1.3 Create Anthropic API Client ✅
 **File**: `src/jshell/jshell_ai_api.h` and `src/jshell/jshell_ai_api.c`
 
-- [ ] Implement `jshell_anthropic_request()`:
+- [x] Implement `jshell_anthropic_request()`:
   ```c
   typedef struct {
     char *content;      // Response content
@@ -135,13 +135,13 @@ void visitAIExecToken(AIExecToken p) {
   void jshell_free_anthropic_response(AnthropicResponse *resp);
   ```
 
-- [ ] Use libcurl for HTTP POST to `https://api.anthropic.com/v1/messages`
-- [ ] Set required headers:
-  - [ ] `x-api-key: <api_key>`
-  - [ ] `anthropic-version: 2023-06-01`
-  - [ ] `content-type: application/json`
+- [x] Use libcurl for HTTP POST to `https://api.anthropic.com/v1/messages`
+- [x] Set required headers:
+  - [x] `x-api-key: <api_key>`
+  - [x] `anthropic-version: 2023-06-01`
+  - [x] `content-type: application/json`
 
-- [ ] Build JSON request body:
+- [x] Build JSON request body:
   ```json
   {
     "model": "claude-3-haiku-20240307",
@@ -153,24 +153,24 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-- [ ] Parse JSON response to extract content
-- [ ] Handle errors (network, API errors, rate limits)
+- [x] Parse JSON response to extract content
+- [x] Handle errors (network, API errors, rate limits)
 
-### 1.4 Implement Chat Function
+### 1.4 Implement Chat Function ✅
 **File**: `src/jshell/jshell_ai.c`
 
-- [ ] Implement `jshell_ai_chat()`:
-  - [ ] Check if AI is available
-  - [ ] Build simple system prompt: "You are a helpful assistant."
-  - [ ] Call `jshell_anthropic_request()`
-  - [ ] Return response content or error message
+- [x] Implement `jshell_ai_chat()`:
+  - [x] Check if AI is available
+  - [x] Build simple system prompt: "You are a helpful assistant."
+  - [x] Call `jshell_anthropic_request()`
+  - [x] Return response content or error message
 
-### 1.5 Implement Execute Query Function
+### 1.5 Implement Execute Query Function ✅
 **File**: `src/jshell/jshell_ai.c`
 
-- [ ] Implement `jshell_ai_execute_query()`:
-  - [ ] Check if AI is available
-  - [ ] Build execute system prompt with context:
+- [x] Implement `jshell_ai_execute_query()`:
+  - [x] Check if AI is available
+  - [x] Build execute system prompt with context:
     ```
     You are a shell command assistant for jshell. Your task is to
     produce a single, valid jshell command to accomplish the user's
@@ -185,20 +185,20 @@ void visitAIExecToken(AIExecToken p) {
     Shell grammar:
     <grammar_context>
     ```
-  - [ ] Call `jshell_anthropic_request()`
-  - [ ] Strip any whitespace from response
-  - [ ] Return command string
+  - [x] Call `jshell_anthropic_request()`
+  - [x] Strip any whitespace from response
+  - [x] Return command string
 
 ---
 
-## Phase 2: AST Interpreter Integration
+## Phase 2: AST Interpreter Integration ✅
 
-### 2.1 Update AST Interpreter
+### 2.1 Update AST Interpreter ✅
 **File**: `src/ast/jshell_ast_interpreter.c`
 
-- [ ] Add include: `#include "jshell/jshell_ai.h"`
+- [x] Add include: `#include "jshell/jshell_ai.h"`
 
-- [ ] Implement `visitAIQueryToken()`:
+- [x] Implement `visitAIQueryToken()`:
   ```c
   void visitAIQueryToken(AIQueryToken p) {
     DPRINT("visiting AIQueryToken: %s", p);
@@ -225,7 +225,7 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-- [ ] Implement `visitAIExecToken()`:
+- [x] Implement `visitAIExecToken()`:
   ```c
   void visitAIExecToken(AIExecToken p) {
     DPRINT("visiting AIExecToken: %s", p);
@@ -277,12 +277,12 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-### 2.2 Update Shell Initialization
+### 2.2 Update Shell Initialization ✅
 **File**: `src/jshell/jshell.c`
 
-- [ ] Add include: `#include "jshell_ai.h"`
+- [x] Add include: `#include "jshell_ai.h"`
 
-- [ ] Call `jshell_ai_init()` after `jshell_load_env_file()`:
+- [x] Call `jshell_ai_init()` after `jshell_load_env_file()`:
   ```c
   jshell_init_signals();
   jshell_init_path();
@@ -292,38 +292,38 @@ void visitAIExecToken(AIExecToken p) {
   // ...
   ```
 
-- [ ] Note: `jshell_ai_init()` should be called after env file is loaded
+- [x] Note: `jshell_ai_init()` should be called after env file is loaded
   so that `ANTHROPIC_API_KEY` from `~/.jshell/env` is available
 
 ---
 
-## Phase 3: Build System Updates
+## Phase 3: Build System Updates ✅
 
-### 3.1 Update Makefile
+### 3.1 Update Makefile ✅
 **File**: `Makefile`
 
-- [ ] Add AI source files to `JSHELL_SRCS`:
+- [x] Add AI source files to `JSHELL_SRCS`:
   ```makefile
   JSHELL_SRCS += \
     src/jshell/jshell_ai.c \
     src/jshell/jshell_ai_api.c
   ```
 
-- [ ] Ensure libcurl is linked (already done for http-get/http-post)
+- [x] Ensure libcurl is linked (already done for http-get/http-post)
 
-### 3.2 Create AI Headers
+### 3.2 Create AI Headers ✅
 **Files**: `src/jshell/jshell_ai.h`, `src/jshell/jshell_ai_api.h`
 
-- [ ] Create header files as specified in Phase 1
+- [x] Create header files as specified in Phase 1
 
 ---
 
-## Phase 4: Context Building
+## Phase 4: Context Building ✅
 
-### 4.1 Capture Command Help Output
+### 4.1 Capture Command Help Output ✅
 **File**: `src/jshell/jshell_ai.c`
 
-- [ ] Create helper to capture `print_usage()` output:
+- [x] Create helper to capture `print_usage()` output:
   ```c
   static char *capture_command_help(const jshell_cmd_spec_t *spec) {
     // Use open_memstream to capture output
@@ -346,7 +346,7 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-- [ ] Create callback for `jshell_for_each_command()`:
+- [x] Create callback for `jshell_for_each_command()`:
   ```c
   typedef struct {
     char *buffer;
@@ -366,10 +366,10 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-### 4.2 Store Grammar Context
+### 4.2 Store Grammar Context ✅
 **File**: `src/jshell/jshell_ai.c`
 
-- [ ] Include shell grammar as a string constant:
+- [x] Include shell grammar as a string constant:
   ```c
   static const char *SHELL_GRAMMAR =
     "-- jshell grammar\n"
@@ -380,16 +380,16 @@ void visitAIExecToken(AIExecToken p) {
     ;
   ```
 
-- [ ] Or read from file at runtime if preferred
+- [x] Or read from file at runtime if preferred
 
 ---
 
-## Phase 5: JSON Handling
+## Phase 5: JSON Handling ✅
 
-### 5.1 JSON Request Building
+### 5.1 JSON Request Building ✅
 **File**: `src/jshell/jshell_ai_api.c`
 
-- [ ] Create helper to escape JSON strings:
+- [x] Create helper to escape JSON strings:
   ```c
   static char *json_escape_string(const char *str) {
     // Escape special characters: \, ", \n, \r, \t, etc.
@@ -397,7 +397,7 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-- [ ] Build request JSON:
+- [x] Build request JSON:
   ```c
   static char *build_request_json(const char *model,
                                   const char *system_prompt,
@@ -414,10 +414,10 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-### 5.2 JSON Response Parsing
+### 5.2 JSON Response Parsing ✅
 **File**: `src/jshell/jshell_ai_api.c`
 
-- [ ] Parse Anthropic response to extract content:
+- [x] Parse Anthropic response to extract content:
   ```c
   static char *extract_response_content(const char *json_response) {
     // Find "content" array
@@ -427,7 +427,7 @@ void visitAIExecToken(AIExecToken p) {
   }
   ```
 
-- [ ] Handle error responses:
+- [x] Handle error responses:
   ```c
   static int is_error_response(const char *json_response) {
     // Check for "error" key in response
@@ -440,15 +440,15 @@ void visitAIExecToken(AIExecToken p) {
 
 ---
 
-## Phase 6: Testing
+## Phase 6: Testing ✅
 
-### 6.1 Manual Testing
-- [ ] Set up `~/.jshell/env` with API key:
+### 6.1 Manual Testing ✅
+- [x] Set up `~/.jshell/env` with API key:
   ```
   ANTHROPIC_API_KEY=sk-ant-...
   ```
 
-- [ ] Test simple chat:
+- [x] Test simple chat:
   ```
   (jsh)>@hello
   Hello! How can I help you today?
@@ -457,7 +457,7 @@ void visitAIExecToken(AIExecToken p) {
   4
   ```
 
-- [ ] Test execute query:
+- [x] Test execute query:
   ```
   (jsh)>@!list the current directory
   Proposed command: ls .
@@ -470,13 +470,13 @@ void visitAIExecToken(AIExecToken p) {
   Cancelled.
   ```
 
-- [ ] Test empty query:
+- [x] Test empty query:
   ```
   (jsh)>@
   Hi! How can I help you today?
   ```
 
-- [ ] Test missing API key:
+- [x] Test missing API key:
   ```
   (jsh)>@hello
   jshell: AI not available (ANTHROPIC_API_KEY not set)
@@ -485,11 +485,11 @@ void visitAIExecToken(AIExecToken p) {
 ### 6.2 Create Unit Tests (Optional)
 **File**: `tests/jshell/test_ai.py`
 
-- [ ] Test API key detection
-- [ ] Test JSON escaping
-- [ ] Test request building
-- [ ] Test response parsing
-- [ ] Mock API responses for testing
+- [x] Test API key detection
+- [x] Test JSON escaping
+- [x] Test request building
+- [x] Test response parsing
+- [x] Mock API responses for testing
 
 ---
 
@@ -553,26 +553,26 @@ Makefile                          # Add AI source files
 
 ## Checklist Summary
 
-- [ ] Phase 1: AI Module Infrastructure (5 tasks)
-  - [ ] 1.1 Create AI module header
-  - [ ] 1.2 Create AI module implementation
-  - [ ] 1.3 Create Anthropic API client
-  - [ ] 1.4 Implement chat function
-  - [ ] 1.5 Implement execute query function
-- [ ] Phase 2: AST Interpreter Integration (2 tasks)
-  - [ ] 2.1 Update AST interpreter
-  - [ ] 2.2 Update shell initialization
-- [ ] Phase 3: Build System Updates (2 tasks)
-  - [ ] 3.1 Update Makefile
-  - [ ] 3.2 Create AI headers
-- [ ] Phase 4: Context Building (2 tasks)
-  - [ ] 4.1 Capture command help output
-  - [ ] 4.2 Store grammar context
-- [ ] Phase 5: JSON Handling (2 tasks)
-  - [ ] 5.1 JSON request building
-  - [ ] 5.2 JSON response parsing
-- [ ] Phase 6: Testing (2 tasks)
-  - [ ] 6.1 Manual testing
-  - [ ] 6.2 Create unit tests (optional)
+- [x] Phase 1: AI Module Infrastructure (5 tasks)
+  - [x] 1.1 Create AI module header
+  - [x] 1.2 Create AI module implementation
+  - [x] 1.3 Create Anthropic API client
+  - [x] 1.4 Implement chat function
+  - [x] 1.5 Implement execute query function
+- [x] Phase 2: AST Interpreter Integration (2 tasks)
+  - [x] 2.1 Update AST interpreter
+  - [x] 2.2 Update shell initialization
+- [x] Phase 3: Build System Updates (2 tasks)
+  - [x] 3.1 Update Makefile
+  - [x] 3.2 Create AI headers
+- [x] Phase 4: Context Building (2 tasks)
+  - [x] 4.1 Capture command help output
+  - [x] 4.2 Store grammar context
+- [x] Phase 5: JSON Handling (2 tasks)
+  - [x] 5.1 JSON request building
+  - [x] 5.2 JSON response parsing
+- [x] Phase 6: Testing (2 tasks)
+  - [x] 6.1 Manual testing
+  - [x] 6.2 Create unit tests (optional)
 
-**Total: 15 major tasks**
+**Total: 15 major tasks - ALL COMPLETED**
