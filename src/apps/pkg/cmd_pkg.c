@@ -77,6 +77,7 @@ static void pkg_print_usage(FILE *out) {
   fprintf(out, "  info NAME                 show information about a package\n");
   fprintf(out, "  search QUERY              search registry for packages\n");
   fprintf(out, "  install <name|tarball>    install package by name or from tarball\n");
+  fprintf(out, "  install all               install all packages from registry\n");
   fprintf(out, "  remove NAME               remove an installed package\n");
   fprintf(out, "  build <src> <out.tar.gz>  build a package for distribution\n");
   fprintf(out, "  check-update              check for available updates\n");
@@ -310,8 +311,244 @@ static int pkg_search(const char *query, int json_output) {
 // Forward declaration for internal tarball install
 static int pkg_install_from_tarball(const char *tarball, int json_output);
 
+// Forward declaration for single package install (non-all)
+static int pkg_install_single(const char *arg, int json_output);
+
+
+static int pkg_install_all(int json_output) {
+  if (!json_output) {
+    printf("Fetching package list from registry...\n");
+  }
+
+  PkgRegistryList *all_packages = pkg_registry_fetch_all();
+  if (all_packages == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to connect to registry\", "
+             "\"registry\": \"%s\"}\n", pkg_registry_get_url());
+    } else {
+      fprintf(stderr, "pkg install all: failed to connect to registry at %s\n",
+              pkg_registry_get_url());
+    }
+    return 1;
+  }
+
+  if (all_packages->count == 0) {
+    if (json_output) {
+      printf("{\"status\": \"ok\", \"installed\": [], \"skipped\": [], "
+             "\"failed\": [], \"message\": \"no packages available\"}\n");
+    } else {
+      printf("No packages available in registry.\n");
+    }
+    pkg_registry_list_free(all_packages);
+    return 0;
+  }
+
+  PkgDb *db = pkg_db_load();
+  if (db == NULL) {
+    if (json_output) {
+      printf("{\"status\": \"error\", "
+             "\"message\": \"failed to load package database\"}\n");
+    } else {
+      fprintf(stderr, "pkg install all: failed to load package database\n");
+    }
+    pkg_registry_list_free(all_packages);
+    return 1;
+  }
+
+  // Track results
+  typedef struct {
+    char *name;
+    char *version;
+    int status;  // 0 = installed, 1 = skipped (already installed), -1 = failed
+    char *error;
+  } install_result_t;
+
+  install_result_t *results = malloc((size_t)all_packages->count
+                                     * sizeof(install_result_t));
+  if (results == NULL) {
+    pkg_db_free(db);
+    pkg_registry_list_free(all_packages);
+    return 1;
+  }
+
+  int installed_count = 0;
+  int skipped_count = 0;
+  int failed_count = 0;
+
+  if (!json_output) {
+    printf("Found %d package(s) in registry.\n\n", all_packages->count);
+  }
+
+  for (int i = 0; i < all_packages->count; i++) {
+    PkgRegistryEntry *pkg = &all_packages->entries[i];
+    results[i].name = strdup(pkg->name);
+    results[i].version = pkg->latest_version ? strdup(pkg->latest_version)
+                                             : NULL;
+    results[i].error = NULL;
+
+    // Check if already installed
+    PkgDbEntry *existing = pkg_db_find(db, pkg->name);
+    if (existing != NULL) {
+      results[i].status = 1;  // skipped
+      skipped_count++;
+      if (!json_output) {
+        printf("  Skipping %s (already installed: %s)\n",
+               pkg->name, existing->version);
+      }
+      continue;
+    }
+
+    if (!json_output) {
+      printf("  Installing %s", pkg->name);
+      if (pkg->latest_version) {
+        printf(" %s", pkg->latest_version);
+      }
+      printf("...\n");
+    }
+
+    if (pkg->download_url == NULL) {
+      results[i].status = -1;
+      results[i].error = strdup("no download URL");
+      failed_count++;
+      if (!json_output) {
+        printf("    FAILED: no download URL\n");
+      }
+      continue;
+    }
+
+    // Download to temp file
+    char temp_path[] = "/tmp/pkg-install-all-XXXXXX.tar.gz";
+    int fd = mkstemps(temp_path, 7);
+    if (fd < 0) {
+      results[i].status = -1;
+      results[i].error = strdup("temp file creation failed");
+      failed_count++;
+      if (!json_output) {
+        printf("    FAILED: could not create temp file\n");
+      }
+      continue;
+    }
+    close(fd);
+
+    if (pkg_registry_download(pkg->download_url, temp_path) != 0) {
+      results[i].status = -1;
+      results[i].error = strdup("download failed");
+      failed_count++;
+      remove(temp_path);
+      if (!json_output) {
+        printf("    FAILED: download error\n");
+      }
+      continue;
+    }
+
+    // Install silently
+    FILE *devnull = fopen("/dev/null", "w");
+    FILE *orig_stdout = stdout;
+    FILE *orig_stderr = stderr;
+    if (devnull) {
+      stdout = devnull;
+      stderr = devnull;
+    }
+
+    int install_result = pkg_install_from_tarball(temp_path, 0);
+
+    if (devnull) {
+      stdout = orig_stdout;
+      stderr = orig_stderr;
+      fclose(devnull);
+    }
+
+    remove(temp_path);
+
+    if (install_result == 0) {
+      results[i].status = 0;
+      installed_count++;
+      if (!json_output) {
+        printf("    OK\n");
+      }
+      // Reload db to see newly installed package
+      pkg_db_free(db);
+      db = pkg_db_load();
+      if (db == NULL) {
+        // Try to continue anyway
+        db = pkg_db_load();
+      }
+    } else {
+      results[i].status = -1;
+      results[i].error = strdup("installation failed");
+      failed_count++;
+      if (!json_output) {
+        printf("    FAILED: installation error\n");
+      }
+    }
+  }
+
+  pkg_db_free(db);
+
+  // Output results
+  if (json_output) {
+    printf("{\"status\": \"%s\", \"installed\": [",
+           failed_count == 0 ? "ok" : "partial");
+    int first = 1;
+    for (int i = 0; i < all_packages->count; i++) {
+      if (results[i].status != 0) continue;
+      if (!first) printf(", ");
+      first = 0;
+      printf("{\"name\": \"%s\"", results[i].name);
+      if (results[i].version) {
+        printf(", \"version\": \"%s\"", results[i].version);
+      }
+      printf("}");
+    }
+    printf("], \"skipped\": [");
+    first = 1;
+    for (int i = 0; i < all_packages->count; i++) {
+      if (results[i].status != 1) continue;
+      if (!first) printf(", ");
+      first = 0;
+      printf("\"%s\"", results[i].name);
+    }
+    printf("], \"failed\": [");
+    first = 1;
+    for (int i = 0; i < all_packages->count; i++) {
+      if (results[i].status != -1) continue;
+      if (!first) printf(", ");
+      first = 0;
+      printf("{\"name\": \"%s\", \"error\": \"%s\"}",
+             results[i].name, results[i].error ? results[i].error : "unknown");
+    }
+    printf("]}\n");
+  } else {
+    printf("\n");
+    printf("Installed: %d, Skipped: %d, Failed: %d\n",
+           installed_count, skipped_count, failed_count);
+  }
+
+  // Cleanup
+  for (int i = 0; i < all_packages->count; i++) {
+    free(results[i].name);
+    free(results[i].version);
+    free(results[i].error);
+  }
+  free(results);
+  pkg_registry_list_free(all_packages);
+
+  return failed_count > 0 ? 1 : 0;
+}
+
 
 static int pkg_install(const char *arg, int json_output) {
+  // Handle "pkg install all" special case
+  if (arg != NULL && strcmp(arg, "all") == 0) {
+    return pkg_install_all(json_output);
+  }
+
+  return pkg_install_single(arg, json_output);
+}
+
+
+static int pkg_install_single(const char *arg, int json_output) {
   if (arg == NULL) {
     if (json_output) {
       printf("{\"status\": \"error\", "
