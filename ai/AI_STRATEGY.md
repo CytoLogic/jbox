@@ -25,6 +25,42 @@ The development process follows a **plan-implement-verify-commit** cycle that ma
 
 ---
 
+## Branching Strategy
+
+AI-assisted development uses a dedicated branch to isolate AI work from the main development flow:
+
+```
+master
+  │
+  └──> dev/feature-branch
+          │
+          └──> ai (AI working branch)
+                │
+                ├── commit: implement phase 1
+                ├── commit: implement phase 2
+                └── commit: implement phase 3
+                │
+          <─────┘ (merge back to dev/feature)
+          │
+  <───────┘ (merge to master)
+```
+
+### Workflow
+
+1. **Create AI branch** - Branch off from the current development or feature branch
+2. **AI performs work** - All AI-assisted implementation happens on the `ai` branch
+3. **Merge to dev/feature** - Once complete, merge the `ai` branch back into the development or feature branch
+4. **Merge to master** - The dev/feature branch is then merged into `master`
+
+### Benefits
+
+- **Isolation** - AI work is isolated from ongoing development
+- **Review opportunity** - Changes can be reviewed before merging to dev
+- **Easy rollback** - If AI-generated code has issues, the branch can be discarded
+- **Clean history** - Squash merges can consolidate AI commits if desired
+
+---
+
 ## Project Setup
 
 ### 1. Establish Conventions Early
