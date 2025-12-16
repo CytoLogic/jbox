@@ -300,12 +300,12 @@ Package tarballs are created in `srv/pkg_repository/downloads/`.
 
 ### FTP Client
 
-```bash
+```jshell
 # Connect to FTP server
-./bin/standalone-apps/ftp -H localhost -p 21021
+ftp -H localhost -p 21021
 
 # With JSON output
-./bin/standalone-apps/ftp --json -H localhost -p 21021
+ftp --json -H localhost -p 21021
 ```
 
 Interactive FTP commands:
@@ -373,9 +373,7 @@ jbox/
 
 Create `~/.jshell/env` for environment variables loaded at startup:
 
-```bash
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=...
+```
 PATH=$HOME/.jshell/bin:$PATH
 ```
 
