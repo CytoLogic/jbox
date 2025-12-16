@@ -45,11 +45,18 @@ class TestCatCommand(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("Usage: cat", result.stdout)
 
-    def test_missing_file_argument(self):
-        """Test error when no file argument is provided."""
-        result = self.run_cat()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("missing", result.stderr.lower())
+    def test_stdin_when_no_file(self):
+        """Test reading from stdin when no file argument is provided."""
+        result = subprocess.run(
+            [str(self.CAT_BIN)],
+            input="hello from stdin",
+            capture_output=True,
+            text=True,
+            timeout=5,
+            env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"}
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "hello from stdin")
 
     def test_single_file(self):
         """Test reading a single file."""

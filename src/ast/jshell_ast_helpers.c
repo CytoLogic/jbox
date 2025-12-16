@@ -176,6 +176,9 @@ static int jshell_exec_builtin_direct(const jshell_cmd_spec_t* spec,
 
   result = spec->run(cmd_params->argc, cmd_params->argv);
 
+  /* Flush stdout to ensure output appears before next command */
+  fflush(stdout);
+
   if (saved_stdout != -1) {
     dup2(saved_stdout, STDOUT_FILENO);
     close(saved_stdout);

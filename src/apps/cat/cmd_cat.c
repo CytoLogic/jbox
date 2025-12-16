@@ -20,7 +20,8 @@ typedef struct {
 static void build_cat_argtable(cat_args_t *args) {
   args->help  = arg_lit0("h", "help", "display this help and exit");
   args->json  = arg_lit0(NULL, "json", "output in JSON format");
-  args->files = arg_filen(NULL, NULL, "FILE", 1, 100, "files to concatenate");
+  args->files = arg_filen(NULL, NULL, "FILE", 0, 100,
+                          "files to concatenate (stdin if omitted)");
   args->end   = arg_end(20);
 
   args->argtable[0] = args->help;
@@ -76,42 +77,82 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+static char *read_stream_content(FILE *fp, size_t *out_size) {
+  size_t capacity = 4096;
+  size_t total = 0;
+  char *content = malloc(capacity);
+  if (!content) {
+    return NULL;
+  }
+
+  while (1) {
+    if (total + 4096 > capacity) {
+      capacity *= 2;
+      char *new_content = realloc(content, capacity);
+      if (!new_content) {
+        free(content);
+        return NULL;
+      }
+      content = new_content;
+    }
+
+    size_t bytes_read = fread(content + total, 1, 4096, fp);
+    total += bytes_read;
+    if (bytes_read < 4096) {
+      break;
+    }
+  }
+
+  content[total] = '\0';
+  if (out_size) {
+    *out_size = total;
+  }
+
+  return content;
+}
+
+
 static char *read_file_content(const char *path, size_t *out_size) {
   FILE *fp = fopen(path, "rb");
   if (!fp) {
     return NULL;
   }
 
-  if (fseek(fp, 0, SEEK_END) != 0) {
+  /* Try to get file size via seeking, fall back to streaming read */
+  int can_seek = (fseek(fp, 0, SEEK_END) == 0);
+  long size = can_seek ? ftell(fp) : -1;
+
+  if (can_seek && size > 0) {
+    /* Regular file with known size */
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+      fclose(fp);
+      return NULL;
+    }
+
+    char *content = malloc((size_t)size + 1);
+    if (!content) {
+      fclose(fp);
+      return NULL;
+    }
+
+    size_t bytes_read = fread(content, 1, (size_t)size, fp);
     fclose(fp);
-    return NULL;
+
+    content[bytes_read] = '\0';
+    if (out_size) {
+      *out_size = bytes_read;
+    }
+
+    return content;
   }
 
-  long size = ftell(fp);
-  if (size < 0) {
-    fclose(fp);
-    return NULL;
+  /* Special file (e.g., /proc/*) or empty file - use streaming read */
+  if (can_seek) {
+    fseek(fp, 0, SEEK_SET);
   }
 
-  if (fseek(fp, 0, SEEK_SET) != 0) {
-    fclose(fp);
-    return NULL;
-  }
-
-  char *content = malloc((size_t)size + 1);
-  if (!content) {
-    fclose(fp);
-    return NULL;
-  }
-
-  size_t bytes_read = fread(content, 1, (size_t)size, fp);
+  char *content = read_stream_content(fp, out_size);
   fclose(fp);
-
-  content[bytes_read] = '\0';
-  if (out_size) {
-    *out_size = bytes_read;
-  }
-
   return content;
 }
 
@@ -141,12 +182,19 @@ static void print_json_content(const char *path, const char *content,
 static int cat_file(const char *path, int show_json, int *first_entry) {
   char *content = NULL;
   size_t content_size = 0;
+  int is_stdin = (path == NULL || strcmp(path, "-") == 0);
+  const char *display_path = is_stdin ? "<stdin>" : path;
 
-  content = read_file_content(path, &content_size);
+  if (is_stdin) {
+    content = read_stream_content(stdin, &content_size);
+  } else {
+    content = read_file_content(path, &content_size);
+  }
+
   if (!content) {
     if (show_json) {
       char escaped_path[512];
-      escape_json_string(path, escaped_path, sizeof(escaped_path));
+      escape_json_string(display_path, escaped_path, sizeof(escaped_path));
       if (!*first_entry) {
         printf(",\n");
       }
@@ -154,7 +202,7 @@ static int cat_file(const char *path, int show_json, int *first_entry) {
       printf("{\"path\": \"%s\", \"error\": \"%s\"}",
              escaped_path, strerror(errno));
     } else {
-      fprintf(stderr, "cat: %s: %s\n", path, strerror(errno));
+      fprintf(stderr, "cat: %s: %s\n", display_path, strerror(errno));
     }
     return 1;
   }
@@ -164,7 +212,7 @@ static int cat_file(const char *path, int show_json, int *first_entry) {
       printf(",\n");
     }
     *first_entry = 0;
-    print_json_content(path, content, content_size);
+    print_json_content(display_path, content, content_size);
   } else {
     fwrite(content, 1, content_size, stdout);
   }
@@ -204,14 +252,21 @@ static int cat_run(int argc, char **argv) {
     printf("[\n");
   }
 
-  for (int i = 0; i < args.files->count; i++) {
-    /* Check for interrupt between files */
-    if (jbox_is_interrupted()) {
-      result = 130;  /* 128 + SIGINT(2) */
-      break;
-    }
-    if (cat_file(args.files->filename[i], show_json, &first_entry) != 0) {
+  if (args.files->count == 0) {
+    /* No files specified, read from stdin */
+    if (cat_file(NULL, show_json, &first_entry) != 0) {
       result = 1;
+    }
+  } else {
+    for (int i = 0; i < args.files->count; i++) {
+      /* Check for interrupt between files */
+      if (jbox_is_interrupted()) {
+        result = 130;  /* 128 + SIGINT(2) */
+        break;
+      }
+      if (cat_file(args.files->filename[i], show_json, &first_entry) != 0) {
+        result = 1;
+      }
     }
   }
 

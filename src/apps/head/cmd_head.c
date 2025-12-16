@@ -25,7 +25,7 @@ static void build_head_argtable(head_args_t *args) {
   args->num_lines = arg_int0("n", NULL, "N",
                              "output the first N lines (default 10)");
   args->json      = arg_lit0(NULL, "json", "output in JSON format");
-  args->file      = arg_file1(NULL, NULL, "FILE", "file to read");
+  args->file      = arg_file0(NULL, NULL, "FILE", "file to read (stdin if omitted)");
   args->end       = arg_end(20);
 
   args->argtable[0] = args->help;
@@ -83,17 +83,25 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 
 
 static int head_file(const char *path, int num_lines, int show_json) {
-  FILE *fp = fopen(path, "r");
-  if (!fp) {
-    if (show_json) {
-      char escaped_path[512];
-      escape_json_string(path, escaped_path, sizeof(escaped_path));
-      printf("{\"path\": \"%s\", \"error\": \"%s\"}\n",
-             escaped_path, strerror(errno));
-    } else {
-      fprintf(stderr, "head: %s: %s\n", path, strerror(errno));
+  FILE *fp;
+  int is_stdin = (path == NULL || strcmp(path, "-") == 0);
+
+  if (is_stdin) {
+    fp = stdin;
+    path = "<stdin>";
+  } else {
+    fp = fopen(path, "r");
+    if (!fp) {
+      if (show_json) {
+        char escaped_path[512];
+        escape_json_string(path, escaped_path, sizeof(escaped_path));
+        printf("{\"path\": \"%s\", \"error\": \"%s\"}\n",
+               escaped_path, strerror(errno));
+      } else {
+        fprintf(stderr, "head: %s: %s\n", path, strerror(errno));
+      }
+      return 1;
     }
-    return 1;
   }
 
   if (show_json) {
@@ -112,7 +120,9 @@ static int head_file(const char *path, int num_lines, int show_json) {
     /* Check for interrupt */
     if (jbox_is_interrupted()) {
       free(line);
-      fclose(fp);
+      if (!is_stdin) {
+        fclose(fp);
+      }
       if (show_json) {
         printf("]}\n");
       }
@@ -151,7 +161,9 @@ static int head_file(const char *path, int num_lines, int show_json) {
   }
 
   free(line);
-  fclose(fp);
+  if (!is_stdin) {
+    fclose(fp);
+  }
 
   if (show_json) {
     printf("]}\n");
@@ -194,7 +206,7 @@ static int head_run(int argc, char **argv) {
   }
 
   int show_json = args.json->count > 0;
-  const char *path = args.file->filename[0];
+  const char *path = (args.file->count > 0) ? args.file->filename[0] : NULL;
 
   int result = head_file(path, num_lines, show_json);
 
