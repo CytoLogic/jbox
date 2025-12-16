@@ -1,3 +1,8 @@
+/**
+ * @file cmd_unset.c
+ * @brief Unset environment variables builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the unset command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -16,6 +24,11 @@ typedef struct {
 } unset_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the unset command.
+ *
+ * @param args Pointer to unset_args_t structure to populate
+ */
 static void build_unset_argtable(unset_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -30,12 +43,22 @@ static void build_unset_argtable(unset_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the unset argtable.
+ *
+ * @param args Pointer to unset_args_t structure to cleanup
+ */
 static void cleanup_unset_argtable(unset_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the unset command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void unset_print_usage(FILE *out) {
   unset_args_t args;
   build_unset_argtable(&args);
@@ -49,6 +72,13 @@ static void unset_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -77,6 +107,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Executes the unset command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int unset_run(int argc, char **argv) {
   unset_args_t args;
   build_unset_argtable(&args);
@@ -141,6 +178,9 @@ static int unset_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the unset builtin.
+ */
 const jshell_cmd_spec_t cmd_unset_spec = {
   .name = "unset",
   .summary = "unset environment variables",
@@ -151,6 +191,9 @@ const jshell_cmd_spec_t cmd_unset_spec = {
 };
 
 
+/**
+ * Registers the unset command with the shell command registry.
+ */
 void jshell_register_unset_command(void) {
   jshell_register_command(&cmd_unset_spec);
 }

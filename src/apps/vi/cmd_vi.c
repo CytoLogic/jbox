@@ -1,3 +1,7 @@
+/** @file cmd_vi.c
+ *  @brief Vi-like text editor implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +16,7 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/** Vi editor modes */
 typedef enum {
   MODE_NORMAL,
   MODE_INSERT,
@@ -20,6 +25,7 @@ typedef enum {
 } vi_mode_t;
 
 
+/** Argtable structure for vi command arguments */
 typedef struct {
   struct arg_lit *help;
   struct arg_file *file;
@@ -28,6 +34,7 @@ typedef struct {
 } vi_args_t;
 
 
+/** Single line in the editor buffer */
 typedef struct {
   char *text;
   size_t len;
@@ -35,6 +42,7 @@ typedef struct {
 } vi_line_t;
 
 
+/** Complete editor state */
 typedef struct {
   vi_line_t *lines;
   size_t line_count;
@@ -61,6 +69,10 @@ static volatile sig_atomic_t term_suspended = 0;
 static volatile sig_atomic_t term_terminated = 0;
 
 
+/**
+ * Builds the argtable3 argument table for vi command.
+ * @param args Pointer to vi_args_t structure to populate
+ */
 static void build_vi_argtable(vi_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->file = arg_file0(NULL, NULL, "FILE", "file to edit");
@@ -72,12 +84,20 @@ static void build_vi_argtable(vi_args_t *args) {
 }
 
 
+/**
+ * Cleans up and frees the argtable3 argument table.
+ * @param args Pointer to vi_args_t structure to clean up
+ */
 static void cleanup_vi_argtable(vi_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the vi command.
+ * @param out Output file stream
+ */
 static void vi_print_usage(FILE *out) {
   vi_args_t args;
   build_vi_argtable(&args);
@@ -119,35 +139,58 @@ static void vi_print_usage(FILE *out) {
 }
 
 
+/**
+ * Signal handler for terminal window resize (SIGWINCH).
+ * @param sig Signal number
+ */
 static void handle_sigwinch(int sig) {
   (void)sig;
   term_resized = 1;
 }
 
 
+/**
+ * Signal handler for terminal suspend (SIGTSTP).
+ * @param sig Signal number
+ */
 static void handle_sigtstp(int sig) {
   (void)sig;
   term_suspended = 1;
 }
 
 
+/**
+ * Signal handler for terminal continue (SIGCONT).
+ * @param sig Signal number
+ */
 static void handle_sigcont(int sig) {
   (void)sig;
   /* Terminal state will be restored in main loop */
 }
 
 
+/**
+ * Signal handler for terminal termination (SIGTERM).
+ * @param sig Signal number
+ */
 static void handle_sigterm(int sig) {
   (void)sig;
   term_terminated = 1;
 }
 
 
+/**
+ * Disables raw terminal mode and restores original settings.
+ */
 static void disable_raw_mode(void) {
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
 }
 
 
+/**
+ * Enables raw terminal mode for vi-style editing.
+ * @return 0 on success, -1 on error
+ */
 static int enable_raw_mode(void) {
   if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
     return -1;
@@ -171,6 +214,11 @@ static int enable_raw_mode(void) {
 }
 
 
+/**
+ * Gets the current terminal size.
+ * @param rows Pointer to store number of rows
+ * @param cols Pointer to store number of columns
+ */
 static void get_terminal_size(int *rows, int *cols) {
   struct winsize ws;
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
@@ -183,6 +231,10 @@ static void get_terminal_size(int *rows, int *cols) {
 }
 
 
+/**
+ * Initializes a line structure.
+ * @param line Pointer to line to initialize
+ */
 static void vi_line_init(vi_line_t *line) {
   line->capacity = 64;
   line->text = malloc(line->capacity);
@@ -191,6 +243,10 @@ static void vi_line_init(vi_line_t *line) {
 }
 
 
+/**
+ * Frees memory associated with a line.
+ * @param line Pointer to line to free
+ */
 static void vi_line_free(vi_line_t *line) {
   free(line->text);
   line->text = NULL;
@@ -199,6 +255,11 @@ static void vi_line_free(vi_line_t *line) {
 }
 
 
+/**
+ * Ensures a line has sufficient capacity for specified size.
+ * @param line Pointer to line
+ * @param needed Required capacity
+ */
 static void vi_line_ensure_capacity(vi_line_t *line, size_t needed) {
   if (needed >= line->capacity) {
     size_t new_cap = line->capacity * 2;
@@ -212,6 +273,12 @@ static void vi_line_ensure_capacity(vi_line_t *line, size_t needed) {
 }
 
 
+/**
+ * Inserts a character at specified position in a line.
+ * @param line Pointer to line
+ * @param pos Position to insert at
+ * @param c Character to insert
+ */
 static void vi_line_insert_char(vi_line_t *line, size_t pos, char c) {
   vi_line_ensure_capacity(line, line->len + 1);
   if (pos > line->len) pos = line->len;
@@ -221,6 +288,11 @@ static void vi_line_insert_char(vi_line_t *line, size_t pos, char c) {
 }
 
 
+/**
+ * Deletes a character at specified position in a line.
+ * @param line Pointer to line
+ * @param pos Position to delete from
+ */
 static void vi_line_delete_char(vi_line_t *line, size_t pos) {
   if (pos >= line->len) return;
   memmove(line->text + pos, line->text + pos + 1, line->len - pos);
@@ -228,6 +300,12 @@ static void vi_line_delete_char(vi_line_t *line, size_t pos) {
 }
 
 
+/**
+ * Sets the content of a line.
+ * @param line Pointer to line
+ * @param text Text to set
+ * @param len Length of text
+ */
 static void vi_line_set(vi_line_t *line, const char *text, size_t len) {
   vi_line_ensure_capacity(line, len);
   memcpy(line->text, text, len);
@@ -236,6 +314,10 @@ static void vi_line_set(vi_line_t *line, const char *text, size_t len) {
 }
 
 
+/**
+ * Initializes the editor state.
+ * @param state Pointer to state structure to initialize
+ */
 static void vi_state_init(vi_state_t *state) {
   state->line_capacity = 256;
   state->lines = malloc(state->line_capacity * sizeof(vi_line_t));
@@ -256,6 +338,10 @@ static void vi_state_init(vi_state_t *state) {
 }
 
 
+/**
+ * Frees all memory associated with editor state.
+ * @param state Pointer to state structure to free
+ */
 static void vi_state_free(vi_state_t *state) {
   for (size_t i = 0; i < state->line_count; i++) {
     vi_line_free(&state->lines[i]);
@@ -265,6 +351,11 @@ static void vi_state_free(vi_state_t *state) {
 }
 
 
+/**
+ * Ensures the editor has capacity for specified number of lines.
+ * @param state Pointer to state structure
+ * @param needed Required line capacity
+ */
 static void vi_ensure_line_capacity(vi_state_t *state, size_t needed) {
   if (needed >= state->line_capacity) {
     size_t new_cap = state->line_capacity * 2;
@@ -278,6 +369,11 @@ static void vi_ensure_line_capacity(vi_state_t *state, size_t needed) {
 }
 
 
+/**
+ * Inserts a new line at specified position.
+ * @param state Pointer to state structure
+ * @param pos Position to insert new line
+ */
 static void vi_insert_line(vi_state_t *state, size_t pos) {
   vi_ensure_line_capacity(state, state->line_count + 1);
   if (pos > state->line_count) pos = state->line_count;
@@ -289,6 +385,11 @@ static void vi_insert_line(vi_state_t *state, size_t pos) {
 }
 
 
+/**
+ * Deletes a line at specified position.
+ * @param state Pointer to state structure
+ * @param pos Position of line to delete
+ */
 static void vi_delete_line(vi_state_t *state, size_t pos) {
   if (state->line_count <= 1) {
     vi_line_set(&state->lines[0], "", 0);
@@ -304,6 +405,12 @@ static void vi_delete_line(vi_state_t *state, size_t pos) {
 }
 
 
+/**
+ * Loads a file into the editor.
+ * @param state Pointer to state structure
+ * @param path File path to load
+ * @return 0 on success, -1 on error
+ */
 static int vi_load_file(vi_state_t *state, const char *path) {
   FILE *fp = fopen(path, "r");
   if (!fp) {
@@ -355,6 +462,11 @@ static int vi_load_file(vi_state_t *state, const char *path) {
 }
 
 
+/**
+ * Saves the current file.
+ * @param state Pointer to state structure
+ * @return 0 on success, -1 on error
+ */
 static int vi_save_file(vi_state_t *state) {
   if (!state->filename) {
     snprintf(state->status_msg, sizeof(state->status_msg),
@@ -381,6 +493,10 @@ static int vi_save_file(vi_state_t *state) {
 }
 
 
+/**
+ * Clamps the cursor position to valid bounds.
+ * @param state Pointer to state structure
+ */
 static void vi_clamp_cursor(vi_state_t *state) {
   if (state->cursor_row >= state->line_count) {
     state->cursor_row = state->line_count > 0 ? state->line_count - 1 : 0;
@@ -396,6 +512,10 @@ static void vi_clamp_cursor(vi_state_t *state) {
 }
 
 
+/**
+ * Scrolls the view to ensure cursor is visible.
+ * @param state Pointer to state structure
+ */
 static void vi_scroll_to_cursor(vi_state_t *state) {
   int text_rows = state->rows - 2;
   if (text_rows < 1) text_rows = 1;
@@ -408,22 +528,34 @@ static void vi_scroll_to_cursor(vi_state_t *state) {
 }
 
 
+/**
+ * Clears the terminal screen.
+ */
 static void clear_screen(void) {
   write(STDOUT_FILENO, "\x1b[2J", 4);
   write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 
+/**
+ * Hides the terminal cursor.
+ */
 static void hide_cursor(void) {
   write(STDOUT_FILENO, "\x1b[?25l", 6);
 }
 
 
+/**
+ * Shows the terminal cursor.
+ */
 static void show_cursor(void) {
   write(STDOUT_FILENO, "\x1b[?25h", 6);
 }
 
 
+/**
+ * Suspends the editor (Ctrl+Z).
+ */
 static void vi_suspend(void) {
   /* Restore terminal to normal mode */
   disable_raw_mode();
@@ -440,6 +572,10 @@ static void vi_suspend(void) {
 }
 
 
+/**
+ * Performs an emergency save to a swap file.
+ * @param state Pointer to state structure
+ */
 static void vi_emergency_save(vi_state_t *state) {
   if (state->modified && state->filename) {
     char backup[512];
@@ -455,6 +591,11 @@ static void vi_emergency_save(vi_state_t *state) {
 }
 
 
+/**
+ * Moves the terminal cursor to specified position.
+ * @param row Row position (1-based)
+ * @param col Column position (1-based)
+ */
 static void move_cursor(int row, int col) {
   char buf[32];
   int len = snprintf(buf, sizeof(buf), "\x1b[%d;%dH", row, col);
@@ -462,21 +603,36 @@ static void move_cursor(int row, int col) {
 }
 
 
+/**
+ * Clears the current terminal line.
+ */
 static void clear_line(void) {
   write(STDOUT_FILENO, "\x1b[K", 3);
 }
 
 
+/**
+ * Sets terminal to reverse video mode.
+ */
 static void set_reverse_video(void) {
   write(STDOUT_FILENO, "\x1b[7m", 4);
 }
 
 
+/**
+ * Resets terminal video attributes to normal.
+ */
 static void reset_video(void) {
   write(STDOUT_FILENO, "\x1b[0m", 4);
 }
 
 
+/**
+ * Draws a single row of the editor.
+ * @param state Pointer to state structure
+ * @param screen_row Screen row position
+ * @param file_row File line number to display
+ */
 static void vi_draw_row(vi_state_t *state, int screen_row, size_t file_row) {
   move_cursor(screen_row, 1);
   clear_line();
@@ -498,6 +654,10 @@ static void vi_draw_row(vi_state_t *state, int screen_row, size_t file_row) {
 }
 
 
+/**
+ * Draws the status bar at bottom of screen.
+ * @param state Pointer to state structure
+ */
 static void vi_draw_status_bar(vi_state_t *state) {
   move_cursor(state->rows - 1, 1);
   set_reverse_video();
@@ -538,6 +698,10 @@ static void vi_draw_status_bar(vi_state_t *state) {
 }
 
 
+/**
+ * Draws the message bar at bottom of screen.
+ * @param state Pointer to state structure
+ */
 static void vi_draw_message_bar(vi_state_t *state) {
   move_cursor(state->rows, 1);
   clear_line();
@@ -556,6 +720,10 @@ static void vi_draw_message_bar(vi_state_t *state) {
 }
 
 
+/**
+ * Draws the entire editor screen.
+ * @param state Pointer to state structure
+ */
 static void vi_draw_screen(vi_state_t *state) {
   hide_cursor();
 
@@ -589,6 +757,10 @@ enum {
 };
 
 
+/**
+ * Reads a key from the terminal.
+ * @return Key code, -1 on error, -2 on terminal resize
+ */
 static int vi_read_key(void) {
   char c;
   int nread;
@@ -639,11 +811,20 @@ static int vi_read_key(void) {
 }
 
 
+/**
+ * Checks if a character is a word character.
+ * @param c Character to check
+ * @return Non-zero if word character, 0 otherwise
+ */
 static int is_word_char(char c) {
   return isalnum((unsigned char)c) || c == '_';
 }
 
 
+/**
+ * Moves cursor forward by one word.
+ * @param state Pointer to state structure
+ */
 static void vi_move_word_forward(vi_state_t *state) {
   vi_line_t *line = &state->lines[state->cursor_row];
 
@@ -670,6 +851,10 @@ static void vi_move_word_forward(vi_state_t *state) {
 }
 
 
+/**
+ * Moves cursor backward by one word.
+ * @param state Pointer to state structure
+ */
 static void vi_move_word_backward(vi_state_t *state) {
   if (state->cursor_col == 0 && state->cursor_row > 0) {
     state->cursor_row--;
@@ -692,6 +877,10 @@ static void vi_move_word_backward(vi_state_t *state) {
 }
 
 
+/**
+ * Yanks (copies) the current line to the yank buffer.
+ * @param state Pointer to state structure
+ */
 static void vi_yank_line(vi_state_t *state) {
   vi_line_t *line = &state->lines[state->cursor_row];
   size_t copy_len = line->len;
@@ -705,6 +894,10 @@ static void vi_yank_line(vi_state_t *state) {
 }
 
 
+/**
+ * Pastes the yank buffer after the cursor.
+ * @param state Pointer to state structure
+ */
 static void vi_paste_after(vi_state_t *state) {
   if (state->yank_buf[0] == '\0') return;
 
@@ -726,6 +919,10 @@ static void vi_paste_after(vi_state_t *state) {
 }
 
 
+/**
+ * Pastes the yank buffer before the cursor.
+ * @param state Pointer to state structure
+ */
 static void vi_paste_before(vi_state_t *state) {
   if (state->yank_buf[0] == '\0') return;
 
@@ -744,6 +941,10 @@ static void vi_paste_before(vi_state_t *state) {
 }
 
 
+/**
+ * Searches forward for the pattern in the command buffer.
+ * @param state Pointer to state structure
+ */
 static void vi_search_forward(vi_state_t *state) {
   if (state->command_buf[0] == '\0') return;
 
@@ -784,6 +985,11 @@ static void vi_search_forward(vi_state_t *state) {
 }
 
 
+/**
+ * Processes a command mode command.
+ * @param state Pointer to state structure
+ * @return 1 to quit, 0 to continue
+ */
 static int vi_process_command(vi_state_t *state) {
   char *cmd = state->command_buf;
 
@@ -833,6 +1039,12 @@ static int vi_process_command(vi_state_t *state) {
 }
 
 
+/**
+ * Handles a key press in normal mode.
+ * @param state Pointer to state structure
+ * @param key Key code
+ * @return 1 to quit, 0 to continue
+ */
 static int vi_handle_normal_mode(vi_state_t *state, int key) {
   static int pending_g = 0;
   static int pending_d = 0;
@@ -1024,6 +1236,12 @@ static int vi_handle_normal_mode(vi_state_t *state, int key) {
 }
 
 
+/**
+ * Handles a key press in insert mode.
+ * @param state Pointer to state structure
+ * @param key Key code
+ * @return 1 to quit, 0 to continue
+ */
 static int vi_handle_insert_mode(vi_state_t *state, int key) {
   vi_line_t *line = &state->lines[state->cursor_row];
 
@@ -1099,6 +1317,12 @@ static int vi_handle_insert_mode(vi_state_t *state, int key) {
 }
 
 
+/**
+ * Handles a key press in command mode.
+ * @param state Pointer to state structure
+ * @param key Key code
+ * @return 1 to quit, 0 to continue
+ */
 static int vi_handle_command_mode(vi_state_t *state, int key) {
   switch (key) {
     case '\x1b':
@@ -1142,6 +1366,12 @@ static int vi_handle_command_mode(vi_state_t *state, int key) {
 }
 
 
+/**
+ * Handles a key press in search mode.
+ * @param state Pointer to state structure
+ * @param key Key code
+ * @return 1 to quit, 0 to continue
+ */
 static int vi_handle_search_mode(vi_state_t *state, int key) {
   switch (key) {
     case '\x1b':
@@ -1183,6 +1413,12 @@ static int vi_handle_search_mode(vi_state_t *state, int key) {
 }
 
 
+/**
+ * Main entry point for the vi command.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 on success)
+ */
 static int vi_run(int argc, char **argv) {
   vi_args_t args;
   build_vi_argtable(&args);
@@ -1323,6 +1559,7 @@ static int vi_run(int argc, char **argv) {
 }
 
 
+/** Command specification for vi */
 const jshell_cmd_spec_t cmd_vi_spec = {
   .name = "vi",
   .summary = "edit files with vi-like interface",
@@ -1336,6 +1573,9 @@ const jshell_cmd_spec_t cmd_vi_spec = {
 };
 
 
+/**
+ * Registers the vi command with the shell command registry.
+ */
 void jshell_register_vi_command(void) {
   jshell_register_command(&cmd_vi_spec);
 }

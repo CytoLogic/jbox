@@ -1,3 +1,12 @@
+/**
+ * @file jshell_ast_helpers.c
+ * @brief Helper functions for AST interpretation and job execution.
+ *
+ * Implements core shell execution functionality including word expansion,
+ * I/O redirection, pipeline creation, builtin command execution, and
+ * process management for both foreground and background jobs.
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +34,16 @@
 #include "jshell_ast_helpers.h"
 
 
+/**
+ * @brief Performs word expansion using wordexp with shell semantics.
+ *
+ * Expands words including variables, globs, and other shell expansions.
+ * Appends results to existing word vector if it already contains words.
+ *
+ * @param word The word string to expand.
+ * @param word_vector_ptr Pointer to wordexp_t structure for results.
+ * @return 0 on success, wordexp error code on failure.
+ */
 int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
   int flags = WRDE_NOCMD;
   
@@ -37,6 +56,12 @@ int jshell_expand_word(char* word, wordexp_t* word_vector_ptr) {
 }
 
 
+/**
+ * @brief Sets up input redirection by duplicating file descriptor to stdin.
+ *
+ * @param input_fd File descriptor to redirect to stdin, or -1 for no redirect.
+ * @return 0 on success, -1 on error.
+ */
 static int jshell_setup_input_redir(int input_fd) {
   if (input_fd == -1) {
     return 0;
@@ -52,6 +77,12 @@ static int jshell_setup_input_redir(int input_fd) {
 }
 
 
+/**
+ * @brief Sets up output redirection by duplicating file descriptor to stdout.
+ *
+ * @param output_fd File descriptor to redirect to stdout, or -1 for no redirect.
+ * @return 0 on success, -1 on error.
+ */
 static int jshell_setup_output_redir(int output_fd) {
   if (output_fd == -1) {
     return 0;
@@ -67,6 +98,15 @@ static int jshell_setup_output_redir(int output_fd) {
 }
 
 
+/**
+ * @brief Creates an array of pipes for command pipeline execution.
+ *
+ * Allocates and initializes pipe file descriptors for connecting commands
+ * in a pipeline.
+ *
+ * @param pipe_count Number of pipes to create (cmd_count - 1).
+ * @return Array of pipe file descriptor pairs, or NULL on error.
+ */
 static int** jshell_create_pipes(size_t pipe_count) {
   if (pipe_count == 0) {
     return NULL;
@@ -108,6 +148,12 @@ static int** jshell_create_pipes(size_t pipe_count) {
 }
 
 
+/**
+ * @brief Closes and frees an array of pipes.
+ *
+ * @param pipes Array of pipe file descriptor pairs.
+ * @param pipe_count Number of pipes in the array.
+ */
 static void jshell_close_pipes(int** pipes, size_t pipe_count) {
   if (pipes == NULL) {
     return;
@@ -124,6 +170,12 @@ static void jshell_close_pipes(int** pipes, size_t pipe_count) {
 }
 
 
+/**
+ * @brief Finds a builtin command by name in the command registry.
+ *
+ * @param name The command name to look up.
+ * @return Pointer to command spec if found, NULL otherwise.
+ */
 static const jshell_cmd_spec_t* jshell_find_builtin(const char* name) {
   if (name == NULL) {
     return NULL;
@@ -132,6 +184,18 @@ static const jshell_cmd_spec_t* jshell_find_builtin(const char* name) {
 }
 
 
+/**
+ * @brief Executes a builtin command directly on the main thread.
+ *
+ * Handles I/O redirection, executes the builtin, and restores original
+ * file descriptors. Used for builtins that must run on the main thread.
+ *
+ * @param spec The command specification.
+ * @param cmd_params Command parameters (argc/argv).
+ * @param input_fd Input redirection fd, or -1 for none.
+ * @param output_fd Output redirection fd, or -1 for none.
+ * @return Exit status from the builtin command.
+ */
 static int jshell_exec_builtin_direct(const jshell_cmd_spec_t* spec,
                                        JShellCmdParams* cmd_params,
                                        int input_fd,
@@ -193,6 +257,18 @@ static int jshell_exec_builtin_direct(const jshell_cmd_spec_t* spec,
 }
 
 
+/**
+ * @brief Executes a builtin command on a separate thread or main thread.
+ *
+ * Dispatches to thread execution for most builtins, or direct execution
+ * for builtins that require the main thread (e.g., cd, export).
+ *
+ * @param spec The command specification.
+ * @param cmd_params Command parameters (argc/argv).
+ * @param input_fd Input redirection fd, or -1 for none.
+ * @param output_fd Output redirection fd, or -1 for none.
+ * @return Exit status from the builtin command.
+ */
 static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
                                 JShellCmdParams* cmd_params,
                                 int input_fd,
@@ -220,9 +296,23 @@ static int jshell_exec_builtin(const jshell_cmd_spec_t* spec,
 }
 
 
-static int jshell_fork_and_exec(JShellCmdParams* cmd_params, 
-                                 int** pipes, 
-                                 size_t cmd_index, 
+/**
+ * @brief Forks a child process and executes an external command.
+ *
+ * Sets up pipe connections for pipelines, handles I/O redirection,
+ * and executes the command via execv/execvp.
+ *
+ * @param cmd_params Command parameters (argc/argv).
+ * @param pipes Array of pipe file descriptor pairs.
+ * @param cmd_index Index of this command in the pipeline.
+ * @param total_cmds Total number of commands in the pipeline.
+ * @param input_fd Input redirection fd for first command, or -1.
+ * @param output_fd Output redirection fd for last command, or -1.
+ * @return PID of child process, or -1 on error.
+ */
+static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
+                                 int** pipes,
+                                 size_t cmd_index,
                                  size_t total_cmds,
                                  int input_fd,
                                  int output_fd) {
@@ -319,7 +409,18 @@ static int jshell_fork_and_exec(JShellCmdParams* cmd_params,
 }
 
 
-static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count, 
+/**
+ * @brief Waits for child processes to complete and collects exit status.
+ *
+ * For foreground jobs, waits for all processes in the pipeline.
+ * For background jobs, returns immediately without waiting.
+ *
+ * @param pids Array of process IDs to wait for.
+ * @param pid_count Number of processes in the array.
+ * @param job_type Foreground or background job type.
+ * @return Exit status of last process, or 0 for background jobs.
+ */
+static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count,
                                  ExecJobType job_type) {
   if (job_type == BG_JOB) {
     DPRINT("Background job, not waiting");
@@ -349,6 +450,15 @@ static int jshell_wait_for_jobs(pid_t* pids, size_t pid_count,
 }
 
 
+/**
+ * @brief Builds a string representation of a command pipeline.
+ *
+ * Concatenates all commands and their arguments, separated by pipes,
+ * for display in job control messages.
+ *
+ * @param cmd_vector Vector of commands in the pipeline.
+ * @return Allocated string with command representation, or NULL on error.
+ */
 static char* jshell_build_cmd_string(JShellCmdVector* cmd_vector) {
   if (cmd_vector == NULL || cmd_vector->cmd_count == 0) {
     return NULL;
@@ -391,7 +501,17 @@ static char* jshell_build_cmd_string(JShellCmdVector* cmd_vector) {
 }
 
 
-// Execute a package command by fork/exec
+/**
+ * @brief Executes a package command by forking and exec'ing the binary.
+ *
+ * Package commands are external binaries installed via the package manager.
+ * This function handles their execution with proper I/O redirection.
+ *
+ * @param spec The command specification with bin_path.
+ * @param cmd_params Command parameters (argc/argv).
+ * @param job The execution job containing redirection info.
+ * @return Exit status of the command.
+ */
 static int jshell_exec_package_cmd(const jshell_cmd_spec_t* spec,
                                    JShellCmdParams* cmd_params,
                                    JShellExecJob* job) {
@@ -448,6 +568,15 @@ static int jshell_exec_package_cmd(const jshell_cmd_spec_t* spec,
 }
 
 
+/**
+ * @brief Executes a single command (no pipeline).
+ *
+ * Determines if the command is a builtin, package command, or external
+ * command, and dispatches to the appropriate execution function.
+ *
+ * @param job The execution job containing command and redirection info.
+ * @return Exit status of the command.
+ */
 static int jshell_exec_single_cmd(JShellExecJob* job) {
   DPRINT("jshell_exec_single_cmd called");
 
@@ -532,6 +661,15 @@ static int jshell_exec_single_cmd(JShellExecJob* job) {
 }
 
 
+/**
+ * @brief Executes a command pipeline.
+ *
+ * Creates pipes, forks processes for each command in the pipeline,
+ * connects them via pipes, and waits for completion.
+ *
+ * @param job The execution job containing pipeline commands.
+ * @return Exit status of the last command in the pipeline.
+ */
 static int jshell_exec_pipeline(JShellExecJob* job) {
   DPRINT("jshell_exec_pipeline called with %zu commands", 
          job->jshell_cmd_vector_ptr->cmd_count);
@@ -605,6 +743,15 @@ static int jshell_exec_pipeline(JShellExecJob* job) {
 }
 
 
+/**
+ * @brief Executes a job (single command or pipeline).
+ *
+ * Main entry point for job execution. Handles both single commands and
+ * pipelines, updates exit status, and refreshes package commands if needed.
+ *
+ * @param job The execution job to run.
+ * @return Exit status of the job.
+ */
 int jshell_exec_job(JShellExecJob* job) {
   DPRINT("jshell_exec_job called");
 
@@ -650,6 +797,15 @@ int jshell_exec_job(JShellExecJob* job) {
 }
 
 
+/**
+ * @brief Captures command output while also displaying it (tee behavior).
+ *
+ * Executes a job and captures its stdout output into a buffer while
+ * simultaneously displaying it. Used for variable assignment from commands.
+ *
+ * @param job The execution job to run and capture.
+ * @return Allocated string with captured output, or NULL on error.
+ */
 char* jshell_capture_and_tee_output(JShellExecJob* job) {
   DPRINT("jshell_capture_and_tee_output called");
   
@@ -855,6 +1011,16 @@ char* jshell_capture_and_tee_output(JShellExecJob* job) {
 }
 
 
+/**
+ * @brief Sets an environment variable with whitespace trimming.
+ *
+ * Trims leading and trailing whitespace from the value before setting
+ * the environment variable.
+ *
+ * @param name The variable name.
+ * @param value The variable value (will be trimmed).
+ * @return 0 on success, -1 on error.
+ */
 int jshell_set_env_var(const char* name, const char* value) {
   DPRINT("jshell_set_env_var: %s = %s", name, value);
   
@@ -891,6 +1057,13 @@ int jshell_set_env_var(const char* name, const char* value) {
 }
 
 
+/**
+ * @brief Cleans up a command vector and frees associated resources.
+ *
+ * Releases word expansion results for all commands in the vector.
+ *
+ * @param cmd_vector The command vector to clean up.
+ */
 void jshell_cleanup_cmd_vector(JShellCmdVector* cmd_vector) {
   DPRINT("jshell_cleanup_cmd_vector called");
   
@@ -907,6 +1080,13 @@ void jshell_cleanup_cmd_vector(JShellCmdVector* cmd_vector) {
 }
 
 
+/**
+ * @brief Cleans up an execution job and frees associated resources.
+ *
+ * Releases command vector, closes file descriptors for I/O redirection.
+ *
+ * @param job The execution job to clean up.
+ */
 void jshell_cleanup_job(JShellExecJob* job) {
   DPRINT("jshell_cleanup_job called");
   

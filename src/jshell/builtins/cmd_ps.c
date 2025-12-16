@@ -1,3 +1,8 @@
+/**
+ * @file cmd_ps.c
+ * @brief Implementation of the ps builtin command for listing processes
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_job_control.h"
 
 
+/**
+ * Argument table structure for the ps command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -15,6 +23,11 @@ typedef struct {
 } ps_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the ps command.
+ *
+ * @param args Pointer to ps_args_t structure to populate
+ */
 static void build_ps_argtable(ps_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -26,12 +39,22 @@ static void build_ps_argtable(ps_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the ps command.
+ *
+ * @param args Pointer to ps_args_t structure to free
+ */
 static void cleanup_ps_argtable(ps_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the ps command.
+ *
+ * @param out Output stream to write to
+ */
 static void ps_print_usage(FILE *out) {
   ps_args_t args;
   build_ps_argtable(&args);
@@ -44,6 +67,13 @@ static void ps_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -72,6 +102,12 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Converts job status enum to string representation.
+ *
+ * @param status Job status enum value
+ * @return String representation of status
+ */
 static const char* job_status_string(JobStatus status) {
   switch (status) {
     case JOB_RUNNING: return "Running";
@@ -82,12 +118,21 @@ static const char* job_status_string(JobStatus status) {
 }
 
 
+/**
+ * Context structure for printing processes
+ */
 typedef struct {
   int show_json;
   int first_proc;
 } ps_print_ctx_t;
 
 
+/**
+ * Prints processes for a job in text format.
+ *
+ * @param job Background job containing processes
+ * @param userdata Unused user data pointer
+ */
 static void print_process_text(const BackgroundJob *job, void *userdata) {
   (void)userdata;
   for (size_t i = 0; i < job->pid_count; i++) {
@@ -100,6 +145,12 @@ static void print_process_text(const BackgroundJob *job, void *userdata) {
 }
 
 
+/**
+ * Prints processes for a job in JSON format.
+ *
+ * @param job Background job containing processes
+ * @param userdata Pointer to ps_print_ctx_t context
+ */
 static void print_process_json(const BackgroundJob *job, void *userdata) {
   ps_print_ctx_t *ctx = (ps_print_ctx_t *)userdata;
 
@@ -122,6 +173,13 @@ static void print_process_json(const BackgroundJob *job, void *userdata) {
 }
 
 
+/**
+ * Executes the ps command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int ps_run(int argc, char **argv) {
   ps_args_t args;
   build_ps_argtable(&args);
@@ -158,6 +216,9 @@ static int ps_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the ps builtin
+ */
 const jshell_cmd_spec_t cmd_ps_spec = {
   .name = "ps",
   .summary = "list processes known to the shell",
@@ -169,6 +230,9 @@ const jshell_cmd_spec_t cmd_ps_spec = {
 };
 
 
+/**
+ * Registers the ps command with the shell command registry.
+ */
 void jshell_register_ps_command(void) {
   jshell_register_command(&cmd_ps_spec);
 }

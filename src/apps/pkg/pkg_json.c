@@ -1,3 +1,7 @@
+/** @file pkg_json.c
+ *  @brief Package manifest (pkg.json) parsing and validation.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +11,10 @@
 #include "pkg_utils.h"
 
 
+/** Skips whitespace characters in a string.
+ *  @param s Input string
+ *  @return Pointer to first non-whitespace character
+ */
 static const char *skip_whitespace(const char *s) {
   while (*s && isspace((unsigned char)*s)) {
     s++;
@@ -15,6 +23,10 @@ static const char *skip_whitespace(const char *s) {
 }
 
 
+/** Parses a JSON string value.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @return Allocated string value, or NULL on error. Caller must free.
+ */
 static char *parse_string(const char **p) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -66,6 +78,11 @@ static char *parse_string(const char **p) {
 }
 
 
+/** Parses a JSON array of strings.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @param count Output parameter for array length
+ *  @return Allocated array of strings, or NULL on error. Caller must free.
+ */
 static char **parse_string_array(const char **p, int *count) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -127,6 +144,12 @@ error:
 }
 
 
+/** Parses a JSON key-value pair.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @param key Output parameter for key string (caller must free)
+ *  @param value_start Output parameter pointing to value
+ *  @return 0 on success, -1 on error
+ */
 static int parse_key_value(const char **p, char **key, const char **value_start) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -151,6 +174,10 @@ static int parse_key_value(const char **p, char **key, const char **value_start)
 }
 
 
+/** Skips over a JSON value without parsing.
+ *  @param s Input string
+ *  @return Pointer past the JSON value
+ */
 static const char *skip_value(const char *s) {
   s = skip_whitespace(s);
 
@@ -214,6 +241,10 @@ static const char *skip_value(const char *s) {
 }
 
 
+/** Parses a package manifest from JSON string.
+ *  @param json_str JSON string containing manifest
+ *  @return Allocated PkgManifest, or NULL on error. Caller must free with pkg_manifest_free.
+ */
 PkgManifest *pkg_manifest_parse(const char *json_str) {
   PkgManifest *m = calloc(1, sizeof(PkgManifest));
   if (m == NULL) {
@@ -297,6 +328,10 @@ error:
 }
 
 
+/** Loads a package manifest from a file.
+ *  @param path Path to pkg.json file
+ *  @return Allocated PkgManifest, or NULL on error. Caller must free with pkg_manifest_free.
+ */
 PkgManifest *pkg_manifest_load(const char *path) {
   char *content = pkg_read_file(path);
   if (content == NULL) {
@@ -309,6 +344,9 @@ PkgManifest *pkg_manifest_load(const char *path) {
 }
 
 
+/** Frees a package manifest and all its contents.
+ *  @param m Pointer to manifest to free
+ */
 void pkg_manifest_free(PkgManifest *m) {
   if (m == NULL) {
     return;
@@ -332,6 +370,10 @@ void pkg_manifest_free(PkgManifest *m) {
 }
 
 
+/** Validates that a package manifest has all required fields.
+ *  @param m Pointer to manifest to validate
+ *  @return 0 if valid, -1 if invalid
+ */
 int pkg_manifest_validate(const PkgManifest *m) {
   if (m == NULL) {
     return -1;

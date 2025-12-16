@@ -1,3 +1,7 @@
+/** @file pkg_db.c
+ *  @brief Package database management and JSON parsing.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,14 +14,41 @@
 #include "pkg_utils.h"
 
 
-// Forward declarations for JSON parsing helpers
+/** Skips whitespace characters in a string.
+ *  @param s Input string
+ *  @return Pointer to first non-whitespace character
+ */
 static const char *skip_whitespace(const char *s);
+
+/** Parses a JSON string value.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @return Allocated string value, or NULL on error. Caller must free.
+ */
 static char *parse_string(const char **p);
+
+/** Parses a JSON array of strings.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @param count Output parameter for array length
+ *  @return Allocated array of strings, or NULL on error. Caller must free.
+ */
 static char **parse_string_array(const char **p, int *count);
+
+/** Skips over a JSON value without parsing.
+ *  @param s Input string
+ *  @return Pointer past the JSON value
+ */
 static const char *skip_value(const char *s);
+
+/** Parses a JSON integer value.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @return Parsed integer value
+ */
 static int parse_int(const char **p);
 
 
+/** Generates an ISO 8601 timestamp string for current time.
+ *  @return Allocated timestamp string, or NULL on error. Caller must free.
+ */
 char *pkg_db_get_timestamp(void) {
   time_t now = time(NULL);
   struct tm *tm_info = gmtime(&now);
@@ -35,6 +66,9 @@ char *pkg_db_get_timestamp(void) {
 }
 
 
+/** Frees memory associated with a package database entry.
+ *  @param entry Pointer to entry to free (fields are freed, not the struct itself)
+ */
 void pkg_db_entry_free(PkgDbEntry *entry) {
   if (entry == NULL) {
     return;
@@ -59,6 +93,9 @@ void pkg_db_entry_free(PkgDbEntry *entry) {
 }
 
 
+/** Frees a package database and all its entries.
+ *  @param db Pointer to database to free
+ */
 void pkg_db_free(PkgDb *db) {
   if (db == NULL) {
     return;
@@ -72,6 +109,11 @@ void pkg_db_free(PkgDb *db) {
 }
 
 
+/** Finds a package entry in the database by name.
+ *  @param db Pointer to database
+ *  @param name Package name to search for
+ *  @return Pointer to entry if found, NULL otherwise
+ */
 PkgDbEntry *pkg_db_find(const PkgDb *db, const char *name) {
   if (db == NULL || name == NULL) {
     return NULL;
@@ -87,6 +129,10 @@ PkgDbEntry *pkg_db_find(const PkgDb *db, const char *name) {
 }
 
 
+/** Ensures the database has capacity for at least one more entry.
+ *  @param db Pointer to database
+ *  @return 0 on success, -1 on error
+ */
 static int pkg_db_ensure_capacity(PkgDb *db) {
   if (db->count >= db->capacity) {
     int new_capacity = db->capacity == 0 ? 8 : db->capacity * 2;
@@ -102,11 +148,26 @@ static int pkg_db_ensure_capacity(PkgDb *db) {
 }
 
 
+/** Adds a package to the database with basic information.
+ *  @param db Pointer to database
+ *  @param name Package name
+ *  @param version Package version
+ *  @return 0 on success, -1 on error
+ */
 int pkg_db_add(PkgDb *db, const char *name, const char *version) {
   return pkg_db_add_full(db, name, version, NULL, NULL, 0);
 }
 
 
+/** Adds a package to the database with full metadata.
+ *  @param db Pointer to database
+ *  @param name Package name
+ *  @param version Package version
+ *  @param description Package description (can be NULL)
+ *  @param files Array of file paths (can be NULL)
+ *  @param files_count Number of files in array
+ *  @return 0 on success, -1 on error
+ */
 int pkg_db_add_full(PkgDb *db, const char *name, const char *version,
                     const char *description, char **files, int files_count) {
   if (db == NULL || name == NULL || version == NULL) {
@@ -206,6 +267,11 @@ int pkg_db_add_full(PkgDb *db, const char *name, const char *version,
 }
 
 
+/** Removes a package from the database.
+ *  @param db Pointer to database
+ *  @param name Package name
+ *  @return 0 on success, -1 if package not found
+ */
 int pkg_db_remove(PkgDb *db, const char *name) {
   if (db == NULL || name == NULL) {
     return -1;
@@ -232,6 +298,7 @@ int pkg_db_remove(PkgDb *db, const char *name) {
 // JSON Parsing Helpers
 // ---------------------------------------------------------------------------
 
+/** Implementation of skip_whitespace. */
 static const char *skip_whitespace(const char *s) {
   while (*s && isspace((unsigned char)*s)) {
     s++;
@@ -240,6 +307,7 @@ static const char *skip_whitespace(const char *s) {
 }
 
 
+/** Implementation of parse_string. */
 static char *parse_string(const char **p) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -291,6 +359,7 @@ static char *parse_string(const char **p) {
 }
 
 
+/** Implementation of parse_int. */
 static int parse_int(const char **p) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -313,6 +382,7 @@ static int parse_int(const char **p) {
 }
 
 
+/** Implementation of parse_string_array. */
 static char **parse_string_array(const char **p, int *count) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -375,6 +445,7 @@ error:
 }
 
 
+/** Implementation of skip_value. */
 static const char *skip_value(const char *s) {
   s = skip_whitespace(s);
 
@@ -442,6 +513,10 @@ static const char *skip_value(const char *s) {
 // JSON Database Loading
 // ---------------------------------------------------------------------------
 
+/** Parses a single package entry from JSON.
+ *  @param p Pointer to string pointer (updated after parse)
+ *  @return Allocated PkgDbEntry, or NULL on error. Caller must free.
+ */
 static PkgDbEntry *parse_package_entry(const char **p) {
   const char *s = *p;
   s = skip_whitespace(s);
@@ -514,6 +589,9 @@ error:
 }
 
 
+/** Loads the package database from JSON file.
+ *  @return Allocated database, or NULL on error. Caller must free.
+ */
 PkgDb *pkg_db_load_json(void) {
   PkgDb *db = calloc(1, sizeof(PkgDb));
   if (db == NULL) {
@@ -633,6 +711,10 @@ PkgDb *pkg_db_load_json(void) {
 // JSON Database Saving
 // ---------------------------------------------------------------------------
 
+/** Writes a JSON-escaped string to file.
+ *  @param f Output file stream
+ *  @param str String to write (can be NULL)
+ */
 static void write_escaped_string(FILE *f, const char *str) {
   fputc('"', f);
   if (str != NULL) {
@@ -651,6 +733,10 @@ static void write_escaped_string(FILE *f, const char *str) {
 }
 
 
+/** Saves the package database to JSON file.
+ *  @param db Pointer to database
+ *  @return 0 on success, -1 on error
+ */
 int pkg_db_save_json(const PkgDb *db) {
   if (pkg_ensure_dirs() != 0) {
     return -1;
@@ -723,6 +809,9 @@ int pkg_db_save_json(const PkgDb *db) {
 // Legacy TXT Database Loading
 // ---------------------------------------------------------------------------
 
+/** Loads the package database from legacy text file.
+ *  @return Allocated database, or NULL on error. Caller must free.
+ */
 static PkgDb *pkg_db_load_txt(void) {
   PkgDb *db = calloc(1, sizeof(PkgDb));
   if (db == NULL) {
@@ -783,6 +872,9 @@ static PkgDb *pkg_db_load_txt(void) {
 // Migration from TXT to JSON
 // ---------------------------------------------------------------------------
 
+/** Migrates database from legacy text format to JSON.
+ *  @return 0 on success or if nothing to migrate, -1 on error
+ */
 int pkg_db_migrate_from_txt(void) {
   // Check if txt database exists
   char *txt_path = pkg_get_db_path_txt();
@@ -833,6 +925,9 @@ int pkg_db_migrate_from_txt(void) {
 // Main Load/Save API
 // ---------------------------------------------------------------------------
 
+/** Loads the package database, migrating from text format if needed.
+ *  @return Allocated database, or NULL on error. Caller must free.
+ */
 PkgDb *pkg_db_load(void) {
   // First, try to load JSON database
   char *json_path = pkg_get_db_path();
@@ -875,6 +970,10 @@ PkgDb *pkg_db_load(void) {
 }
 
 
+/** Saves the package database to disk.
+ *  @param db Pointer to database
+ *  @return 0 on success, -1 on error
+ */
 int pkg_db_save(const PkgDb *db) {
   return pkg_db_save_json(db);
 }

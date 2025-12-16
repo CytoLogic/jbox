@@ -1,3 +1,11 @@
+/**
+ * @file jbox_signals.c
+ * @brief Signal handling utilities for jbox applications.
+ *
+ * Provides a simple SIGINT handler and interrupt checking utilities
+ * for graceful handling of Ctrl-C in command-line applications.
+ */
+
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -5,13 +13,17 @@
 #include "jbox_signals.h"
 
 
-/* Global signal flag */
+/** Global flag indicating whether SIGINT was received. */
 volatile sig_atomic_t jbox_interrupted = 0;
 
 
 /**
- * Simple SIGINT handler for apps.
- * Just sets the flag - apps should check and handle appropriately.
+ * @brief SIGINT signal handler.
+ *
+ * Sets the global interrupted flag when Ctrl-C is pressed.
+ * Applications should check this flag periodically.
+ *
+ * @param sig Signal number (unused).
  */
 static void jbox_sigint_handler(int sig) {
   (void)sig;
@@ -19,6 +31,12 @@ static void jbox_sigint_handler(int sig) {
 }
 
 
+/**
+ * @brief Installs the SIGINT signal handler.
+ *
+ * Sets up the signal handler to catch Ctrl-C interrupts.
+ * Does not use SA_RESTART, so system calls will return EINTR.
+ */
 void jbox_setup_sigint_handler(void) {
   struct sigaction sa;
 
@@ -30,6 +48,13 @@ void jbox_setup_sigint_handler(void) {
 }
 
 
+/**
+ * @brief Checks and clears the interrupt flag.
+ *
+ * Atomically checks if SIGINT was received and clears the flag.
+ *
+ * @return true if interrupt was pending, false otherwise.
+ */
 bool jbox_check_interrupted(void) {
   if (jbox_interrupted) {
     jbox_interrupted = 0;
@@ -39,11 +64,21 @@ bool jbox_check_interrupted(void) {
 }
 
 
+/**
+ * @brief Checks the interrupt flag without clearing it.
+ *
+ * @return true if SIGINT was received, false otherwise.
+ */
 bool jbox_is_interrupted(void) {
   return jbox_interrupted != 0;
 }
 
 
+/**
+ * @brief Clears the interrupt flag.
+ *
+ * Resets the SIGINT flag to allow detecting future interrupts.
+ */
 void jbox_clear_interrupted(void) {
   jbox_interrupted = 0;
 }

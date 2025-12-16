@@ -1,3 +1,8 @@
+/**
+ * @file cmd_cat.c
+ * @brief Implementation of the cat command for concatenating files.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,9 @@
 #include "utils/jbox_signals.h"
 
 
+/**
+ * Arguments structure for the cat command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -17,6 +25,11 @@ typedef struct {
 } cat_args_t;
 
 
+/**
+ * Initializes the argtable3 argument definitions for the cat command.
+ *
+ * @param args Pointer to the cat_args_t structure to initialize.
+ */
 static void build_cat_argtable(cat_args_t *args) {
   args->help  = arg_lit0("h", "help", "display this help and exit");
   args->json  = arg_lit0(NULL, "json", "output in JSON format");
@@ -31,12 +44,22 @@ static void build_cat_argtable(cat_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_cat_argtable.
+ *
+ * @param args Pointer to the cat_args_t structure to clean up.
+ */
 static void cleanup_cat_argtable(cat_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the cat command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void cat_print_usage(FILE *out) {
   cat_args_t args;
   build_cat_argtable(&args);
@@ -49,6 +72,13 @@ static void cat_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str     The input string to escape.
+ * @param out     Buffer to write the escaped string to.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -77,6 +107,14 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Reads entire content from a file stream into a dynamically allocated buffer.
+ *
+ * @param fp       File pointer to read from.
+ * @param out_size Optional pointer to receive the number of bytes read.
+ * @return Newly allocated buffer containing the content, or NULL on error.
+ *         Caller must free the returned buffer.
+ */
 static char *read_stream_content(FILE *fp, size_t *out_size) {
   size_t capacity = 4096;
   size_t total = 0;
@@ -112,6 +150,17 @@ static char *read_stream_content(FILE *fp, size_t *out_size) {
 }
 
 
+/**
+ * Reads entire content of a file into a dynamically allocated buffer.
+ *
+ * Attempts to determine file size first for efficiency, but falls back
+ * to streaming read for special files (e.g., /proc/* files).
+ *
+ * @param path     Path to the file to read.
+ * @param out_size Optional pointer to receive the number of bytes read.
+ * @return Newly allocated buffer containing the content, or NULL on error.
+ *         Caller must free the returned buffer.
+ */
 static char *read_file_content(const char *path, size_t *out_size) {
   FILE *fp = fopen(path, "rb");
   if (!fp) {
@@ -157,6 +206,13 @@ static char *read_file_content(const char *path, size_t *out_size) {
 }
 
 
+/**
+ * Prints file content as a JSON object with path and content fields.
+ *
+ * @param path         Path to the file (for JSON output).
+ * @param content      Content of the file.
+ * @param content_size Size of the content in bytes.
+ */
 static void print_json_content(const char *path, const char *content,
                                size_t content_size) {
   char escaped_path[512];
@@ -179,6 +235,14 @@ static void print_json_content(const char *path, const char *content,
 }
 
 
+/**
+ * Reads and outputs a single file's content.
+ *
+ * @param path        Path to the file, or NULL/"-" for stdin.
+ * @param show_json   If non-zero, output in JSON format.
+ * @param first_entry Pointer to flag tracking if this is the first JSON entry.
+ * @return 0 on success, 1 on error.
+ */
 static int cat_file(const char *path, int show_json, int *first_entry) {
   char *content = NULL;
   size_t content_size = 0;
@@ -222,6 +286,16 @@ static int cat_file(const char *path, int show_json, int *first_entry) {
 }
 
 
+/**
+ * Main entry point for the cat command.
+ *
+ * Parses arguments and concatenates specified files to stdout.
+ * Supports JSON output format with --json flag.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int cat_run(int argc, char **argv) {
   cat_args_t args;
   build_cat_argtable(&args);
@@ -279,6 +353,9 @@ static int cat_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the cat command.
+ */
 const jshell_cmd_spec_t cmd_cat_spec = {
   .name = "cat",
   .summary = "concatenate files and print on standard output",
@@ -291,6 +368,9 @@ const jshell_cmd_spec_t cmd_cat_spec = {
 };
 
 
+/**
+ * Registers the cat command with the shell command registry.
+ */
 void jshell_register_cat_command(void) {
   jshell_register_command(&cmd_cat_spec);
 }

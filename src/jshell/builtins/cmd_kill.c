@@ -1,3 +1,8 @@
+/**
+ * @file cmd_kill.c
+ * @brief Implementation of the kill builtin command for sending signals
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,9 @@
 #include "jshell/jshell_job_control.h"
 
 
+/**
+ * Argument table structure for the kill command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_str *signal;
@@ -20,6 +28,11 @@ typedef struct {
 } kill_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the kill command.
+ *
+ * @param args Pointer to kill_args_t structure to populate
+ */
 static void build_kill_argtable(kill_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->signal = arg_str0("s", NULL, "SIGNAL",
@@ -37,12 +50,22 @@ static void build_kill_argtable(kill_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the kill command.
+ *
+ * @param args Pointer to kill_args_t structure to free
+ */
 static void cleanup_kill_argtable(kill_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the kill command.
+ *
+ * @param out Output stream to write to
+ */
 static void kill_print_usage(FILE *out) {
   kill_args_t args;
   build_kill_argtable(&args);
@@ -62,12 +85,18 @@ static void kill_print_usage(FILE *out) {
 }
 
 
+/**
+ * Signal name to number mapping entry
+ */
 typedef struct {
   const char *name;
   int signum;
 } signal_entry_t;
 
 
+/**
+ * Table mapping signal names to signal numbers
+ */
 static const signal_entry_t signal_table[] = {
   {"HUP",  SIGHUP},
   {"INT",  SIGINT},
@@ -93,6 +122,12 @@ static const signal_entry_t signal_table[] = {
 };
 
 
+/**
+ * Parses a signal specification string to a signal number.
+ *
+ * @param sig_str Signal string (name or number, NULL defaults to SIGTERM)
+ * @return Signal number, or -1 if invalid
+ */
 static int parse_signal(const char *sig_str) {
   if (sig_str == NULL || sig_str[0] == '\0') {
     return SIGTERM;
@@ -122,6 +157,12 @@ static int parse_signal(const char *sig_str) {
 }
 
 
+/**
+ * Converts a signal number to its name.
+ *
+ * @param signum Signal number
+ * @return Signal name string
+ */
 static const char* signal_name(int signum) {
   for (const signal_entry_t *entry = signal_table; entry->name; entry++) {
     if (entry->signum == signum) {
@@ -132,6 +173,14 @@ static const char* signal_name(int signum) {
 }
 
 
+/**
+ * Prints a JSON result for a kill operation.
+ *
+ * @param pid Process ID
+ * @param signum Signal number sent
+ * @param status Status string ("ok" or "error")
+ * @param message Optional error message (NULL if none)
+ */
 static void print_json_result(pid_t pid, int signum, const char *status,
                               const char *message) {
   printf("{\"pid\": %d, \"signal\": %d, \"signal_name\": \"%s\", "
@@ -144,6 +193,13 @@ static void print_json_result(pid_t pid, int signum, const char *status,
 }
 
 
+/**
+ * Executes the kill command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int kill_run(int argc, char **argv) {
   kill_args_t args;
   build_kill_argtable(&args);
@@ -275,6 +331,9 @@ static int kill_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the kill builtin
+ */
 const jshell_cmd_spec_t cmd_kill_spec = {
   .name = "kill",
   .summary = "send a signal to a process or job",
@@ -287,6 +346,9 @@ const jshell_cmd_spec_t cmd_kill_spec = {
 };
 
 
+/**
+ * Registers the kill command with the shell command registry.
+ */
 void jshell_register_kill_command(void) {
   jshell_register_command(&cmd_kill_spec);
 }

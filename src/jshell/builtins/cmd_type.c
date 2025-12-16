@@ -1,3 +1,8 @@
+/**
+ * @file cmd_type.c
+ * @brief Display command type information builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the type command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -17,6 +25,11 @@ typedef struct {
 } type_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the type command.
+ *
+ * @param args Pointer to type_args_t structure to populate
+ */
 static void build_type_argtable(type_args_t *args) {
   args->help  = arg_lit0("h", "help", "display this help and exit");
   args->json  = arg_lit0(NULL, "json", "output in JSON format");
@@ -30,12 +43,22 @@ static void build_type_argtable(type_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the type argtable.
+ *
+ * @param args Pointer to type_args_t structure to cleanup
+ */
 static void cleanup_type_argtable(type_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the type command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void type_print_usage(FILE *out) {
   type_args_t args;
   build_type_argtable(&args);
@@ -50,6 +73,13 @@ static void type_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -78,6 +108,12 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Searches for an executable in the PATH environment variable.
+ *
+ * @param name Name of the executable to find
+ * @return Dynamically allocated path to the executable, or NULL if not found
+ */
 static char *find_in_path(const char *name) {
   if (strchr(name, '/') != NULL) {
     if (access(name, X_OK) == 0) {
@@ -116,6 +152,13 @@ static char *find_in_path(const char *name) {
 }
 
 
+/**
+ * Executes the type command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int type_run(int argc, char **argv) {
   type_args_t args;
   build_type_argtable(&args);
@@ -193,6 +236,9 @@ static int type_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the type builtin.
+ */
 const jshell_cmd_spec_t cmd_type_spec = {
   .name = "type",
   .summary = "display information about command type",
@@ -204,6 +250,9 @@ const jshell_cmd_spec_t cmd_type_spec = {
 };
 
 
+/**
+ * Registers the type command with the shell command registry.
+ */
 void jshell_register_type_command(void) {
   jshell_register_command(&cmd_type_spec);
 }

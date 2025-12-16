@@ -1,3 +1,8 @@
+/**
+ * @file cmd_date.c
+ * @brief Implementation of the date command for displaying current date/time.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -6,6 +11,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the date command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_end *end;
@@ -13,6 +21,11 @@ typedef struct {
 } date_args_t;
 
 
+/**
+ * Initializes the argtable3 argument definitions for the date command.
+ *
+ * @param args Pointer to the date_args_t structure to initialize.
+ */
 static void build_date_argtable(date_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->end = arg_end(20);
@@ -22,12 +35,22 @@ static void build_date_argtable(date_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_date_argtable.
+ *
+ * @param args Pointer to the date_args_t structure to clean up.
+ */
 static void cleanup_date_argtable(date_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the date command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void date_print_usage(FILE *out) {
   date_args_t args;
   build_date_argtable(&args);
@@ -40,6 +63,15 @@ static void date_print_usage(FILE *out) {
 }
 
 
+/**
+ * Main entry point for the date command.
+ *
+ * Displays the current date and time in the default format.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int date_run(int argc, char **argv) {
   date_args_t args;
   build_date_argtable(&args);
@@ -85,6 +117,9 @@ static int date_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the date command.
+ */
 const jshell_cmd_spec_t cmd_date_spec = {
   .name = "date",
   .summary = "display the current date and time",
@@ -95,6 +130,9 @@ const jshell_cmd_spec_t cmd_date_spec = {
 };
 
 
+/**
+ * Registers the date command with the shell command registry.
+ */
 void jshell_register_date_command(void) {
   jshell_register_command(&cmd_date_spec);
 }

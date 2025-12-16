@@ -1,6 +1,16 @@
+/**
+ * @file jshell_register_builtins.c
+ * @brief Registration of all builtin shell commands
+ */
+
 #include "jshell_register_builtins.h"
 
 
+/**
+ * Register all builtin commands with the command registry.
+ * Calls individual registration functions for each builtin command.
+ * This should be called during shell initialization.
+ */
 void jshell_register_all_builtin_commands(void) {
   jshell_register_jobs_command();
   jshell_register_ps_command();

@@ -1,3 +1,8 @@
+/**
+ * @file cmd_env.c
+ * @brief Print environment variables builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,9 @@
 extern char **environ;
 
 
+/**
+ * Arguments structure for the env command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -16,6 +24,11 @@ typedef struct {
 } env_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the env command.
+ *
+ * @param args Pointer to env_args_t structure to populate
+ */
 static void build_env_argtable(env_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -27,12 +40,22 @@ static void build_env_argtable(env_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the env argtable.
+ *
+ * @param args Pointer to env_args_t structure to cleanup
+ */
 static void cleanup_env_argtable(env_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the env command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void env_print_usage(FILE *out) {
   env_args_t args;
   build_env_argtable(&args);
@@ -45,6 +68,13 @@ static void env_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -73,6 +103,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Executes the env command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int env_run(int argc, char **argv) {
   env_args_t args;
   build_env_argtable(&args);
@@ -131,6 +168,9 @@ static int env_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the env builtin.
+ */
 const jshell_cmd_spec_t cmd_env_spec = {
   .name = "env",
   .summary = "print environment variables",
@@ -141,6 +181,9 @@ const jshell_cmd_spec_t cmd_env_spec = {
 };
 
 
+/**
+ * Registers the env command with the shell command registry.
+ */
 void jshell_register_env_command(void) {
   jshell_register_command(&cmd_env_spec);
 }

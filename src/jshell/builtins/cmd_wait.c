@@ -1,3 +1,8 @@
+/**
+ * @file cmd_wait.c
+ * @brief Implementation of the wait builtin command for job synchronization
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +14,9 @@
 #include "jshell/jshell_job_control.h"
 
 
+/**
+ * Argument table structure for the wait command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -18,6 +26,11 @@ typedef struct {
 } wait_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the wait command.
+ *
+ * @param args Pointer to wait_args_t structure to populate
+ */
 static void build_wait_argtable(wait_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -32,12 +45,22 @@ static void build_wait_argtable(wait_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the wait command.
+ *
+ * @param args Pointer to wait_args_t structure to free
+ */
 static void cleanup_wait_argtable(wait_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the wait command.
+ *
+ * @param out Output stream to write to
+ */
 static void wait_print_usage(FILE *out) {
   wait_args_t args;
   build_wait_argtable(&args);
@@ -51,6 +74,9 @@ static void wait_print_usage(FILE *out) {
 }
 
 
+/**
+ * Context structure for waiting on all jobs
+ */
 typedef struct {
   int show_json;
   int first;
@@ -58,6 +84,12 @@ typedef struct {
 } wait_all_ctx_t;
 
 
+/**
+ * Callback function to wait for each job.
+ *
+ * @param job Background job to wait for
+ * @param userdata Pointer to wait_all_ctx_t context
+ */
 static void wait_for_job_callback(const BackgroundJob *job, void *userdata) {
   wait_all_ctx_t *ctx = (wait_all_ctx_t *)userdata;
 
@@ -84,6 +116,13 @@ static void wait_for_job_callback(const BackgroundJob *job, void *userdata) {
 }
 
 
+/**
+ * Executes the wait command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int wait_run(int argc, char **argv) {
   wait_args_t args;
   build_wait_argtable(&args);
@@ -188,6 +227,9 @@ static int wait_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the wait builtin
+ */
 const jshell_cmd_spec_t cmd_wait_spec = {
   .name = "wait",
   .summary = "wait for a job to finish",
@@ -199,6 +241,9 @@ const jshell_cmd_spec_t cmd_wait_spec = {
 };
 
 
+/**
+ * Registers the wait command with the shell command registry.
+ */
 void jshell_register_wait_command(void) {
   jshell_register_command(&cmd_wait_spec);
 }

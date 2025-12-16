@@ -1,3 +1,12 @@
+/**
+ * @file jshell_path.c
+ * @brief Path management and command resolution for jshell.
+ *
+ * Handles initialization of jshell's binary directory (~/.jshell/bin),
+ * PATH environment variable updates, and command resolution for external
+ * executables.
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,10 +26,19 @@
 #define MAX_PATH_LEN 4096
 
 
+/** Path to jshell's binary directory */
 static char g_jshell_bin_dir[MAX_PATH_LEN] = {0};
+
+/** Flag indicating whether path has been initialized */
 static int g_path_initialized = 0;
 
 
+/**
+ * Recursively creates directories along a path.
+ *
+ * @param path Directory path to create.
+ * @return 0 on success, -1 on failure.
+ */
 static int make_directory_recursive(const char* path) {
   char tmp[MAX_PATH_LEN];
   char* p = NULL;
@@ -51,6 +69,14 @@ static int make_directory_recursive(const char* path) {
 }
 
 
+/**
+ * Gets the user's home directory.
+ *
+ * Tries the HOME environment variable first, then falls back to
+ * querying the password database.
+ *
+ * @return Pointer to home directory string, or NULL if not found.
+ */
 static const char* get_home_directory(void) {
   const char* home = getenv("HOME");
   if (home != NULL && home[0] != '\0') {
@@ -66,6 +92,14 @@ static const char* get_home_directory(void) {
 }
 
 
+/**
+ * Initializes jshell's path system.
+ *
+ * Creates the ~/.jshell/bin directory if it doesn't exist and prepends
+ * it to the PATH environment variable. This allows installed packages
+ * to be found and executed. This function is idempotent - it can be
+ * called multiple times safely.
+ */
 void jshell_init_path(void) {
   if (g_path_initialized) {
     return;
@@ -106,6 +140,13 @@ void jshell_init_path(void) {
 }
 
 
+/**
+ * Gets the path to jshell's binary directory.
+ *
+ * Ensures the path system is initialized before returning the directory.
+ *
+ * @return Pointer to the binary directory path (typically ~/.jshell/bin).
+ */
 const char* jshell_get_bin_dir(void) {
   if (!g_path_initialized) {
     jshell_init_path();
@@ -114,6 +155,16 @@ const char* jshell_get_bin_dir(void) {
 }
 
 
+/**
+ * Searches the system PATH for an executable command.
+ *
+ * Iterates through directories in the PATH environment variable
+ * and checks for an executable file with the given name.
+ *
+ * @param cmd_name Name of the command to search for.
+ * @return Dynamically allocated full path to the command if found,
+ *         NULL otherwise. Caller must free the returned string.
+ */
 static char* search_path_for_command(const char* cmd_name) {
   const char* path_env = getenv("PATH");
   if (path_env == NULL || cmd_name == NULL) {
@@ -145,6 +196,18 @@ static char* search_path_for_command(const char* cmd_name) {
 }
 
 
+/**
+ * Resolves a command name to its full executable path.
+ *
+ * Resolution order:
+ * 1. If cmd_name starts with '/' or '.', treat as absolute/relative path
+ * 2. If command is registered as external, check jshell bin directory
+ * 3. Search system PATH
+ *
+ * @param cmd_name Name or path of the command to resolve.
+ * @return Dynamically allocated full path to the executable if found,
+ *         NULL otherwise. Caller must free the returned string.
+ */
 char* jshell_resolve_command(const char* cmd_name) {
   if (cmd_name == NULL || cmd_name[0] == '\0') {
     return NULL;
@@ -185,6 +248,12 @@ char* jshell_resolve_command(const char* cmd_name) {
 }
 
 
+/**
+ * Cleans up the path system state.
+ *
+ * Resets initialization flags and clears the bin directory path.
+ * Used during shell shutdown or reinitialization.
+ */
 void jshell_cleanup_path(void) {
   g_path_initialized = 0;
   g_jshell_bin_dir[0] = '\0';

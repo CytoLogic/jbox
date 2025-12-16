@@ -1,3 +1,8 @@
+/**
+ * @file cmd_jobs.c
+ * @brief Implementation of the jobs builtin command for listing background jobs
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_job_control.h"
 
 
+/**
+ * Argument table structure for the jobs command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -15,6 +23,11 @@ typedef struct {
 } jobs_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the jobs command.
+ *
+ * @param args Pointer to jobs_args_t structure to populate
+ */
 static void build_jobs_argtable(jobs_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -26,11 +39,21 @@ static void build_jobs_argtable(jobs_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the jobs command.
+ *
+ * @param args Pointer to jobs_args_t structure to free
+ */
 static void cleanup_jobs_argtable(jobs_args_t *args) {
   arg_freetable(args->argtable, sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the jobs command.
+ *
+ * @param out Output stream to write to
+ */
 static void jobs_print_usage(FILE *out) {
   jobs_args_t args;
   build_jobs_argtable(&args);
@@ -43,6 +66,13 @@ static void jobs_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -71,12 +101,21 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Context structure for printing jobs
+ */
 typedef struct {
   int show_json;
   int first;
 } jobs_print_ctx_t;
 
 
+/**
+ * Converts job status enum to string representation.
+ *
+ * @param status Job status enum value
+ * @return String representation of status
+ */
 static const char* job_status_string(JobStatus status) {
   switch (status) {
     case JOB_RUNNING: return "Running";
@@ -87,6 +126,12 @@ static const char* job_status_string(JobStatus status) {
 }
 
 
+/**
+ * Prints a single job in text format.
+ *
+ * @param job Background job to print
+ * @param userdata Unused user data pointer
+ */
 static void print_job_text(const BackgroundJob *job, void *userdata) {
   (void)userdata;
   printf("[%d]  %-23s %s\n",
@@ -96,6 +141,12 @@ static void print_job_text(const BackgroundJob *job, void *userdata) {
 }
 
 
+/**
+ * Prints a single job in JSON format.
+ *
+ * @param job Background job to print
+ * @param userdata Pointer to jobs_print_ctx_t context
+ */
 static void print_job_json(const BackgroundJob *job, void *userdata) {
   jobs_print_ctx_t *ctx = (jobs_print_ctx_t *)userdata;
 
@@ -120,6 +171,13 @@ static void print_job_json(const BackgroundJob *job, void *userdata) {
 }
 
 
+/**
+ * Executes the jobs command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int jobs_run(int argc, char **argv) {
   jobs_args_t args;
   build_jobs_argtable(&args);
@@ -155,6 +213,9 @@ static int jobs_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the jobs builtin
+ */
 const jshell_cmd_spec_t cmd_jobs_spec = {
   .name = "jobs",
   .summary = "list background jobs",
@@ -166,6 +227,9 @@ const jshell_cmd_spec_t cmd_jobs_spec = {
 };
 
 
+/**
+ * Registers the jobs command with the shell command registry.
+ */
 void jshell_register_jobs_command(void) {
   jshell_register_command(&cmd_jobs_spec);
 }

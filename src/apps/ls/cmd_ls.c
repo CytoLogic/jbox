@@ -1,3 +1,8 @@
+/**
+ * @file cmd_ls.c
+ * @brief Implementation of the ls command for listing directory contents.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +17,9 @@
 #include "argtable3.h"
 #include "jshell/jshell_cmd_registry.h"
 
+/**
+ * Arguments structure for the ls command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *all;
@@ -22,6 +30,11 @@ typedef struct {
   void *argtable[6];
 } ls_args_t;
 
+/**
+ * Initializes the argtable3 argument definitions for the ls command.
+ *
+ * @param args Pointer to the ls_args_t structure to initialize.
+ */
 static void build_ls_argtable(ls_args_t *args) {
   args->help    = arg_lit0("h", "help", "display this help and exit");
   args->all     = arg_lit0("a", NULL, "do not ignore entries starting with .");
@@ -38,10 +51,20 @@ static void build_ls_argtable(ls_args_t *args) {
   args->argtable[5] = args->end;
 }
 
+/**
+ * Frees memory allocated by build_ls_argtable.
+ *
+ * @param args Pointer to the ls_args_t structure to clean up.
+ */
 static void cleanup_ls_argtable(ls_args_t *args) {
   arg_freetable(args->argtable, sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
+/**
+ * Prints usage information for the ls command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void ls_print_usage(FILE *out) {
   ls_args_t args;
   build_ls_argtable(&args);
@@ -53,6 +76,12 @@ static void ls_print_usage(FILE *out) {
   cleanup_ls_argtable(&args);
 }
 
+/**
+ * Returns a single character representing the file type.
+ *
+ * @param mode File mode from stat.
+ * @return Character representing the file type (d, l, c, b, p, s, or -).
+ */
 static char get_file_type_char(mode_t mode) {
   if (S_ISDIR(mode))  return 'd';
   if (S_ISLNK(mode))  return 'l';
@@ -63,6 +92,12 @@ static char get_file_type_char(mode_t mode) {
   return '-';
 }
 
+/**
+ * Formats file permissions into a string (e.g., "drwxr-xr-x").
+ *
+ * @param mode File mode from stat.
+ * @param buf  Buffer of at least 11 characters to write to.
+ */
 static void format_permissions(mode_t mode, char *buf) {
   buf[0] = get_file_type_char(mode);
   buf[1] = (mode & S_IRUSR) ? 'r' : '-';
@@ -77,6 +112,12 @@ static void format_permissions(mode_t mode, char *buf) {
   buf[10] = '\0';
 }
 
+/**
+ * Returns a string representing the file type for JSON output.
+ *
+ * @param mode File mode from stat.
+ * @return Static string describing the file type.
+ */
 static const char *get_file_type_string(mode_t mode) {
   if (S_ISDIR(mode))  return "directory";
   if (S_ISLNK(mode))  return "symlink";
@@ -87,6 +128,13 @@ static const char *get_file_type_string(mode_t mode) {
   return "file";
 }
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str      The input string to escape.
+ * @param out      Buffer to write the escaped string to.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -114,6 +162,16 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
   out[j] = '\0';
 }
 
+/**
+ * Lists the contents of a directory.
+ *
+ * @param path        Path to the directory to list.
+ * @param show_all    If non-zero, include hidden entries.
+ * @param show_long   If non-zero, use long listing format.
+ * @param show_json   If non-zero, output in JSON format.
+ * @param first_entry Pointer to flag tracking if this is the first JSON entry.
+ * @return 0 on success, 1 on error.
+ */
 static int list_directory(const char *path, int show_all, int show_long, int show_json, int *first_entry) {
   DIR *dir = opendir(path);
   if (!dir) {
@@ -191,6 +249,13 @@ static int list_directory(const char *path, int show_all, int show_long, int sho
   return 0;
 }
 
+/**
+ * Main entry point for the ls command.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int ls_run(int argc, char **argv) {
   ls_args_t args;
   build_ls_argtable(&args);
@@ -302,6 +367,9 @@ static int ls_run(int argc, char **argv) {
   return result;
 }
 
+/**
+ * Command specification for the ls command.
+ */
 const jshell_cmd_spec_t cmd_ls_spec = {
   .name = "ls",
   .summary = "list directory contents",
@@ -313,6 +381,9 @@ const jshell_cmd_spec_t cmd_ls_spec = {
 };
 
 
+/**
+ * Registers the ls command with the shell command registry.
+ */
 void jshell_register_ls_command(void) {
   jshell_register_command(&cmd_ls_spec);
 }

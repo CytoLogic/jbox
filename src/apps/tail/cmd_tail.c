@@ -1,3 +1,8 @@
+/**
+ * @file cmd_tail.c
+ * @brief Tail command implementation for jshell.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,9 @@
 #define DEFAULT_LINES 10
 
 
+/**
+ * Argument table structure for tail command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_int *num_lines;
@@ -20,6 +28,10 @@ typedef struct {
 } tail_args_t;
 
 
+/**
+ * Build the argument table for the tail command.
+ * @param args Pointer to tail_args_t structure to populate.
+ */
 static void build_tail_argtable(tail_args_t *args) {
   args->help      = arg_lit0("h", "help", "display this help and exit");
   args->num_lines = arg_int0("n", NULL, "N",
@@ -36,12 +48,20 @@ static void build_tail_argtable(tail_args_t *args) {
 }
 
 
+/**
+ * Clean up and free the argument table.
+ * @param args Pointer to tail_args_t structure to clean up.
+ */
 static void cleanup_tail_argtable(tail_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Print usage information for the tail command.
+ * @param out Output stream to write usage information to.
+ */
 static void tail_print_usage(FILE *out) {
   tail_args_t args;
   build_tail_argtable(&args);
@@ -54,6 +74,12 @@ static void tail_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escape special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -82,7 +108,12 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
-// Read all lines from file into an array
+/**
+ * Read all lines from file into an array.
+ * @param fp File pointer to read from.
+ * @param out_count Pointer to store the number of lines read.
+ * @return Array of strings (lines) or NULL on error/interrupt.
+ */
 static char **read_all_lines(FILE *fp, int *out_count) {
   char **lines = NULL;
   int capacity = 0;
@@ -143,6 +174,11 @@ static char **read_all_lines(FILE *fp, int *out_count) {
 }
 
 
+/**
+ * Free an array of lines.
+ * @param lines Array of strings to free.
+ * @param count Number of strings in the array.
+ */
 static void free_lines(char **lines, int count) {
   for (int i = 0; i < count; i++) {
     free(lines[i]);
@@ -151,6 +187,13 @@ static void free_lines(char **lines, int count) {
 }
 
 
+/**
+ * Print the last N lines of a file.
+ * @param path Path to the file to read.
+ * @param num_lines Number of lines to display from the end.
+ * @param show_json Whether to output in JSON format.
+ * @return Exit status (0 on success, non-zero on error).
+ */
 static int tail_file(const char *path, int num_lines, int show_json) {
   FILE *fp = fopen(path, "r");
   if (!fp) {
@@ -223,6 +266,12 @@ static int tail_file(const char *path, int num_lines, int show_json) {
 }
 
 
+/**
+ * Execute the tail command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return Exit status (0 on success, non-zero on error).
+ */
 static int tail_run(int argc, char **argv) {
   tail_args_t args;
   build_tail_argtable(&args);
@@ -265,6 +314,9 @@ static int tail_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for tail command.
+ */
 const jshell_cmd_spec_t cmd_tail_spec = {
   .name = "tail",
   .summary = "output the last part of files",
@@ -276,6 +328,9 @@ const jshell_cmd_spec_t cmd_tail_spec = {
 };
 
 
+/**
+ * Registers the tail command with the shell command registry.
+ */
 void jshell_register_tail_command(void) {
   jshell_register_command(&cmd_tail_spec);
 }

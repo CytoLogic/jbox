@@ -1,3 +1,12 @@
+/**
+ * @file jbox.c
+ * @brief Main entry point for the jbox shell application.
+ *
+ * This file provides the main() function that dispatches to the jshell
+ * implementation. It handles command name resolution (jbox vs jshell)
+ * and provides a welcome message when appropriate.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +16,17 @@
 #include "utils/jbox_utils.h"
 
 
+/**
+ * @brief Main entry point for jbox/jshell application.
+ *
+ * Determines which mode to run in based on the command name (argv[0]).
+ * Supports both "jbox" and "jshell" invocations with appropriate handling
+ * of flags and welcome messages.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return Exit status from jshell_main().
+ */
 int main(int argc, char *argv[]) {
   char *cmd = argv[0];
 

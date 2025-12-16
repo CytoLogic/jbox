@@ -1,3 +1,12 @@
+/**
+ * @file jshell_pkg_loader.c
+ * @brief Package loader for jshell installed packages.
+ *
+ * Parses ~/.jshell/pkgs/pkgdb.json and registers installed package commands
+ * with the shell's command registry. This allows installed packages to be
+ * available as commands in the shell.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +22,12 @@
 // Path Utilities (static - internal use only)
 // ---------------------------------------------------------------------------
 
+/**
+ * Gets the jshell home directory path.
+ *
+ * @return Dynamically allocated path to ~/.jshell, or NULL on error.
+ *         Caller must free the returned string.
+ */
 static char *get_home_dir(void) {
   const char *home = getenv("HOME");
   if (home == NULL) {
@@ -30,6 +45,12 @@ static char *get_home_dir(void) {
 }
 
 
+/**
+ * Gets the jshell binary directory path.
+ *
+ * @return Dynamically allocated path to ~/.jshell/bin, or NULL on error.
+ *         Caller must free the returned string.
+ */
 static char *get_bin_dir(void) {
   char *home = get_home_dir();
   if (home == NULL) {
@@ -49,6 +70,12 @@ static char *get_bin_dir(void) {
 }
 
 
+/**
+ * Gets the package database file path.
+ *
+ * @return Dynamically allocated path to ~/.jshell/pkgs/pkgdb.json, or NULL on
+ *         error. Caller must free the returned string.
+ */
 static char *get_pkgdb_path(void) {
   char *home = get_home_dir();
   if (home == NULL) {
@@ -72,6 +99,12 @@ static char *get_pkgdb_path(void) {
 // Simple JSON Parser for pkgdb.json
 // ---------------------------------------------------------------------------
 
+/**
+ * Skips whitespace characters in a string.
+ *
+ * @param s String to process.
+ * @return Pointer to the first non-whitespace character.
+ */
 static const char *skip_ws(const char *s) {
   while (*s && isspace((unsigned char)*s)) {
     s++;
@@ -80,6 +113,16 @@ static const char *skip_ws(const char *s) {
 }
 
 
+/**
+ * Parses a JSON string value.
+ *
+ * Handles escape sequences like \n, \t, \r, \", and \\.
+ *
+ * @param p Pointer to current position in JSON (will be updated to position
+ *          after the parsed string).
+ * @return Dynamically allocated unescaped string, or NULL on parse error.
+ *         Caller must free the returned string.
+ */
 static char *parse_str(const char **p) {
   const char *s = *p;
   s = skip_ws(s);
@@ -131,6 +174,15 @@ static char *parse_str(const char **p) {
 }
 
 
+/**
+ * Parses a JSON array of strings.
+ *
+ * @param p Pointer to current position in JSON (will be updated to position
+ *          after the parsed array).
+ * @param count Output parameter for number of strings in the array.
+ * @return Dynamically allocated array of string pointers, or NULL on parse
+ *         error. Both the array and each string must be freed by the caller.
+ */
 static char **parse_str_array(const char **p, int *count) {
   const char *s = *p;
   s = skip_ws(s);
@@ -193,6 +245,14 @@ error:
 }
 
 
+/**
+ * Skips over a JSON value without parsing it.
+ *
+ * Handles strings, arrays, objects, and primitive values.
+ *
+ * @param s Current position in JSON.
+ * @return Pointer to position after the skipped value.
+ */
 static const char *skip_val(const char *s) {
   s = skip_ws(s);
 
@@ -256,15 +316,22 @@ static const char *skip_val(const char *s) {
 }
 
 
-// Package entry structure for parsing
+/**
+ * Package entry structure for parsing pkgdb.json entries.
+ */
 typedef struct {
-  char *name;
-  char *description;
-  char **files;
-  int files_count;
+  char *name;         /** Package name */
+  char *description;  /** Package description */
+  char **files;       /** Array of file paths in the package */
+  int files_count;    /** Number of files in the package */
 } PkgEntry;
 
 
+/**
+ * Frees memory allocated for a package entry.
+ *
+ * @param e Package entry to free.
+ */
 static void free_pkg_entry(PkgEntry *e) {
   if (e == NULL) return;
   free(e->name);
@@ -276,6 +343,14 @@ static void free_pkg_entry(PkgEntry *e) {
 }
 
 
+/**
+ * Parses a single package entry object from JSON.
+ *
+ * @param p Pointer to current position in JSON (will be updated to position
+ *          after the parsed entry).
+ * @param entry Package entry structure to populate.
+ * @return 0 on success, -1 on parse error.
+ */
 static int parse_pkg_entry(const char **p, PkgEntry *entry) {
   const char *s = *p;
   s = skip_ws(s);
@@ -344,6 +419,13 @@ error:
 // Package Loading
 // ---------------------------------------------------------------------------
 
+/**
+ * Reads an entire file into memory.
+ *
+ * @param path Path to the file to read.
+ * @return Dynamically allocated string containing file contents, or NULL on
+ *         error. Caller must free the returned string.
+ */
 static char *read_file(const char *path) {
   FILE *f = fopen(path, "r");
   if (f == NULL) {
@@ -380,6 +462,16 @@ static char *read_file(const char *path) {
 }
 
 
+/**
+ * Loads installed packages from pkgdb.json and registers them with the shell.
+ *
+ * Parses ~/.jshell/pkgs/pkgdb.json and registers each package's commands
+ * with the shell's command registry. This allows installed packages to be
+ * executed as commands.
+ *
+ * @return Number of package commands successfully loaded, or 0 if no packages
+ *         or database doesn't exist. Returns -1 on critical errors.
+ */
 int jshell_load_installed_packages(void) {
   char *db_path = get_pkgdb_path();
   if (db_path == NULL) {
@@ -524,6 +616,14 @@ int jshell_load_installed_packages(void) {
 }
 
 
+/**
+ * Reloads all installed packages.
+ *
+ * Unregisters all currently loaded package commands and re-parses the
+ * package database. Useful after package installation or removal.
+ *
+ * @return Number of package commands successfully loaded.
+ */
 int jshell_reload_packages(void) {
   jshell_unregister_all_package_commands();
   return jshell_load_installed_packages();

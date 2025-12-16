@@ -1,3 +1,8 @@
+/**
+ * @file jshell_socketpair.c
+ * @brief Pipe and socketpair creation utilities for inter-process communication.
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <unistd.h>
@@ -7,6 +12,12 @@
 #include "utils/jbox_utils.h"
 
 
+/**
+ * Create a pipe or socketpair for inter-process communication.
+ * @param p Pointer to JShellPipe structure to initialize.
+ * @param use_socketpair If true, create socketpair; otherwise create pipe.
+ * @return 0 on success, -1 on failure.
+ */
 int jshell_create_pipe(JShellPipe* p, bool use_socketpair) {
   if (p == NULL) {
     return -1;
@@ -39,6 +50,10 @@ int jshell_create_pipe(JShellPipe* p, bool use_socketpair) {
 }
 
 
+/**
+ * Close both ends of a pipe.
+ * @param p Pointer to JShellPipe to close.
+ */
 void jshell_close_pipe(JShellPipe* p) {
   if (p == NULL) {
     return;
@@ -49,6 +64,10 @@ void jshell_close_pipe(JShellPipe* p) {
 }
 
 
+/**
+ * Close the read end of a pipe.
+ * @param p Pointer to JShellPipe.
+ */
 void jshell_close_pipe_read(JShellPipe* p) {
   if (p == NULL) {
     return;
@@ -61,6 +80,10 @@ void jshell_close_pipe_read(JShellPipe* p) {
 }
 
 
+/**
+ * Close the write end of a pipe.
+ * @param p Pointer to JShellPipe.
+ */
 void jshell_close_pipe_write(JShellPipe* p) {
   if (p == NULL) {
     return;

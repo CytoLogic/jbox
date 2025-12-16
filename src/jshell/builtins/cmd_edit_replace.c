@@ -1,3 +1,8 @@
+/**
+ * @file cmd_edit_replace.c
+ * @brief Global find/replace with regex in a file command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,9 @@
 #include "jshell/jshell_signals.h"
 
 
+/**
+ * Command-line arguments for edit-replace command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *case_insensitive;
@@ -23,6 +31,10 @@ typedef struct {
 } edit_replace_args_t;
 
 
+/**
+ * Builds the argument table for edit-replace command.
+ * @param args Pointer to argument structure to populate
+ */
 static void build_edit_replace_argtable(edit_replace_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->case_insensitive = arg_lit0("i", NULL, "case-insensitive matching");
@@ -45,12 +57,20 @@ static void build_edit_replace_argtable(edit_replace_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the argument table.
+ * @param args Pointer to argument structure to clean up
+ */
 static void cleanup_edit_replace_argtable(edit_replace_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the edit-replace command.
+ * @param out Output stream for usage information
+ */
 static void edit_replace_print_usage(FILE *out) {
   edit_replace_args_t args;
   build_edit_replace_argtable(&args);
@@ -63,6 +83,12 @@ static void edit_replace_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -91,6 +117,14 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Prints a JSON-formatted result message.
+ * @param path File path
+ * @param status Status string ("ok", "error", or "interrupted")
+ * @param matches Number of matches found
+ * @param replacements Number of replacements made
+ * @param message Optional error message (can be NULL)
+ */
 static void print_json_result(const char *path, const char *status,
                               int matches, int replacements,
                               const char *message) {
@@ -110,6 +144,15 @@ static void print_json_result(const char *path, const char *status,
 }
 
 
+/**
+ * Replaces all occurrences of a literal string with another string.
+ * @param str Input string to search
+ * @param old String to find
+ * @param new_str Replacement string
+ * @param case_insensitive Whether to perform case-insensitive matching
+ * @param count Output parameter for number of replacements made
+ * @return Newly allocated string with replacements, or NULL on error
+ */
 static char *str_replace_literal(const char *str, const char *old,
                                   const char *new_str, int case_insensitive,
                                   int *count) {
@@ -173,6 +216,14 @@ static char *str_replace_literal(const char *str, const char *old,
 }
 
 
+/**
+ * Replaces all matches of a compiled regex pattern with a replacement string.
+ * @param str Input string to search
+ * @param regex Compiled regex pattern
+ * @param replacement Replacement string
+ * @param count Output parameter for number of replacements made
+ * @return Newly allocated string with replacements, or NULL on error
+ */
 static char *str_replace_regex(const char *str, regex_t *regex,
                                 const char *replacement, int *count) {
   *count = 0;
@@ -238,6 +289,9 @@ static char *str_replace_regex(const char *str, regex_t *regex,
 }
 
 
+/**
+ * Dynamic buffer for storing lines of text from a file
+ */
 typedef struct {
   char **lines;
   size_t count;
@@ -245,6 +299,10 @@ typedef struct {
 } line_buffer_t;
 
 
+/**
+ * Initializes a line buffer to empty state.
+ * @param buf Pointer to line buffer to initialize
+ */
 static void line_buffer_init(line_buffer_t *buf) {
   buf->lines = NULL;
   buf->count = 0;
@@ -252,6 +310,10 @@ static void line_buffer_init(line_buffer_t *buf) {
 }
 
 
+/**
+ * Frees all memory associated with a line buffer.
+ * @param buf Pointer to line buffer to free
+ */
 static void line_buffer_free(line_buffer_t *buf) {
   for (size_t i = 0; i < buf->count; i++) {
     free(buf->lines[i]);
@@ -263,6 +325,12 @@ static void line_buffer_free(line_buffer_t *buf) {
 }
 
 
+/**
+ * Adds a line to the end of a line buffer.
+ * @param buf Pointer to line buffer
+ * @param line Line to add (will be duplicated)
+ * @return 0 on success, -1 on memory allocation failure
+ */
 static int line_buffer_add(line_buffer_t *buf, const char *line) {
   if (buf->count >= buf->capacity) {
     size_t new_cap = buf->capacity == 0 ? 256 : buf->capacity * 2;
@@ -278,6 +346,12 @@ static int line_buffer_add(line_buffer_t *buf, const char *line) {
 }
 
 
+/**
+ * Reads all lines from a file into a line buffer.
+ * @param path Path to file to read
+ * @param buf Pointer to line buffer to populate
+ * @return 0 on success, -1 on error, -2 if interrupted
+ */
 static int read_file_lines(const char *path, line_buffer_t *buf) {
   FILE *fp = fopen(path, "r");
   if (!fp) return -1;
@@ -310,6 +384,12 @@ static int read_file_lines(const char *path, line_buffer_t *buf) {
 }
 
 
+/**
+ * Writes all lines from a buffer to a file.
+ * @param path Path to file to write
+ * @param buf Pointer to line buffer containing lines to write
+ * @return 0 on success, -1 on error
+ */
 static int write_file_lines(const char *path, line_buffer_t *buf) {
   FILE *fp = fopen(path, "w");
   if (!fp) return -1;
@@ -326,6 +406,12 @@ static int write_file_lines(const char *path, line_buffer_t *buf) {
 }
 
 
+/**
+ * Main entry point for the edit-replace command.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return 0 on success, non-zero on error, 130 if interrupted
+ */
 static int edit_replace_run(int argc, char **argv) {
   edit_replace_args_t args;
   build_edit_replace_argtable(&args);
@@ -479,6 +565,9 @@ static int edit_replace_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for edit-replace
+ */
 const jshell_cmd_spec_t cmd_edit_replace_spec = {
   .name = "edit-replace",
   .summary = "global find/replace with regex in a file",
@@ -490,6 +579,9 @@ const jshell_cmd_spec_t cmd_edit_replace_spec = {
 };
 
 
+/**
+ * Registers the edit-replace command with the shell command registry.
+ */
 void jshell_register_edit_replace_command(void) {
   jshell_register_command(&cmd_edit_replace_spec);
 }

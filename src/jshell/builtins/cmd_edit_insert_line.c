@@ -1,3 +1,8 @@
+/**
+ * @file cmd_edit_insert_line.c
+ * @brief Insert a line before a given line number in a file
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Command-line arguments for edit-insert-line command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -18,6 +26,10 @@ typedef struct {
 } edit_insert_line_args_t;
 
 
+/**
+ * Builds the argument table for edit-insert-line command.
+ * @param args Pointer to argument structure to populate
+ */
 static void build_edit_insert_line_argtable(edit_insert_line_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -36,12 +48,20 @@ static void build_edit_insert_line_argtable(edit_insert_line_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the argument table.
+ * @param args Pointer to argument structure to clean up
+ */
 static void cleanup_edit_insert_line_argtable(edit_insert_line_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the edit-insert-line command.
+ * @param out Output stream for usage information
+ */
 static void edit_insert_line_print_usage(FILE *out) {
   edit_insert_line_args_t args;
   build_edit_insert_line_argtable(&args);
@@ -54,6 +74,12 @@ static void edit_insert_line_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -82,6 +108,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Prints a JSON-formatted result message.
+ * @param path File path
+ * @param line Line number
+ * @param status Status string ("ok" or "error")
+ * @param message Optional error message (can be NULL)
+ */
 static void print_json_result(const char *path, int line, const char *status,
                               const char *message) {
   char escaped_path[512];
@@ -100,6 +133,9 @@ static void print_json_result(const char *path, int line, const char *status,
 }
 
 
+/**
+ * Dynamic buffer for storing lines of text from a file
+ */
 typedef struct {
   char **lines;
   size_t count;
@@ -107,6 +143,10 @@ typedef struct {
 } line_buffer_t;
 
 
+/**
+ * Initializes a line buffer to empty state.
+ * @param buf Pointer to line buffer to initialize
+ */
 static void line_buffer_init(line_buffer_t *buf) {
   buf->lines = NULL;
   buf->count = 0;
@@ -114,6 +154,10 @@ static void line_buffer_init(line_buffer_t *buf) {
 }
 
 
+/**
+ * Frees all memory associated with a line buffer.
+ * @param buf Pointer to line buffer to free
+ */
 static void line_buffer_free(line_buffer_t *buf) {
   for (size_t i = 0; i < buf->count; i++) {
     free(buf->lines[i]);
@@ -125,6 +169,12 @@ static void line_buffer_free(line_buffer_t *buf) {
 }
 
 
+/**
+ * Adds a line to the end of a line buffer.
+ * @param buf Pointer to line buffer
+ * @param line Line to add (will be duplicated)
+ * @return 0 on success, -1 on memory allocation failure
+ */
 static int line_buffer_add(line_buffer_t *buf, const char *line) {
   if (buf->count >= buf->capacity) {
     size_t new_cap = buf->capacity == 0 ? 256 : buf->capacity * 2;
@@ -140,6 +190,13 @@ static int line_buffer_add(line_buffer_t *buf, const char *line) {
 }
 
 
+/**
+ * Inserts a line at a specific position in a line buffer.
+ * @param buf Pointer to line buffer
+ * @param index Position to insert at (0-based)
+ * @param line Line to insert (will be duplicated)
+ * @return 0 on success, -1 on memory allocation failure
+ */
 static int line_buffer_insert(line_buffer_t *buf, size_t index,
                               const char *line) {
   if (buf->count >= buf->capacity) {
@@ -161,6 +218,12 @@ static int line_buffer_insert(line_buffer_t *buf, size_t index,
 }
 
 
+/**
+ * Reads all lines from a file into a line buffer.
+ * @param path Path to file to read
+ * @param buf Pointer to line buffer to populate
+ * @return 0 on success, -1 on error
+ */
 static int read_file_lines(const char *path, line_buffer_t *buf) {
   FILE *fp = fopen(path, "r");
   if (!fp) return -1;
@@ -186,6 +249,12 @@ static int read_file_lines(const char *path, line_buffer_t *buf) {
 }
 
 
+/**
+ * Writes all lines from a buffer to a file.
+ * @param path Path to file to write
+ * @param buf Pointer to line buffer containing lines to write
+ * @return 0 on success, -1 on error
+ */
 static int write_file_lines(const char *path, line_buffer_t *buf) {
   FILE *fp = fopen(path, "w");
   if (!fp) return -1;
@@ -202,6 +271,12 @@ static int write_file_lines(const char *path, line_buffer_t *buf) {
 }
 
 
+/**
+ * Main entry point for the edit-insert-line command.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return 0 on success, non-zero on error
+ */
 static int edit_insert_line_run(int argc, char **argv) {
   edit_insert_line_args_t args;
   build_edit_insert_line_argtable(&args);
@@ -297,6 +372,9 @@ static int edit_insert_line_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for edit-insert-line
+ */
 const jshell_cmd_spec_t cmd_edit_insert_line_spec = {
   .name = "edit-insert-line",
   .summary = "insert a line before a given line number",
@@ -308,6 +386,9 @@ const jshell_cmd_spec_t cmd_edit_insert_line_spec = {
 };
 
 
+/**
+ * Registers the edit-insert-line command with the shell command registry.
+ */
 void jshell_register_edit_insert_line_command(void) {
   jshell_register_command(&cmd_edit_insert_line_spec);
 }

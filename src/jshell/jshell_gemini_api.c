@@ -1,3 +1,19 @@
+/**
+ * @file jshell_gemini_api.c
+ * @brief HTTP client for Google Gemini API
+ *
+ * Provides low-level integration with the Google Gemini API using libcurl.
+ * Handles JSON request/response formatting, HTTP communication, error
+ * handling, and user feedback (spinner) during API calls.
+ *
+ * Features:
+ * - JSON request building with proper escaping
+ * - Response parsing and content extraction
+ * - Visual spinner feedback during API calls
+ * - Interrupt handling (Ctrl+C support)
+ * - Comprehensive error reporting
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,17 +23,31 @@
 #include "jshell_signals.h"
 
 
+/** Base URL for Gemini API endpoints */
 #define GEMINI_API_URL_BASE \
   "https://generativelanguage.googleapis.com/v1beta/models/"
 
 
+/** Buffer for accumulating HTTP response data */
 typedef struct {
-  char *data;
-  size_t size;
-  size_t capacity;
+  char *data;         /**< Response data buffer */
+  size_t size;        /**< Current data size */
+  size_t capacity;    /**< Buffer capacity */
 } ResponseBuffer;
 
 
+/**
+ * Callback function for writing HTTP response data.
+ *
+ * Called by libcurl when response data is received. Accumulates data
+ * into a ResponseBuffer, automatically growing the buffer as needed.
+ *
+ * @param contents Pointer to received data
+ * @param size Size of each data element
+ * @param nmemb Number of data elements
+ * @param userp User-provided pointer (ResponseBuffer*)
+ * @return Number of bytes processed, or 0 on error
+ */
 static size_t write_callback(void *contents, size_t size, size_t nmemb,
                              void *userp) {
   size_t realsize = size * nmemb;
@@ -44,16 +74,30 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb,
 }
 
 
-/* Spinner state */
+/** Spinner animation frames */
 static const char *SPINNER_FRAMES[] = {"|", "/", "-", "\\"};
+
+/** Number of spinner frames */
 static const int SPINNER_FRAME_COUNT = 4;
+
+/** Current spinner frame index */
 static int g_spinner_frame = 0;
+
+/** Whether spinner is currently active */
 static int g_spinner_active = 0;
 
+/** ANSI escape code for green text */
 #define GREEN "\033[32m"
+
+/** ANSI escape code to reset text formatting */
 #define RESET "\033[0m"
 
 
+/**
+ * Start the spinner animation.
+ *
+ * Initializes spinner state and displays the first frame.
+ */
 static void spinner_start(void) {
   g_spinner_frame = 0;
   g_spinner_active = 1;
@@ -62,6 +106,9 @@ static void spinner_start(void) {
 }
 
 
+/**
+ * Stop the spinner animation and clear it from the terminal.
+ */
 static void spinner_stop(void) {
   if (g_spinner_active) {
     fprintf(stderr, "\r \r");  /* Clear the spinner */
@@ -71,6 +118,20 @@ static void spinner_stop(void) {
 }
 
 
+/**
+ * Progress callback for libcurl.
+ *
+ * Called periodically during the HTTP request to:
+ * - Check for user interrupts (Ctrl+C)
+ * - Update the spinner animation
+ *
+ * @param clientp User data (unused)
+ * @param dltotal Total bytes to download (unused)
+ * @param dlnow Bytes downloaded so far (unused)
+ * @param ultotal Total bytes to upload (unused)
+ * @param ulnow Bytes uploaded so far (unused)
+ * @return 0 to continue, 1 to abort the request
+ */
 static int progress_callback(void *clientp, curl_off_t dltotal,
                              curl_off_t dlnow, curl_off_t ultotal,
                              curl_off_t ulnow) {
@@ -160,9 +221,11 @@ static char *json_escape_string(const char *str) {
 
 /**
  * Build JSON request body for Gemini API.
- * Returns a newly allocated string that must be freed.
  *
- * Gemini format:
+ * Constructs a properly formatted JSON request with escaped strings for
+ * the Gemini API's generateContent endpoint.
+ *
+ * Request format:
  * {
  *   "contents": [
  *     {"role": "user", "parts": [{"text": "..."}]}
@@ -170,6 +233,12 @@ static char *json_escape_string(const char *str) {
  *   "systemInstruction": {"parts": [{"text": "..."}]},
  *   "generationConfig": {"maxOutputTokens": N}
  * }
+ *
+ * @param system_prompt System prompt to set context (may be NULL or empty)
+ * @param user_message User's message content
+ * @param max_tokens Maximum output tokens to generate
+ * @return Newly allocated JSON string, or NULL on allocation failure.
+ *         Caller must free the returned string.
  */
 static char *build_request_json(const char *system_prompt,
                                 const char *user_message, int max_tokens) {
@@ -209,8 +278,14 @@ static char *build_request_json(const char *system_prompt,
 
 
 /**
- * Build the full API URL with model.
- * Returns a newly allocated string that must be freed.
+ * Build the full API URL for the Gemini endpoint.
+ *
+ * Constructs the complete URL by combining the base URL, model name,
+ * and the generateContent endpoint.
+ *
+ * @param model Model identifier (e.g., "gemini-2.5-flash")
+ * @return Newly allocated URL string, or NULL on allocation failure.
+ *         Caller must free the returned string.
  */
 static char *build_api_url(const char *model) {
   /* URL format: BASE + model + ":generateContent" */
@@ -227,10 +302,13 @@ static char *build_api_url(const char *model) {
 
 
 /**
- * Extract content text from Gemini API response.
- * Returns a newly allocated string that must be freed, or NULL on error.
+ * Extract content text from a successful Gemini API response.
  *
- * Response format:
+ * Parses the JSON response to extract the generated text from the
+ * candidates[0].content.parts[0].text field. Handles JSON unescaping
+ * to convert escape sequences back to their original characters.
+ *
+ * Expected response format:
  * {
  *   "candidates": [
  *     {
@@ -241,6 +319,10 @@ static char *build_api_url(const char *model) {
  *     }
  *   ]
  * }
+ *
+ * @param json_response Complete JSON response from the API
+ * @return Newly allocated string with extracted and unescaped content,
+ *         or NULL if parsing fails. Caller must free the returned string.
  */
 static char *extract_response_content(const char *json_response) {
   /* Find "candidates" array */
@@ -342,10 +424,12 @@ static char *extract_response_content(const char *json_response) {
 
 
 /**
- * Extract error message from Gemini API error response.
- * Returns a newly allocated string that must be freed, or NULL.
+ * Extract error message from a Gemini API error response.
  *
- * Error format:
+ * Parses the JSON error response to extract the error message from
+ * the error.message field. Does not unescape the message string.
+ *
+ * Error response format:
  * {
  *   "error": {
  *     "code": 400,
@@ -353,6 +437,10 @@ static char *extract_response_content(const char *json_response) {
  *     "status": "..."
  *   }
  * }
+ *
+ * @param json_response Complete JSON error response from the API
+ * @return Newly allocated string with error message, or NULL if parsing fails.
+ *         Caller must free the returned string.
  */
 static char *extract_error_message(const char *json_response) {
   const char *error_key = "\"error\"";
@@ -403,6 +491,30 @@ static char *extract_error_message(const char *json_response) {
 }
 
 
+/**
+ * Send a request to the Google Gemini API.
+ *
+ * Makes an HTTPS POST request to the Gemini API's generateContent endpoint
+ * with the specified parameters. Displays a spinner during the request and
+ * supports interrupt handling (Ctrl+C).
+ *
+ * The function performs the following steps:
+ * 1. Validates input parameters
+ * 2. Initializes libcurl
+ * 3. Builds the API URL and request JSON
+ * 4. Configures HTTP headers with API key
+ * 5. Performs the request with spinner feedback
+ * 6. Parses the response (success or error)
+ * 7. Cleans up all resources
+ *
+ * @param api_key Google API key for authentication (required)
+ * @param model Model identifier (e.g., "gemini-2.5-flash") (required)
+ * @param system_prompt System prompt to set context (may be NULL or empty)
+ * @param user_message User's message content (required)
+ * @param max_tokens Maximum tokens in response
+ * @return GeminiResponse containing either content (on success) or error.
+ *         Caller must call jshell_free_gemini_response() to free memory.
+ */
 GeminiResponse jshell_gemini_request(
     const char *api_key,
     const char *model,
@@ -531,6 +643,15 @@ GeminiResponse jshell_gemini_request(
 }
 
 
+/**
+ * Free memory allocated in a GeminiResponse.
+ *
+ * Frees the content and error strings and resets all fields to their
+ * initial state. Safe to call on a response that has already been freed
+ * or was never populated.
+ *
+ * @param resp Pointer to GeminiResponse to free (may be NULL)
+ */
 void jshell_free_gemini_response(GeminiResponse *resp) {
   if (resp) {
     free(resp->content);

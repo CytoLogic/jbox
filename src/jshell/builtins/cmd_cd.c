@@ -1,3 +1,8 @@
+/**
+ * @file cmd_cd.c
+ * @brief Change directory builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the cd command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_file *dir;
@@ -16,6 +24,11 @@ typedef struct {
 } cd_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the cd command.
+ *
+ * @param args Pointer to cd_args_t structure to populate
+ */
 static void build_cd_argtable(cd_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->dir  = arg_file0(NULL, NULL, "DIR", "directory to change to");
@@ -27,12 +40,22 @@ static void build_cd_argtable(cd_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the cd argtable.
+ *
+ * @param args Pointer to cd_args_t structure to cleanup
+ */
 static void cleanup_cd_argtable(cd_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the cd command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void cd_print_usage(FILE *out) {
   cd_args_t args;
   build_cd_argtable(&args);
@@ -47,6 +70,13 @@ static void cd_print_usage(FILE *out) {
 }
 
 
+/**
+ * Executes the cd command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int cd_run(int argc, char **argv) {
   cd_args_t args;
   build_cd_argtable(&args);
@@ -90,6 +120,9 @@ static int cd_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the cd builtin.
+ */
 const jshell_cmd_spec_t cmd_cd_spec = {
   .name = "cd",
   .summary = "change the shell working directory",
@@ -101,6 +134,9 @@ const jshell_cmd_spec_t cmd_cd_spec = {
 };
 
 
+/**
+ * Registers the cd command with the shell command registry.
+ */
 void jshell_register_cd_command(void) {
   jshell_register_command(&cmd_cd_spec);
 }

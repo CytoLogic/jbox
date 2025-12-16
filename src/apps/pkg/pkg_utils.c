@@ -1,3 +1,7 @@
+/** @file pkg_utils.c
+ *  @brief Utility functions for package management (paths, file I/O, etc).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +14,9 @@
 #include "pkg_utils.h"
 
 
+/** Gets the jshell home directory path.
+ *  @return Allocated path string (~/.jshell), or NULL on error. Caller must free.
+ */
 char *pkg_get_home_dir(void) {
   const char *home = getenv("HOME");
   if (home == NULL) {
@@ -27,6 +34,9 @@ char *pkg_get_home_dir(void) {
 }
 
 
+/** Gets the packages directory path.
+ *  @return Allocated path string (~/.jshell/pkgs), or NULL on error. Caller must free.
+ */
 char *pkg_get_pkgs_dir(void) {
   char *home = pkg_get_home_dir();
   if (home == NULL) {
@@ -46,6 +56,9 @@ char *pkg_get_pkgs_dir(void) {
 }
 
 
+/** Gets the bin directory path.
+ *  @return Allocated path string (~/.jshell/bin), or NULL on error. Caller must free.
+ */
 char *pkg_get_bin_dir(void) {
   char *home = pkg_get_home_dir();
   if (home == NULL) {
@@ -65,6 +78,9 @@ char *pkg_get_bin_dir(void) {
 }
 
 
+/** Gets the package database file path (JSON format).
+ *  @return Allocated path string, or NULL on error. Caller must free.
+ */
 char *pkg_get_db_path(void) {
   char *pkgs = pkg_get_pkgs_dir();
   if (pkgs == NULL) {
@@ -84,6 +100,9 @@ char *pkg_get_db_path(void) {
 }
 
 
+/** Gets the legacy package database file path (text format).
+ *  @return Allocated path string, or NULL on error. Caller must free.
+ */
 char *pkg_get_db_path_txt(void) {
   char *home = pkg_get_home_dir();
   if (home == NULL) {
@@ -103,6 +122,9 @@ char *pkg_get_db_path_txt(void) {
 }
 
 
+/** Gets the temporary directory path for package operations.
+ *  @return Allocated path string, or NULL on error. Caller must free.
+ */
 char *pkg_get_tmp_dir(void) {
   char *pkgs = pkg_get_pkgs_dir();
   if (pkgs == NULL) {
@@ -122,6 +144,10 @@ char *pkg_get_tmp_dir(void) {
 }
 
 
+/** Ensures a directory exists, creating it if necessary.
+ *  @param path Directory path
+ *  @return 0 on success, -1 on error
+ */
 static int ensure_dir(const char *path) {
   struct stat st;
   if (stat(path, &st) == 0) {
@@ -138,6 +164,9 @@ static int ensure_dir(const char *path) {
 }
 
 
+/** Ensures all package-related directories exist.
+ *  @return 0 on success, -1 on error
+ */
 int pkg_ensure_dirs(void) {
   char *home = pkg_get_home_dir();
   if (home == NULL) {
@@ -176,6 +205,10 @@ int pkg_ensure_dirs(void) {
 }
 
 
+/** Runs an external command and waits for completion.
+ *  @param argv NULL-terminated argument array
+ *  @return Exit status of command, or -1 on error
+ */
 int pkg_run_command(char *const argv[]) {
   pid_t pid = fork();
 
@@ -201,6 +234,10 @@ int pkg_run_command(char *const argv[]) {
 }
 
 
+/** Recursively removes a directory and all its contents.
+ *  @param path Directory path
+ *  @return 0 on success, -1 on error
+ */
 int pkg_remove_dir_recursive(const char *path) {
   DIR *dir = opendir(path);
   if (dir == NULL) {
@@ -263,6 +300,10 @@ int pkg_remove_dir_recursive(const char *path) {
 }
 
 
+/** Reads an entire file into memory.
+ *  @param path File path
+ *  @return Allocated file contents as string, or NULL on error. Caller must free.
+ */
 char *pkg_read_file(const char *path) {
   FILE *f = fopen(path, "r");
   if (f == NULL) {
@@ -299,6 +340,9 @@ char *pkg_read_file(const char *path) {
 }
 
 
+/** Ensures the temporary directory exists.
+ *  @return 0 on success, -1 on error
+ */
 int pkg_ensure_tmp_dir(void) {
   if (pkg_ensure_dirs() != 0) {
     return -1;
@@ -315,6 +359,9 @@ int pkg_ensure_tmp_dir(void) {
 }
 
 
+/** Removes the temporary directory and all its contents.
+ *  @return 0 on success, -1 on error
+ */
 int pkg_cleanup_tmp_dir(void) {
   char *tmp = pkg_get_tmp_dir();
   if (tmp == NULL) {

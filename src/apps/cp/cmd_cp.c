@@ -1,3 +1,8 @@
+/**
+ * @file cmd_cp.c
+ * @brief Implementation of the cp command for copying files and directories.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +17,9 @@
 #include "utils/jbox_signals.h"
 
 
+/**
+ * Arguments structure for the cp command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *recursive;
@@ -24,6 +32,11 @@ typedef struct {
 } cp_args_t;
 
 
+/**
+ * Initializes the argtable3 argument definitions for the cp command.
+ *
+ * @param args Pointer to the cp_args_t structure to initialize.
+ */
 static void build_cp_argtable(cp_args_t *args) {
   args->help      = arg_lit0("h", "help", "display this help and exit");
   args->recursive = arg_lit0("r", "recursive", "copy directories recursively");
@@ -43,12 +56,22 @@ static void build_cp_argtable(cp_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_cp_argtable.
+ *
+ * @param args Pointer to the cp_args_t structure to clean up.
+ */
 static void cleanup_cp_argtable(cp_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the cp command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void cp_print_usage(FILE *out) {
   cp_args_t args;
   build_cp_argtable(&args);
@@ -61,6 +84,13 @@ static void cp_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str      The input string to escape.
+ * @param out      Buffer to write the escaped string to.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -89,6 +119,12 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Checks if a path refers to a directory.
+ *
+ * @param path Path to check.
+ * @return Non-zero if path is a directory, 0 otherwise.
+ */
 static int is_directory(const char *path) {
   struct stat st;
   if (stat(path, &st) != 0) {
@@ -98,12 +134,26 @@ static int is_directory(const char *path) {
 }
 
 
+/**
+ * Checks if a file or directory exists at the given path.
+ *
+ * @param path Path to check.
+ * @return Non-zero if path exists, 0 otherwise.
+ */
 static int file_exists(const char *path) {
   struct stat st;
   return stat(path, &st) == 0;
 }
 
 
+/**
+ * Copies a single file from source to destination.
+ *
+ * @param src   Source file path.
+ * @param dest  Destination file path.
+ * @param force If non-zero, overwrite existing destination.
+ * @return 0 on success, -1 on error, -2 if interrupted.
+ */
 static int copy_file(const char *src, const char *dest, int force) {
   if (!force && file_exists(dest)) {
     errno = EEXIST;
@@ -157,9 +207,19 @@ static int copy_file(const char *src, const char *dest, int force) {
 }
 
 
+/* Forward declaration for recursive directory copy */
 static int copy_directory(const char *src, const char *dest, int force);
 
 
+/**
+ * Copies a file or directory entry from source to destination.
+ *
+ * @param src_path  Source path.
+ * @param dest_path Destination path.
+ * @param recursive If non-zero, copy directories recursively.
+ * @param force     If non-zero, overwrite existing files.
+ * @return 0 on success, -1 on error, -2 if interrupted.
+ */
 static int copy_entry(const char *src_path, const char *dest_path,
                       int recursive, int force) {
   struct stat st;
@@ -183,6 +243,14 @@ static int copy_entry(const char *src_path, const char *dest_path,
 }
 
 
+/**
+ * Recursively copies a directory and its contents.
+ *
+ * @param src   Source directory path.
+ * @param dest  Destination directory path.
+ * @param force If non-zero, overwrite existing files.
+ * @return 0 on success, -1 on error, -2 if interrupted.
+ */
 static int copy_directory(const char *src, const char *dest, int force) {
   DIR *dir = opendir(src);
   if (!dir) {
@@ -250,6 +318,15 @@ static int copy_directory(const char *src, const char *dest, int force) {
 }
 
 
+/**
+ * Builds the final destination path for a copy operation.
+ *
+ * If dest is a directory, appends the source basename to it.
+ *
+ * @param src  Source path.
+ * @param dest Destination path.
+ * @return Newly allocated destination path string. Caller must free.
+ */
 static char *build_dest_path(const char *src, const char *dest) {
   if (!is_directory(dest)) {
     return strdup(dest);
@@ -273,6 +350,15 @@ static char *build_dest_path(const char *src, const char *dest) {
 }
 
 
+/**
+ * Main entry point for the cp command.
+ *
+ * Parses arguments and copies files or directories.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int cp_run(int argc, char **argv) {
   cp_args_t args;
   build_cp_argtable(&args);
@@ -360,6 +446,9 @@ static int cp_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the cp command.
+ */
 const jshell_cmd_spec_t cmd_cp_spec = {
   .name = "cp",
   .summary = "copy files and directories",
@@ -372,6 +461,9 @@ const jshell_cmd_spec_t cmd_cp_spec = {
 };
 
 
+/**
+ * Registers the cp command with the shell command registry.
+ */
 void jshell_register_cp_command(void) {
   jshell_register_command(&cmd_cp_spec);
 }

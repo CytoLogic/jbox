@@ -1,3 +1,7 @@
+/** @file cmd_pkg.c
+ *  @brief Package manager command implementation for jshell.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +18,7 @@
 #include "pkg_registry.h"
 
 
+/** Package manager subcommands. */
 typedef enum {
   PKG_CMD_NONE,
   PKG_CMD_LIST,
@@ -28,6 +33,7 @@ typedef enum {
 } pkg_subcommand_t;
 
 
+/** Argument table structure for pkg command. */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -38,11 +44,20 @@ typedef struct {
 } pkg_args_t;
 
 
-// Forward declarations
+/** Compiles a package from a directory with Makefile.
+ *  @param name Package name for display
+ *  @param dir Directory containing Makefile
+ *  @param json_output Whether to output JSON format
+ *  @param verbose Whether to print verbose output
+ *  @return 0 on success, -1 if no Makefile, >0 on compilation failure
+ */
 static int compile_package_dir(const char *name, const char *dir,
                                int json_output, int verbose);
 
 
+/** Builds the argtable for pkg command.
+ *  @param args Pointer to pkg_args_t structure to populate
+ */
 static void build_pkg_argtable(pkg_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -60,12 +75,18 @@ static void build_pkg_argtable(pkg_args_t *args) {
 }
 
 
+/** Cleans up and frees the pkg argtable.
+ *  @param args Pointer to pkg_args_t structure to clean up
+ */
 static void cleanup_pkg_argtable(pkg_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/** Prints usage information for the pkg command.
+ *  @param out Output file stream
+ */
 static void pkg_print_usage(FILE *out) {
   fprintf(out, "Usage: pkg [OPTIONS] COMMAND [ARGS...]\n\n");
   fprintf(out, "Manage jshell packages.\n\n");
@@ -89,6 +110,10 @@ static void pkg_print_usage(FILE *out) {
 }
 
 
+/** Parses a subcommand string into pkg_subcommand_t enum.
+ *  @param cmd Subcommand string
+ *  @return Corresponding pkg_subcommand_t value or PKG_CMD_NONE if unknown
+ */
 static pkg_subcommand_t parse_subcommand(const char *cmd) {
   if (strcmp(cmd, "list") == 0) return PKG_CMD_LIST;
   if (strcmp(cmd, "info") == 0) return PKG_CMD_INFO;
@@ -103,6 +128,10 @@ static pkg_subcommand_t parse_subcommand(const char *cmd) {
 }
 
 
+/** Lists all installed packages.
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_list(int json_output) {
   PkgDb *db = pkg_db_load();
   if (db == NULL) {
@@ -138,6 +167,11 @@ static int pkg_list(int json_output) {
 }
 
 
+/** Shows detailed information about an installed package.
+ *  @param name Package name
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_info(const char *name, int json_output) {
   if (name == NULL) {
     if (json_output) {
@@ -247,6 +281,11 @@ static int pkg_info(const char *name, int json_output) {
 }
 
 
+/** Searches the registry for packages matching a query.
+ *  @param query Search query string
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_search(const char *query, int json_output) {
   if (query == NULL) {
     if (json_output) {
@@ -308,13 +347,25 @@ static int pkg_search(const char *query, int json_output) {
 }
 
 
-// Forward declaration for internal tarball install
+/** Installs a package from a tarball file.
+ *  @param tarball Path to tarball file
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install_from_tarball(const char *tarball, int json_output);
 
-// Forward declaration for single package install (non-all)
+/** Installs a single package by name or tarball path.
+ *  @param arg Package name or tarball path
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install_single(const char *arg, int json_output);
 
 
+/** Installs all packages available in the registry.
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install_all(int json_output) {
   if (!json_output) {
     printf("Fetching package list from registry...\n");
@@ -538,6 +589,11 @@ static int pkg_install_all(int json_output) {
 }
 
 
+/** Installs a package or all packages.
+ *  @param arg Package name, tarball path, or "all" for all packages
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install(const char *arg, int json_output) {
   // Handle "pkg install all" special case
   if (arg != NULL && strcmp(arg, "all") == 0) {
@@ -548,6 +604,11 @@ static int pkg_install(const char *arg, int json_output) {
 }
 
 
+/** Implementation of pkg_install_single.
+ *  @param arg Package name or tarball path
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install_single(const char *arg, int json_output) {
   if (arg == NULL) {
     if (json_output) {
@@ -728,6 +789,11 @@ static int pkg_install_single(const char *arg, int json_output) {
 }
 
 
+/** Implementation of pkg_install_from_tarball.
+ *  @param tarball Path to tarball file
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_install_from_tarball(const char *tarball, int json_output) {
   if (pkg_ensure_tmp_dir() != 0) {
     if (json_output) {
@@ -964,6 +1030,11 @@ static int pkg_install_from_tarball(const char *tarball, int json_output) {
 }
 
 
+/** Removes an installed package.
+ *  @param name Package name
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_remove(const char *name, int json_output) {
   if (name == NULL) {
     if (json_output) {
@@ -1107,6 +1178,12 @@ static int pkg_remove(const char *name, int json_output) {
 }
 
 
+/** Builds a package tarball from source directory.
+ *  @param src_dir Source directory containing pkg.json
+ *  @param output_tar Output tarball path
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_build(const char *src_dir, const char *output_tar,
                      int json_output) {
   if (src_dir == NULL) {
@@ -1223,6 +1300,10 @@ static int pkg_build(const char *src_dir, const char *output_tar,
 }
 
 
+/** Checks for available package updates.
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_check_update(int json_output) {
   PkgDb *db = pkg_db_load();
   if (db == NULL) {
@@ -1363,6 +1444,10 @@ static int pkg_check_update(int json_output) {
 }
 
 
+/** Upgrades all packages with available updates.
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_upgrade(int json_output) {
   if (!json_output) {
     printf("Checking for updates...\n");
@@ -1635,7 +1720,13 @@ static int pkg_upgrade(int json_output) {
 }
 
 
-// Helper: compile a package from a directory with Makefile
+/** Implementation of compile_package_dir.
+ *  @param name Package name for display
+ *  @param dir Directory containing Makefile
+ *  @param json_output Whether to output in JSON format
+ *  @param verbose Whether to print verbose output
+ *  @return 0 on success, -1 if no Makefile, >0 on compilation failure
+ */
 static int compile_package_dir(const char *name, const char *dir,
                                int json_output, int verbose) {
   struct stat st;
@@ -1662,7 +1753,10 @@ static int compile_package_dir(const char *name, const char *dir,
 }
 
 
-// Helper: get installed package directory path
+/** Gets the installation directory path for a package.
+ *  @param name Package name
+ *  @return Allocated path string, or NULL on error. Caller must free.
+ */
 static char *get_installed_pkg_dir(const char *name) {
   PkgDb *db = pkg_db_load();
   if (db == NULL) return NULL;
@@ -1691,7 +1785,11 @@ static char *get_installed_pkg_dir(const char *name) {
 }
 
 
-// Helper: update symlink for compiled binary
+/** Updates the symlink for a compiled package binary.
+ *  @param name Package name
+ *  @param pkg_dir Package installation directory
+ *  @return 0 on success, -1 on error
+ */
 static int update_pkg_symlink(const char *name, const char *pkg_dir) {
   char *bin_dir = pkg_get_bin_dir();
   if (bin_dir == NULL) return -1;
@@ -1722,6 +1820,11 @@ static int update_pkg_symlink(const char *name, const char *pkg_dir) {
 }
 
 
+/** Compiles packages from source.
+ *  @param app_name Specific package name, or NULL to compile all
+ *  @param json_output Whether to output in JSON format
+ *  @return 0 on success, 1 on error
+ */
 static int pkg_compile(const char *app_name, int json_output) {
   struct stat st;
 
@@ -1967,6 +2070,11 @@ static int pkg_compile(const char *app_name, int json_output) {
 }
 
 
+/** Main entry point for the pkg command.
+ *  @param argc Argument count
+ *  @param argv Argument vector
+ *  @return Exit status code
+ */
 static int pkg_run(int argc, char **argv) {
   pkg_args_t args;
   build_pkg_argtable(&args);
@@ -2041,6 +2149,7 @@ static int pkg_run(int argc, char **argv) {
 }
 
 
+/** Command specification for pkg. */
 const jshell_cmd_spec_t cmd_pkg_spec = {
   .name = "pkg",
   .summary = "manage jshell packages",
@@ -2052,6 +2161,7 @@ const jshell_cmd_spec_t cmd_pkg_spec = {
 };
 
 
+/** Registers the pkg command with the shell command registry. */
 void jshell_register_pkg_command(void) {
   jshell_register_command(&cmd_pkg_spec);
 }

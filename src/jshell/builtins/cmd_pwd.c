@@ -1,3 +1,8 @@
+/**
+ * @file cmd_pwd.c
+ * @brief Print working directory builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +14,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the pwd command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -17,6 +25,11 @@ typedef struct {
 } pwd_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the pwd command.
+ *
+ * @param args Pointer to pwd_args_t structure to populate
+ */
 static void build_pwd_argtable(pwd_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -28,12 +41,22 @@ static void build_pwd_argtable(pwd_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the pwd argtable.
+ *
+ * @param args Pointer to pwd_args_t structure to cleanup
+ */
 static void cleanup_pwd_argtable(pwd_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the pwd command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void pwd_print_usage(FILE *out) {
   pwd_args_t args;
   build_pwd_argtable(&args);
@@ -46,6 +69,13 @@ static void pwd_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -74,6 +104,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Executes the pwd command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int pwd_run(int argc, char **argv) {
   pwd_args_t args;
   build_pwd_argtable(&args);
@@ -120,6 +157,9 @@ static int pwd_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the pwd builtin.
+ */
 const jshell_cmd_spec_t cmd_pwd_spec = {
   .name = "pwd",
   .summary = "print working directory",
@@ -130,6 +170,9 @@ const jshell_cmd_spec_t cmd_pwd_spec = {
 };
 
 
+/**
+ * Registers the pwd command with the shell command registry.
+ */
 void jshell_register_pwd_command(void) {
   jshell_register_command(&cmd_pwd_spec);
 }

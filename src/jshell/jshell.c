@@ -1,3 +1,8 @@
+/**
+ * @file jshell.c
+ * @brief Main entry point and interactive loop for the jbox shell
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,19 +27,29 @@
 #include "jshell.h"
 
 
+/** Global variable tracking the exit status of the last executed command */
 static int g_last_exit_status = 0;
 
 
+/**
+ * Get the exit status of the last executed command.
+ * @return Exit status code (0 for success, non-zero for failure)
+ */
 int jshell_get_last_exit_status(void) {
   return g_last_exit_status;
 }
 
 
+/**
+ * Set the exit status of the last executed command.
+ * @param status Exit status code to store
+ */
 void jshell_set_last_exit_status(int status) {
   g_last_exit_status = status;
 }
 
 
+/** Structure holding parsed command-line arguments for the jshell binary */
 typedef struct {
   struct arg_lit *help;
   struct arg_str *cmd;
@@ -43,6 +58,10 @@ typedef struct {
 } jshell_args_t;
 
 
+/**
+ * Build the argtable3 argument specification for jshell.
+ * @param args Pointer to jshell_args_t structure to populate
+ */
 static void build_jshell_argtable(jshell_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->cmd  = arg_str0("c", NULL, "COMMAND", "execute command and exit");
@@ -55,12 +74,20 @@ static void build_jshell_argtable(jshell_args_t *args) {
 }
 
 
+/**
+ * Clean up and free the argtable3 argument specification.
+ * @param args Pointer to jshell_args_t structure to free
+ */
 static void cleanup_jshell_argtable(jshell_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Print usage information for the jshell command.
+ * @param out Output stream to write usage information to
+ */
 void jshell_print_usage(FILE *out) {
   jshell_args_t args;
   build_jshell_argtable(&args);
@@ -74,6 +101,12 @@ void jshell_print_usage(FILE *out) {
 }
 
 
+/**
+ * Execute a single command string (non-interactive mode).
+ * Initializes all shell subsystems, parses and executes the command.
+ * @param cmd_string Command string to parse and execute
+ * @return Exit status code of the executed command
+ */
 int jshell_exec_string(const char *cmd_string) {
   Input parse_tree;
 
@@ -105,6 +138,12 @@ int jshell_exec_string(const char *cmd_string) {
 }
 
 
+/**
+ * Run the shell in interactive mode (REPL).
+ * Displays prompt, reads commands, parses and executes them in a loop.
+ * Handles line continuation (backslash), command history, and signals.
+ * @return Exit status code (0 on normal exit)
+ */
 static int jshell_interactive(void) {
   char line[1024];
   char full_line[4096] = "";
@@ -204,6 +243,14 @@ static int jshell_interactive(void) {
 }
 
 
+/**
+ * Main entry point for the jshell shell.
+ * Parses command-line arguments and either executes a single command
+ * (with -c option) or runs in interactive mode.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status code
+ */
 int jshell_main(int argc, char **argv) {
   jshell_args_t args;
   build_jshell_argtable(&args);

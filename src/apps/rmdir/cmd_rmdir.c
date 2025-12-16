@@ -1,3 +1,7 @@
+/** @file cmd_rmdir.c
+ *  @brief Implementation of the rmdir command for removing empty directories.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +12,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * @brief Argument structure for rmdir command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -17,6 +24,10 @@ typedef struct {
 } rmdir_args_t;
 
 
+/**
+ * @brief Builds the argtable3 structure for rmdir command arguments.
+ * @param args Pointer to rmdir_args_t structure to populate.
+ */
 static void build_rmdir_argtable(rmdir_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -30,12 +41,20 @@ static void build_rmdir_argtable(rmdir_args_t *args) {
 }
 
 
+/**
+ * @brief Frees memory allocated for the rmdir argtable.
+ * @param args Pointer to rmdir_args_t structure to clean up.
+ */
 static void cleanup_rmdir_argtable(rmdir_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * @brief Prints usage information for the rmdir command.
+ * @param out File stream to write the usage information to.
+ */
 static void rmdir_print_usage(FILE *out) {
   rmdir_args_t args;
   build_rmdir_argtable(&args);
@@ -48,6 +67,12 @@ static void rmdir_print_usage(FILE *out) {
 }
 
 
+/**
+ * @brief Escapes special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -76,6 +101,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * @brief Removes an empty directory and outputs result.
+ * @param path Directory path to remove.
+ * @param show_json If non-zero, output in JSON format.
+ * @param first_entry Pointer to flag tracking first JSON entry.
+ * @return 0 on success, non-zero on failure.
+ */
 static int remove_dir(const char *path, int show_json, int *first_entry) {
   int result = rmdir(path);
 
@@ -108,6 +140,12 @@ static int remove_dir(const char *path, int show_json, int *first_entry) {
 }
 
 
+/**
+ * @brief Main entry point for the rmdir command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, 1 on failure.
+ */
 static int rmdir_run(int argc, char **argv) {
   rmdir_args_t args;
   build_rmdir_argtable(&args);
@@ -150,6 +188,9 @@ static int rmdir_run(int argc, char **argv) {
 }
 
 
+/**
+ * @brief Command specification for rmdir.
+ */
 const jshell_cmd_spec_t cmd_rmdir_spec = {
   .name = "rmdir",
   .summary = "remove empty directories",
@@ -160,6 +201,9 @@ const jshell_cmd_spec_t cmd_rmdir_spec = {
 };
 
 
+/**
+ * @brief Registers the rmdir command with the shell command registry.
+ */
 void jshell_register_rmdir_command(void) {
   jshell_register_command(&cmd_rmdir_spec);
 }

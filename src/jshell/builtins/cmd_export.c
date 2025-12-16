@@ -1,3 +1,8 @@
+/**
+ * @file cmd_export.c
+ * @brief Set environment variables builtin command implementation
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the export command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -16,6 +24,11 @@ typedef struct {
 } export_args_t;
 
 
+/**
+ * Builds the argtable3 structure for the export command.
+ *
+ * @param args Pointer to export_args_t structure to populate
+ */
 static void build_export_argtable(export_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -30,12 +43,22 @@ static void build_export_argtable(export_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the export argtable.
+ *
+ * @param args Pointer to export_args_t structure to cleanup
+ */
 static void cleanup_export_argtable(export_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the export command.
+ *
+ * @param out Output stream to write usage information to
+ */
 static void export_print_usage(FILE *out) {
   export_args_t args;
   build_export_argtable(&args);
@@ -50,6 +73,13 @@ static void export_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -78,6 +108,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Executes the export command.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @return 0 on success, 1 on failure
+ */
 static int export_run(int argc, char **argv) {
   export_args_t args;
   build_export_argtable(&args);
@@ -168,6 +205,9 @@ static int export_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the export builtin.
+ */
 const jshell_cmd_spec_t cmd_export_spec = {
   .name = "export",
   .summary = "set environment variables",
@@ -179,6 +219,9 @@ const jshell_cmd_spec_t cmd_export_spec = {
 };
 
 
+/**
+ * Registers the export command with the shell command registry.
+ */
 void jshell_register_export_command(void) {
   jshell_register_command(&cmd_export_spec);
 }

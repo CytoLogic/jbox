@@ -1,3 +1,8 @@
+/**
+ * @file cmd_less.c
+ * @brief Implementation of the less pager for viewing file contents.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +17,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the less command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *line_numbers;
@@ -21,29 +29,37 @@ typedef struct {
 } less_args_t;
 
 
+/**
+ * State structure for the less pager session.
+ */
 typedef struct {
-  char **lines;
-  size_t line_count;
-  size_t top_line;
-  int rows;
-  int cols;
-  int show_line_numbers;
-  int line_num_width;
-  const char *filename;
-  char search_pattern[256];
-  size_t *search_matches;
-  size_t search_match_count;
-  size_t current_match;
+  char **lines;             /**< Array of line strings */
+  size_t line_count;        /**< Total number of lines */
+  size_t top_line;          /**< Index of the top visible line */
+  int rows;                 /**< Terminal rows */
+  int cols;                 /**< Terminal columns */
+  int show_line_numbers;    /**< Whether to show line numbers */
+  int line_num_width;       /**< Width of line number column */
+  const char *filename;     /**< Name of file being viewed */
+  char search_pattern[256]; /**< Current search pattern */
+  size_t *search_matches;   /**< Array of matching line indices */
+  size_t search_match_count; /**< Number of search matches */
+  size_t current_match;     /**< Index of current match */
 } less_state_t;
 
 
-static struct termios orig_termios;
-static volatile sig_atomic_t term_resized = 0;
-static volatile sig_atomic_t term_suspended = 0;
-static volatile sig_atomic_t term_terminated = 0;
-static volatile sig_atomic_t term_interrupted = 0;
+static struct termios orig_termios;       /**< Original terminal settings */
+static volatile sig_atomic_t term_resized = 0;    /**< Window resize flag */
+static volatile sig_atomic_t term_suspended = 0;  /**< Suspend signal flag */
+static volatile sig_atomic_t term_terminated = 0; /**< Terminate signal flag */
+static volatile sig_atomic_t term_interrupted = 0; /**< Interrupt signal flag */
 
 
+/**
+ * Initializes the argtable3 argument definitions for the less command.
+ *
+ * @param args Pointer to the less_args_t structure to initialize.
+ */
 static void build_less_argtable(less_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->line_numbers = arg_lit0("N", NULL, "show line numbers");
@@ -57,12 +73,22 @@ static void build_less_argtable(less_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_less_argtable.
+ *
+ * @param args Pointer to the less_args_t structure to clean up.
+ */
 static void cleanup_less_argtable(less_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the less command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void less_print_usage(FILE *out) {
   less_args_t args;
   build_less_argtable(&args);
@@ -86,41 +112,64 @@ static void less_print_usage(FILE *out) {
 }
 
 
+/**
+ * Signal handler for SIGWINCH (window resize).
+ */
 static void handle_sigwinch(int sig) {
   (void)sig;
   term_resized = 1;
 }
 
 
+/**
+ * Signal handler for SIGTSTP (suspend).
+ */
 static void handle_sigtstp(int sig) {
   (void)sig;
   term_suspended = 1;
 }
 
 
+/**
+ * Signal handler for SIGCONT (continue after suspend).
+ */
 static void handle_sigcont(int sig) {
   (void)sig;
   /* Terminal state will be restored in main loop */
 }
 
 
+/**
+ * Signal handler for SIGTERM (terminate).
+ */
 static void handle_sigterm(int sig) {
   (void)sig;
   term_terminated = 1;
 }
 
 
+/**
+ * Signal handler for SIGINT (interrupt).
+ */
 static void handle_sigint(int sig) {
   (void)sig;
   term_interrupted = 1;
 }
 
 
+/**
+ * Restores original terminal settings.
+ */
 static void disable_raw_mode(void) {
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
 }
 
 
+/**
+ * Enables raw terminal mode for character-by-character input.
+ *
+ * @return 0 on success, -1 on error.
+ */
 static int enable_raw_mode(void) {
   if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
     return -1;
@@ -141,6 +190,12 @@ static int enable_raw_mode(void) {
 }
 
 
+/**
+ * Gets the current terminal dimensions.
+ *
+ * @param rows Pointer to store number of rows.
+ * @param cols Pointer to store number of columns.
+ */
 static void get_terminal_size(int *rows, int *cols) {
   struct winsize ws;
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
@@ -153,6 +208,13 @@ static void get_terminal_size(int *rows, int *cols) {
 }
 
 
+/**
+ * Splits content string into an array of lines.
+ *
+ * @param content    The content string to split.
+ * @param line_count Pointer to store the number of lines.
+ * @return Array of line strings, or NULL on error. Caller must free.
+ */
 static char **split_lines(const char *content, size_t *line_count) {
   size_t capacity = 256;
   char **lines = malloc(capacity * sizeof(char *));
@@ -211,6 +273,12 @@ static char **split_lines(const char *content, size_t *line_count) {
 }
 
 
+/**
+ * Frees an array of lines allocated by split_lines.
+ *
+ * @param lines      Array of line strings to free.
+ * @param line_count Number of lines in the array.
+ */
 static void free_lines(char **lines, size_t line_count) {
   for (size_t i = 0; i < line_count; i++) {
     free(lines[i]);
@@ -219,6 +287,12 @@ static void free_lines(char **lines, size_t line_count) {
 }
 
 
+/**
+ * Counts the number of decimal digits in a number.
+ *
+ * @param n The number to count digits of.
+ * @return Number of digits.
+ */
 static int count_digits(size_t n) {
   int count = 0;
   do {
@@ -229,12 +303,21 @@ static int count_digits(size_t n) {
 }
 
 
+/**
+ * Clears the terminal screen and moves cursor to home position.
+ */
 static void clear_screen(void) {
   write(STDOUT_FILENO, "\x1b[2J", 4);
   write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 
+/**
+ * Moves the terminal cursor to a specific position.
+ *
+ * @param row Row number (1-based).
+ * @param col Column number (1-based).
+ */
 static void move_cursor(int row, int col) {
   char buf[32];
   int len = snprintf(buf, sizeof(buf), "\x1b[%d;%dH", row, col);
@@ -242,26 +325,41 @@ static void move_cursor(int row, int col) {
 }
 
 
+/**
+ * Clears from cursor to end of current line.
+ */
 static void clear_line(void) {
   write(STDOUT_FILENO, "\x1b[K", 3);
 }
 
 
+/**
+ * Enables reverse video mode for status line display.
+ */
 static void set_reverse_video(void) {
   write(STDOUT_FILENO, "\x1b[7m", 4);
 }
 
 
+/**
+ * Resets terminal video attributes to normal.
+ */
 static void reset_video(void) {
   write(STDOUT_FILENO, "\x1b[0m", 4);
 }
 
 
+/**
+ * Shows the terminal cursor (if hidden).
+ */
 static void show_cursor(void) {
   write(STDOUT_FILENO, "\x1b[?25h", 6);
 }
 
 
+/**
+ * Handles suspend (Ctrl-Z) by restoring terminal and sending SIGSTOP.
+ */
 static void less_suspend(void) {
   /* Restore terminal to normal mode */
   disable_raw_mode();
@@ -278,6 +376,13 @@ static void less_suspend(void) {
 }
 
 
+/**
+ * Draws a single line of content at a screen row.
+ *
+ * @param state      Pager state.
+ * @param line_idx   Index of the line to draw.
+ * @param screen_row Screen row to draw on (1-based).
+ */
 static void draw_line(less_state_t *state, size_t line_idx, int screen_row) {
   move_cursor(screen_row, 1);
   clear_line();
@@ -310,6 +415,12 @@ static void draw_line(less_state_t *state, size_t line_idx, int screen_row) {
 }
 
 
+/**
+ * Draws the status line at the bottom of the screen.
+ *
+ * @param state Pager state.
+ * @param msg   Optional message to display, or NULL for default status.
+ */
 static void draw_status_line(less_state_t *state, const char *msg) {
   move_cursor(state->rows, 1);
   set_reverse_video();
@@ -342,6 +453,11 @@ static void draw_status_line(less_state_t *state, const char *msg) {
 }
 
 
+/**
+ * Redraws the entire screen contents.
+ *
+ * @param state Pager state.
+ */
 static void draw_screen(less_state_t *state) {
   for (int row = 1; row < state->rows; row++) {
     size_t line_idx = state->top_line + (size_t)(row - 1);
@@ -351,6 +467,12 @@ static void draw_screen(less_state_t *state) {
 }
 
 
+/**
+ * Scrolls the view down by a number of lines.
+ *
+ * @param state Pager state.
+ * @param lines Number of lines to scroll.
+ */
 static void scroll_down(less_state_t *state, size_t lines) {
   size_t max_top = 0;
   if (state->line_count > (size_t)(state->rows - 1)) {
@@ -365,6 +487,12 @@ static void scroll_down(less_state_t *state, size_t lines) {
 }
 
 
+/**
+ * Scrolls the view up by a number of lines.
+ *
+ * @param state Pager state.
+ * @param lines Number of lines to scroll.
+ */
 static void scroll_up(less_state_t *state, size_t lines) {
   if (lines > state->top_line) {
     state->top_line = 0;
@@ -374,11 +502,21 @@ static void scroll_up(less_state_t *state, size_t lines) {
 }
 
 
+/**
+ * Jumps to the beginning of the file.
+ *
+ * @param state Pager state.
+ */
 static void goto_beginning(less_state_t *state) {
   state->top_line = 0;
 }
 
 
+/**
+ * Jumps to the end of the file.
+ *
+ * @param state Pager state.
+ */
 static void goto_end(less_state_t *state) {
   if (state->line_count > (size_t)(state->rows - 1)) {
     state->top_line = state->line_count - (size_t)(state->rows - 1);
@@ -388,6 +526,11 @@ static void goto_end(less_state_t *state) {
 }
 
 
+/**
+ * Searches for the current pattern and populates match list.
+ *
+ * @param state Pager state containing search_pattern to search for.
+ */
 static void search_pattern(less_state_t *state) {
   free(state->search_matches);
   state->search_matches = NULL;
@@ -415,6 +558,11 @@ static void search_pattern(less_state_t *state) {
 }
 
 
+/**
+ * Jumps to the next search match.
+ *
+ * @param state Pager state.
+ */
 static void goto_next_match(less_state_t *state) {
   if (state->search_match_count == 0) return;
 
@@ -431,6 +579,11 @@ static void goto_next_match(less_state_t *state) {
 }
 
 
+/**
+ * Jumps to the previous search match.
+ *
+ * @param state Pager state.
+ */
 static void goto_prev_match(less_state_t *state) {
   if (state->search_match_count == 0) return;
 
@@ -447,6 +600,12 @@ static void goto_prev_match(less_state_t *state) {
 }
 
 
+/**
+ * Reads search pattern input from the user.
+ *
+ * @param state Pager state to store pattern in.
+ * @return 1 if search was performed, 0 if cancelled, -1 if interrupted.
+ */
 static int read_search_input(less_state_t *state) {
   draw_status_line(state, "/");
   move_cursor(state->rows, 2);
@@ -507,6 +666,11 @@ static int read_search_input(less_state_t *state) {
 }
 
 
+/**
+ * Reads a single keypress, handling escape sequences for arrow keys.
+ *
+ * @return Key code (ASCII or 1000+ for special keys), -1 on EOF, -2 on signal.
+ */
 static int read_key(void) {
   char c;
   ssize_t n = read(STDIN_FILENO, &c, 1);
@@ -545,6 +709,11 @@ static int read_key(void) {
 }
 
 
+/**
+ * Reads all content from stdin into a dynamically allocated buffer.
+ *
+ * @return Newly allocated content string, or NULL on error.
+ */
 static char *read_stdin_content(void) {
   size_t capacity = 4096;
   size_t size = 0;
@@ -573,6 +742,12 @@ static char *read_stdin_content(void) {
 }
 
 
+/**
+ * Reads entire file content into a dynamically allocated buffer.
+ *
+ * @param path Path to the file to read.
+ * @return Newly allocated content string, or NULL on error.
+ */
 static char *read_file_content(const char *path) {
   FILE *fp = fopen(path, "r");
   if (!fp) return NULL;
@@ -607,6 +782,13 @@ static char *read_file_content(const char *path) {
 }
 
 
+/**
+ * Main entry point for the less command.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int less_run(int argc, char **argv) {
   less_args_t args;
   build_less_argtable(&args);
@@ -833,6 +1015,9 @@ static int less_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the less command.
+ */
 const jshell_cmd_spec_t cmd_less_spec = {
   .name = "less",
   .summary = "view file contents with paging",
@@ -845,6 +1030,9 @@ const jshell_cmd_spec_t cmd_less_spec = {
 };
 
 
+/**
+ * Registers the less command with the shell command registry.
+ */
 void jshell_register_less_command(void) {
   jshell_register_command(&cmd_less_spec);
 }

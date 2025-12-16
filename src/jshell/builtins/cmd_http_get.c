@@ -1,3 +1,8 @@
+/**
+ * @file cmd_http_get.c
+ * @brief HTTP GET command implementation using libcurl
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +13,9 @@
 #include "jshell/jshell_signals.h"
 
 
+/**
+ * Argument table structure for http-get command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_str *headers;
@@ -18,6 +26,9 @@ typedef struct {
 } http_get_args_t;
 
 
+/**
+ * Buffer for accumulating HTTP response body data.
+ */
 typedef struct {
   char *data;
   size_t size;
@@ -25,6 +36,9 @@ typedef struct {
 } response_buffer_t;
 
 
+/**
+ * Buffer for accumulating HTTP response headers.
+ */
 typedef struct {
   char **headers;
   size_t count;
@@ -32,6 +46,10 @@ typedef struct {
 } header_buffer_t;
 
 
+/**
+ * Builds the argtable3 argument table for http-get command.
+ * @param args Pointer to http_get_args_t structure to initialize
+ */
 static void build_http_get_argtable(http_get_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->headers = arg_strn("H", "header", "KEY:VALUE", 0, 20,
@@ -48,12 +66,20 @@ static void build_http_get_argtable(http_get_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated for the argtable3 argument table.
+ * @param args Pointer to http_get_args_t structure to clean up
+ */
 static void cleanup_http_get_argtable(http_get_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the http-get command.
+ * @param out Output stream (typically stdout or stderr)
+ */
 static void http_get_print_usage(FILE *out) {
   http_get_args_t args;
   build_http_get_argtable(&args);
@@ -70,6 +96,14 @@ static void http_get_print_usage(FILE *out) {
 }
 
 
+/**
+ * Callback function for libcurl to write received data to a buffer.
+ * @param contents Pointer to received data
+ * @param size Size of each data element
+ * @param nmemb Number of data elements
+ * @param userp User pointer to response_buffer_t structure
+ * @return Number of bytes written, or 0 on error
+ */
 static size_t write_callback(void *contents, size_t size, size_t nmemb,
                              void *userp) {
   size_t realsize = size * nmemb;
@@ -96,6 +130,14 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb,
 }
 
 
+/**
+ * Callback function for libcurl to process received HTTP headers.
+ * @param buffer Pointer to header data
+ * @param size Size of each data element
+ * @param nitems Number of data elements
+ * @param userdata User pointer to header_buffer_t structure
+ * @return Number of bytes processed, or 0 on error
+ */
 static size_t header_callback(char *buffer, size_t size, size_t nitems,
                               void *userdata) {
   size_t realsize = size * nitems;
@@ -134,6 +176,10 @@ static size_t header_callback(char *buffer, size_t size, size_t nitems,
 }
 
 
+/**
+ * Frees memory allocated for header buffer and all stored headers.
+ * @param headers Pointer to header_buffer_t structure to free
+ */
 static void free_header_buffer(header_buffer_t *headers) {
   for (size_t i = 0; i < headers->count; i++) {
     free(headers->headers[i]);
@@ -142,6 +188,11 @@ static void free_header_buffer(header_buffer_t *headers) {
 }
 
 
+/**
+ * Prints a string as properly escaped JSON.
+ * @param out Output stream
+ * @param str String to print with JSON escaping
+ */
 static void print_json_string(FILE *out, const char *str) {
   fputc('"', out);
   for (const char *p = str; *p; p++) {
@@ -168,7 +219,12 @@ static void print_json_string(FILE *out, const char *str) {
 
 /**
  * Progress callback to check for interruption during transfer.
- * Returns non-zero to abort the transfer.
+ * @param clientp Client data pointer (unused)
+ * @param dltotal Total bytes to download
+ * @param dlnow Bytes downloaded so far
+ * @param ultotal Total bytes to upload
+ * @param ulnow Bytes uploaded so far
+ * @return Non-zero to abort the transfer, 0 to continue
  */
 static int progress_callback(void *clientp, curl_off_t dltotal,
                              curl_off_t dlnow, curl_off_t ultotal,
@@ -186,6 +242,12 @@ static int progress_callback(void *clientp, curl_off_t dltotal,
 }
 
 
+/**
+ * Main execution function for the http-get command.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 on success, non-zero on error)
+ */
 static int http_get_run(int argc, char **argv) {
   http_get_args_t args;
   build_http_get_argtable(&args);
@@ -346,6 +408,9 @@ static int http_get_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for http-get.
+ */
 const jshell_cmd_spec_t cmd_http_get_spec = {
   .name = "http-get",
   .summary = "fetch content from a URL using HTTP GET",
@@ -357,6 +422,9 @@ const jshell_cmd_spec_t cmd_http_get_spec = {
 };
 
 
+/**
+ * Registers the http-get command with the shell command registry.
+ */
 void jshell_register_http_get_command(void) {
   jshell_register_command(&cmd_http_get_spec);
 }

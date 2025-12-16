@@ -1,3 +1,8 @@
+/**
+ * @file cmd_stat.c
+ * @brief Stat command implementation for jshell.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +16,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Argument table structure for stat command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *json;
@@ -20,6 +28,10 @@ typedef struct {
 } stat_args_t;
 
 
+/**
+ * Build the argument table for the stat command.
+ * @param args Pointer to stat_args_t structure to populate.
+ */
 static void build_stat_argtable(stat_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->json = arg_lit0(NULL, "json", "output in JSON format");
@@ -33,12 +45,20 @@ static void build_stat_argtable(stat_args_t *args) {
 }
 
 
+/**
+ * Clean up and free the argument table.
+ * @param args Pointer to stat_args_t structure to clean up.
+ */
 static void cleanup_stat_argtable(stat_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Print usage information for the stat command.
+ * @param out Output stream to write usage information to.
+ */
 static void stat_print_usage(FILE *out) {
   stat_args_t args;
   build_stat_argtable(&args);
@@ -51,6 +71,11 @@ static void stat_print_usage(FILE *out) {
 }
 
 
+/**
+ * Get human-readable string for file type.
+ * @param mode File mode from stat structure.
+ * @return String describing the file type.
+ */
 static const char *get_file_type_string(mode_t mode) {
   if (S_ISDIR(mode))  return "directory";
   if (S_ISLNK(mode))  return "symbolic link";
@@ -62,6 +87,12 @@ static const char *get_file_type_string(mode_t mode) {
 }
 
 
+/**
+ * Escape special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -90,11 +121,23 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Format file mode as octal string.
+ * @param mode File mode from stat structure.
+ * @param buf Output buffer for octal string.
+ * @param buf_size Size of output buffer.
+ */
 static void format_mode_octal(mode_t mode, char *buf, size_t buf_size) {
   snprintf(buf, buf_size, "%04o", mode & 07777);
 }
 
 
+/**
+ * Execute the stat command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return Exit status (0 on success, non-zero on error).
+ */
 static int stat_run(int argc, char **argv) {
   stat_args_t args;
   build_stat_argtable(&args);
@@ -189,6 +232,9 @@ static int stat_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for stat command.
+ */
 const jshell_cmd_spec_t cmd_stat_spec = {
   .name = "stat",
   .summary = "display file metadata",
@@ -200,6 +246,9 @@ const jshell_cmd_spec_t cmd_stat_spec = {
 };
 
 
+/**
+ * Registers the stat command with the shell command registry.
+ */
 void jshell_register_stat_command(void) {
   jshell_register_command(&cmd_stat_spec);
 }

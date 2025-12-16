@@ -1,3 +1,7 @@
+/** @file cmd_mv.c
+ *  @brief Implementation of the mv command for moving/renaming files.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +14,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * @brief Argument structure for mv command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *force;
@@ -21,6 +28,10 @@ typedef struct {
 } mv_args_t;
 
 
+/**
+ * @brief Builds the argtable3 structure for mv command arguments.
+ * @param args Pointer to mv_args_t structure to populate.
+ */
 static void build_mv_argtable(mv_args_t *args) {
   args->help   = arg_lit0("h", "help", "display this help and exit");
   args->force  = arg_lit0("f", "force", "overwrite existing files");
@@ -38,12 +49,20 @@ static void build_mv_argtable(mv_args_t *args) {
 }
 
 
+/**
+ * @brief Frees memory allocated for the mv argtable.
+ * @param args Pointer to mv_args_t structure to clean up.
+ */
 static void cleanup_mv_argtable(mv_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * @brief Prints usage information for the mv command.
+ * @param out File stream to write the usage information to.
+ */
 static void mv_print_usage(FILE *out) {
   mv_args_t args;
   build_mv_argtable(&args);
@@ -56,6 +75,12 @@ static void mv_print_usage(FILE *out) {
 }
 
 
+/**
+ * @brief Escapes special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -84,6 +109,11 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * @brief Checks if a path is a directory.
+ * @param path Path to check.
+ * @return 1 if path is a directory, 0 otherwise.
+ */
 static int is_directory(const char *path) {
   struct stat st;
   if (stat(path, &st) != 0) {
@@ -93,12 +123,23 @@ static int is_directory(const char *path) {
 }
 
 
+/**
+ * @brief Checks if a file or directory exists.
+ * @param path Path to check.
+ * @return 1 if path exists, 0 otherwise.
+ */
 static int file_exists(const char *path) {
   struct stat st;
   return stat(path, &st) == 0;
 }
 
 
+/**
+ * @brief Builds the final destination path for a move operation.
+ * @param src Source file path.
+ * @param dest Destination path (file or directory).
+ * @return Allocated string with final destination path, or NULL on error.
+ */
 static char *build_dest_path(const char *src, const char *dest) {
   if (!is_directory(dest)) {
     return strdup(dest);
@@ -122,6 +163,12 @@ static char *build_dest_path(const char *src, const char *dest) {
 }
 
 
+/**
+ * @brief Main entry point for the mv command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, 1 on failure.
+ */
 static int mv_run(int argc, char **argv) {
   mv_args_t args;
   build_mv_argtable(&args);
@@ -220,6 +267,9 @@ static int mv_run(int argc, char **argv) {
 }
 
 
+/**
+ * @brief Command specification for mv.
+ */
 const jshell_cmd_spec_t cmd_mv_spec = {
   .name = "mv",
   .summary = "move (rename) files",
@@ -231,6 +281,9 @@ const jshell_cmd_spec_t cmd_mv_spec = {
 };
 
 
+/**
+ * @brief Registers the mv command with the shell command registry.
+ */
 void jshell_register_mv_command(void) {
   jshell_register_command(&cmd_mv_spec);
 }

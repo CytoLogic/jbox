@@ -1,3 +1,8 @@
+/**
+ * @file jshell_thread_exec.c
+ * @brief Threaded execution of builtin commands with I/O redirection.
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,9 +13,11 @@
 #include "utils/jbox_utils.h"
 
 
-// List of builtin commands that must run in the main thread
-// These commands either modify shell state or are fast enough that
-// threading overhead isn't worth it
+/**
+ * List of builtin commands that must run in the main thread.
+ * These commands either modify shell state or are fast enough that
+ * threading overhead isn't worth it.
+ */
 static const char* MAIN_THREAD_BUILTINS[] = {
   "cd",
   "export",
@@ -25,6 +32,12 @@ static const char* MAIN_THREAD_BUILTINS[] = {
 };
 
 
+/**
+ * Create a deep copy of an argv array.
+ * @param argc Number of arguments.
+ * @param argv Array of argument strings.
+ * @return Newly allocated argv copy, or NULL on failure.
+ */
 static char** copy_argv(int argc, char** argv) {
   if (argc <= 0 || argv == NULL) {
     return NULL;
@@ -55,6 +68,11 @@ static char** copy_argv(int argc, char** argv) {
 }
 
 
+/**
+ * Free a copied argv array.
+ * @param argc Number of arguments.
+ * @param argv Array of argument strings to free.
+ */
 static void free_argv(int argc, char** argv) {
   if (argv == NULL) {
     return;
@@ -69,6 +87,12 @@ static void free_argv(int argc, char** argv) {
 }
 
 
+/**
+ * Thread entry point for executing a builtin command.
+ * Handles I/O redirection, runs the command, and signals completion.
+ * @param arg Pointer to JShellBuiltinThread structure.
+ * @return NULL (pthread return value).
+ */
 static void* builtin_thread_entry(void* arg) {
   JShellBuiltinThread* bt = (JShellBuiltinThread*)arg;
 
@@ -147,6 +171,11 @@ cleanup:
 }
 
 
+/**
+ * Check if a builtin command must run on the main thread.
+ * @param cmd_name Name of the builtin command.
+ * @return true if command requires main thread, false otherwise.
+ */
 bool jshell_builtin_requires_main_thread(const char* cmd_name) {
   if (cmd_name == NULL) {
     return false;
@@ -162,6 +191,15 @@ bool jshell_builtin_requires_main_thread(const char* cmd_name) {
 }
 
 
+/**
+ * Spawn a new thread to execute a builtin command.
+ * @param spec Command specification for the builtin.
+ * @param argc Number of arguments.
+ * @param argv Array of argument strings.
+ * @param input_fd File descriptor for stdin redirection (-1 for none).
+ * @param output_fd File descriptor for stdout redirection (-1 for none).
+ * @return Pointer to JShellBuiltinThread on success, NULL on failure.
+ */
 JShellBuiltinThread* jshell_spawn_builtin_thread(
     const jshell_cmd_spec_t* spec,
     int argc,
@@ -221,6 +259,12 @@ JShellBuiltinThread* jshell_spawn_builtin_thread(
 }
 
 
+/**
+ * Wait for a builtin thread to complete execution.
+ * Blocks until the thread finishes.
+ * @param bt Pointer to JShellBuiltinThread to wait for.
+ * @return Exit code from the builtin command, or -1 if bt is NULL.
+ */
 int jshell_wait_builtin_thread(JShellBuiltinThread* bt) {
   if (bt == NULL) {
     return -1;
@@ -234,6 +278,11 @@ int jshell_wait_builtin_thread(JShellBuiltinThread* bt) {
 }
 
 
+/**
+ * Free resources associated with a builtin thread.
+ * Thread must have been joined before calling this function.
+ * @param bt Pointer to JShellBuiltinThread to free.
+ */
 void jshell_free_builtin_thread(JShellBuiltinThread* bt) {
   if (bt == NULL) {
     return;

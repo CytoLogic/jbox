@@ -1,3 +1,8 @@
+/**
+ * @file cmd_echo.c
+ * @brief Implementation of the echo command for displaying text.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +11,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Arguments structure for the echo command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *no_newline;
@@ -15,6 +23,11 @@ typedef struct {
 } echo_args_t;
 
 
+/**
+ * Initializes the argtable3 argument definitions for the echo command.
+ *
+ * @param args Pointer to the echo_args_t structure to initialize.
+ */
 static void build_echo_argtable(echo_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->no_newline = arg_lit0("n", NULL, "do not output trailing newline");
@@ -28,12 +41,22 @@ static void build_echo_argtable(echo_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_echo_argtable.
+ *
+ * @param args Pointer to the echo_args_t structure to clean up.
+ */
 static void cleanup_echo_argtable(echo_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the echo command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void echo_print_usage(FILE *out) {
   echo_args_t args;
   build_echo_argtable(&args);
@@ -46,6 +69,15 @@ static void echo_print_usage(FILE *out) {
 }
 
 
+/**
+ * Main entry point for the echo command.
+ *
+ * Prints arguments separated by spaces, optionally without trailing newline.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int echo_run(int argc, char **argv) {
   echo_args_t args;
   build_echo_argtable(&args);
@@ -81,6 +113,9 @@ static int echo_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the echo command.
+ */
 const jshell_cmd_spec_t cmd_echo_spec = {
   .name = "echo",
   .summary = "display a line of text",
@@ -92,6 +127,9 @@ const jshell_cmd_spec_t cmd_echo_spec = {
 };
 
 
+/**
+ * Registers the echo command with the shell command registry.
+ */
 void jshell_register_echo_command(void) {
   jshell_register_command(&cmd_echo_spec);
 }

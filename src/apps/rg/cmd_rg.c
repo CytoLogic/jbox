@@ -1,3 +1,7 @@
+/** @file cmd_rg.c
+ *  @brief Search for patterns using regular expressions
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +13,7 @@
 #include "utils/jbox_signals.h"
 
 
+/** Argtable structure for rg command arguments */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *line_numbers;
@@ -24,6 +29,10 @@ typedef struct {
 } rg_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for rg command.
+ * @param args Pointer to rg_args_t structure to populate
+ */
 static void build_rg_argtable(rg_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->line_numbers = arg_lit0("n", NULL, "show line numbers");
@@ -50,12 +59,20 @@ static void build_rg_argtable(rg_args_t *args) {
 }
 
 
+/**
+ * Cleans up and frees the argtable3 argument table.
+ * @param args Pointer to rg_args_t structure to clean up
+ */
 static void cleanup_rg_argtable(rg_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the rg command.
+ * @param out Output file stream
+ */
 static void rg_print_usage(FILE *out) {
   rg_args_t args;
   build_rg_argtable(&args);
@@ -68,6 +85,12 @@ static void rg_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ * @param str Input string to escape
+ * @param out Output buffer for escaped string
+ * @param out_size Size of output buffer
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -96,6 +119,11 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Escapes regex metacharacters for literal string matching.
+ * @param pattern Input pattern string
+ * @return Newly allocated escaped pattern, or NULL on error
+ */
 static char *escape_regex_pattern(const char *pattern) {
   size_t len = strlen(pattern);
   char *escaped = malloc(len * 2 + 1);
@@ -114,6 +142,11 @@ static char *escape_regex_pattern(const char *pattern) {
 }
 
 
+/**
+ * Creates a word-boundary pattern for whole-word matching.
+ * @param pattern Input pattern string
+ * @return Newly allocated word pattern, or NULL on error
+ */
 static char *create_word_pattern(const char *pattern) {
   size_t len = strlen(pattern);
   char *word_pat = malloc(len + 20);
@@ -123,6 +156,7 @@ static char *create_word_pattern(const char *pattern) {
 }
 
 
+/** Dynamic buffer for storing file lines */
 typedef struct {
   char **lines;
   size_t count;
@@ -130,6 +164,10 @@ typedef struct {
 } line_buffer_t;
 
 
+/**
+ * Initializes a line buffer to empty state.
+ * @param buf Pointer to line buffer to initialize
+ */
 static void line_buffer_init(line_buffer_t *buf) {
   buf->lines = NULL;
   buf->count = 0;
@@ -137,6 +175,10 @@ static void line_buffer_init(line_buffer_t *buf) {
 }
 
 
+/**
+ * Frees all memory associated with a line buffer.
+ * @param buf Pointer to line buffer to free
+ */
 static void line_buffer_free(line_buffer_t *buf) {
   for (size_t i = 0; i < buf->count; i++) {
     free(buf->lines[i]);
@@ -148,6 +190,12 @@ static void line_buffer_free(line_buffer_t *buf) {
 }
 
 
+/**
+ * Adds a line to the line buffer.
+ * @param buf Pointer to line buffer
+ * @param line Line to add (will be duplicated)
+ * @return 0 on success, -1 on error
+ */
 static int line_buffer_add(line_buffer_t *buf, const char *line) {
   if (buf->count >= buf->capacity) {
     size_t new_cap = buf->capacity == 0 ? 1024 : buf->capacity * 2;
@@ -163,6 +211,12 @@ static int line_buffer_add(line_buffer_t *buf, const char *line) {
 }
 
 
+/**
+ * Reads all lines from a file into a line buffer.
+ * @param path File path to read
+ * @param buf Line buffer to populate
+ * @return 0 on success, -1 on error, -2 on interrupt
+ */
 static int read_file_lines(const char *path, line_buffer_t *buf) {
   FILE *fp = fopen(path, "r");
   if (!fp) return -1;
@@ -195,6 +249,12 @@ static int read_file_lines(const char *path, line_buffer_t *buf) {
 }
 
 
+/**
+ * Finds the column position of the first regex match in a line.
+ * @param line Line to search
+ * @param regex Compiled regex pattern
+ * @return 1-based column position, or 1 if not found
+ */
 static int find_column(const char *line, regex_t *regex) {
   regmatch_t match;
   if (regexec(regex, line, 1, &match, 0) == 0) {
@@ -204,6 +264,7 @@ static int find_column(const char *line, regex_t *regex) {
 }
 
 
+/** Result of a pattern match */
 typedef struct {
   const char *file;
   int line;
@@ -212,6 +273,11 @@ typedef struct {
 } match_result_t;
 
 
+/**
+ * Prints a match result in JSON format.
+ * @param match Match result to print
+ * @param first Pointer to flag indicating if this is the first JSON entry
+ */
 static void print_match_json(const match_result_t *match, int *first) {
   if (!*first) {
     printf(",\n");
@@ -238,6 +304,12 @@ static void print_match_json(const match_result_t *match, int *first) {
 }
 
 
+/**
+ * Prints a match result in text format.
+ * @param match Match result to print
+ * @param show_filename Whether to show filename
+ * @param show_line_numbers Whether to show line numbers
+ */
 static void print_match_text(const match_result_t *match, int show_filename,
                              int show_line_numbers) {
   if (show_filename && show_line_numbers) {
@@ -252,6 +324,15 @@ static void print_match_text(const match_result_t *match, int show_filename,
 }
 
 
+/**
+ * Prints a context line (before or after a match).
+ * @param file Filename
+ * @param line_num Line number
+ * @param text Line text
+ * @param show_filename Whether to show filename
+ * @param show_line_numbers Whether to show line numbers
+ * @param separator Separator character (':' for match, '-' for context)
+ */
 static void print_context_line(const char *file, int line_num,
                                const char *text, int show_filename,
                                int show_line_numbers, char separator) {
@@ -267,6 +348,18 @@ static void print_context_line(const char *file, int line_num,
 }
 
 
+/**
+ * Searches a file for pattern matches.
+ * @param path File path to search
+ * @param regex Compiled regex pattern
+ * @param show_json Whether to output JSON
+ * @param show_line_numbers Whether to show line numbers
+ * @param show_filename Whether to show filename
+ * @param context_lines Number of context lines to show
+ * @param first_json_entry Pointer to first JSON entry flag
+ * @param found_any Pointer to flag indicating if any matches found
+ * @return 0 on success, 1 on error, -2 on interrupt
+ */
 static int search_file(const char *path, regex_t *regex, int show_json,
                        int show_line_numbers, int show_filename,
                        int context_lines, int *first_json_entry,
@@ -361,6 +454,16 @@ static int search_file(const char *path, regex_t *regex, int show_json,
 }
 
 
+/**
+ * Searches standard input for pattern matches.
+ * @param regex Compiled regex pattern
+ * @param show_json Whether to output JSON
+ * @param show_line_numbers Whether to show line numbers
+ * @param context_lines Number of context lines to show
+ * @param first_json_entry Pointer to first JSON entry flag
+ * @param found_any Pointer to flag indicating if any matches found
+ * @return 0 on success, 1 on error, -2 on interrupt
+ */
 static int search_stdin(regex_t *regex, int show_json, int show_line_numbers,
                         int context_lines, int *first_json_entry,
                         int *found_any) {
@@ -459,6 +562,12 @@ static int search_stdin(regex_t *regex, int show_json, int show_line_numbers,
 }
 
 
+/**
+ * Main entry point for the rg command.
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 on success, 1 on error or no matches)
+ */
 static int rg_run(int argc, char **argv) {
   rg_args_t args;
   build_rg_argtable(&args);
@@ -596,6 +705,7 @@ static int rg_run(int argc, char **argv) {
 }
 
 
+/** Command specification for rg */
 const jshell_cmd_spec_t cmd_rg_spec = {
   .name = "rg",
   .summary = "search for patterns using regular expressions",
@@ -608,6 +718,9 @@ const jshell_cmd_spec_t cmd_rg_spec = {
 };
 
 
+/**
+ * Registers the rg command with the shell command registry.
+ */
 void jshell_register_rg_command(void) {
   jshell_register_command(&cmd_rg_spec);
 }

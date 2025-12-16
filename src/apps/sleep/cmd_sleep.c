@@ -1,3 +1,8 @@
+/**
+ * @file cmd_sleep.c
+ * @brief Sleep command implementation for jshell.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -7,6 +12,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Argument table structure for sleep command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_dbl *seconds;
@@ -15,6 +23,10 @@ typedef struct {
 } sleep_args_t;
 
 
+/**
+ * Build the argument table for the sleep command.
+ * @param args Pointer to sleep_args_t structure to populate.
+ */
 static void build_sleep_argtable(sleep_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->seconds = arg_dbl1(NULL, NULL, "SECONDS",
@@ -27,12 +39,20 @@ static void build_sleep_argtable(sleep_args_t *args) {
 }
 
 
+/**
+ * Clean up and free the argument table.
+ * @param args Pointer to sleep_args_t structure to clean up.
+ */
 static void cleanup_sleep_argtable(sleep_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Print usage information for the sleep command.
+ * @param out Output stream to write usage information to.
+ */
 static void sleep_print_usage(FILE *out) {
   sleep_args_t args;
   build_sleep_argtable(&args);
@@ -47,6 +67,12 @@ static void sleep_print_usage(FILE *out) {
 }
 
 
+/**
+ * Execute the sleep command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return Exit status (0 on success, non-zero on error).
+ */
 static int sleep_run(int argc, char **argv) {
   sleep_args_t args;
   build_sleep_argtable(&args);
@@ -89,6 +115,9 @@ static int sleep_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for sleep command.
+ */
 const jshell_cmd_spec_t cmd_sleep_spec = {
   .name = "sleep",
   .summary = "delay for a specified amount of time",
@@ -100,6 +129,9 @@ const jshell_cmd_spec_t cmd_sleep_spec = {
 };
 
 
+/**
+ * Registers the sleep command with the shell command registry.
+ */
 void jshell_register_sleep_command(void) {
   jshell_register_command(&cmd_sleep_spec);
 }

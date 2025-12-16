@@ -1,3 +1,8 @@
+/**
+ * @file jshell_signals.c
+ * @brief Signal handling for the shell (SIGINT, SIGTERM, SIGHUP, SIGPIPE).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,9 +13,13 @@
 #include "utils/jbox_utils.h"
 
 
-/* Global signal flags - volatile for safe access from signal handlers */
+/** Global flag set by SIGINT handler - volatile for signal safety. */
 volatile sig_atomic_t jshell_interrupted = 0;
+
+/** Global flag set by SIGTERM handler - volatile for signal safety. */
 volatile sig_atomic_t jshell_received_sigterm = 0;
+
+/** Global flag set by SIGHUP handler - volatile for signal safety. */
 volatile sig_atomic_t jshell_received_sighup = 0;
 
 
@@ -45,6 +54,10 @@ static void sighup_handler(int sig) {
 }
 
 
+/**
+ * Initialize signal handlers for the shell.
+ * Sets up handlers for SIGINT, SIGTERM, SIGHUP, and ignores SIGPIPE.
+ */
 void jshell_init_signals(void) {
   struct sigaction sa;
 
@@ -87,6 +100,10 @@ void jshell_init_signals(void) {
 }
 
 
+/**
+ * Reset all signal handlers to default for child processes.
+ * Called after fork() before exec() to restore normal signal behavior.
+ */
 void jshell_reset_signals_for_child(void) {
   struct sigaction sa;
 
@@ -114,6 +131,11 @@ void jshell_reset_signals_for_child(void) {
 }
 
 
+/**
+ * Block SIGINT and SIGCHLD signals.
+ * Used during critical sections to prevent signal interruption.
+ * @param oldmask Pointer to store previous signal mask (for restoration).
+ */
 void jshell_block_signals(sigset_t *oldmask) {
   sigset_t block_mask;
 
@@ -127,6 +149,10 @@ void jshell_block_signals(sigset_t *oldmask) {
 }
 
 
+/**
+ * Restore signal mask to previous state.
+ * @param oldmask Pointer to signal mask to restore.
+ */
 void jshell_unblock_signals(const sigset_t *oldmask) {
   if (sigprocmask(SIG_SETMASK, oldmask, NULL) == -1) {
     perror("sigprocmask unblock");
@@ -134,6 +160,10 @@ void jshell_unblock_signals(const sigset_t *oldmask) {
 }
 
 
+/**
+ * Check if SIGINT was received and clear the flag.
+ * @return true if interrupted, false otherwise.
+ */
 bool jshell_check_interrupted(void) {
   if (jshell_interrupted) {
     jshell_interrupted = 0;
@@ -143,21 +173,36 @@ bool jshell_check_interrupted(void) {
 }
 
 
+/**
+ * Check if SIGINT was received without clearing the flag.
+ * @return true if interrupted, false otherwise.
+ */
 bool jshell_is_interrupted(void) {
   return jshell_interrupted != 0;
 }
 
 
+/**
+ * Clear the interrupted flag.
+ */
 void jshell_clear_interrupted(void) {
   jshell_interrupted = 0;
 }
 
 
+/**
+ * Check if SIGTERM was received.
+ * @return true if termination signal received, false otherwise.
+ */
 bool jshell_should_terminate(void) {
   return jshell_received_sigterm != 0;
 }
 
 
+/**
+ * Check if SIGHUP was received.
+ * @return true if hangup signal received, false otherwise.
+ */
 bool jshell_should_hangup(void) {
   return jshell_received_sighup != 0;
 }

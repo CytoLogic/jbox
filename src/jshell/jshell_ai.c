@@ -1,3 +1,12 @@
+/**
+ * @file jshell_ai.c
+ * @brief AI integration module for jshell using Google Gemini API
+ *
+ * Provides two main AI features:
+ * - Chat queries (@query): conversational AI responses
+ * - Execute queries (@!query): AI-generated shell commands
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,29 +17,44 @@
 #include "utils/jbox_utils.h"
 
 
+/** Default AI model for all requests */
 #define AI_MODEL "gemini-2.5-flash"
+
+/** Maximum tokens for chat responses */
 #define AI_CHAT_MAX_TOKENS 1024
+
+/** Maximum tokens for command generation responses */
 #define AI_EXEC_MAX_TOKENS 512
 
 
-/* System prompt for chat queries (no command context) */
+/** System prompt for chat queries (no command context) */
 static const char *CHAT_SYSTEM_PROMPT =
   "You are a helpful assistant running inside jshell, a custom Unix-like "
   "shell. Keep responses concise and focused.";
 
 
-/* Global AI context */
+/** Internal AI context state */
 typedef struct {
-  char *api_key;
-  int initialized;
+  char *api_key;      /**< Google API key from environment */
+  int initialized;    /**< 1 if module is initialized, 0 otherwise */
 } AIContext;
 
+/** Global AI context singleton */
 static AIContext g_ai_ctx = {
   .api_key = NULL,
   .initialized = 0
 };
 
 
+/**
+ * Initialize the AI module.
+ *
+ * Loads the Google API key from the GOOGLE_API_KEY environment variable
+ * and marks the module as initialized. Must be called before using any
+ * AI features.
+ *
+ * @return 0 on success, -1 if API key is not set or allocation fails
+ */
 int jshell_ai_init(void) {
   if (g_ai_ctx.initialized) {
     return 0;
@@ -55,6 +79,12 @@ int jshell_ai_init(void) {
 }
 
 
+/**
+ * Clean up the AI module and free all resources.
+ *
+ * Frees the API key and resets the module to uninitialized state.
+ * Safe to call multiple times.
+ */
 void jshell_ai_cleanup(void) {
   free(g_ai_ctx.api_key);
   g_ai_ctx.api_key = NULL;
@@ -62,11 +92,26 @@ void jshell_ai_cleanup(void) {
 }
 
 
+/**
+ * Check if AI functionality is currently available.
+ *
+ * @return 1 if the module is initialized and has a valid API key, 0 otherwise
+ */
 int jshell_ai_available(void) {
   return g_ai_ctx.initialized && g_ai_ctx.api_key != NULL;
 }
 
 
+/**
+ * Send a chat query to the AI.
+ *
+ * This function handles simple conversational queries without command context.
+ * The AI responds with helpful information, keeping responses concise.
+ *
+ * @param query User's chat message (NULL or empty defaults to "Hi!")
+ * @return Newly allocated string with AI response or error message.
+ *         Caller must free the returned string.
+ */
 char *jshell_ai_chat(const char *query) {
   if (!jshell_ai_available()) {
     return strdup("AI not available (GOOGLE_API_KEY not set)");
@@ -106,6 +151,23 @@ char *jshell_ai_chat(const char *query) {
 }
 
 
+/**
+ * Generate a shell command from a natural language query.
+ *
+ * This function sends a query to the AI with full context about jshell's
+ * grammar, available commands, and their usage. The AI generates a valid
+ * shell command that can be executed directly.
+ *
+ * The system prompt includes:
+ * - Execution instructions for the AI
+ * - Shell grammar specification
+ * - Available command documentation
+ *
+ * @param query Natural language description of desired command
+ * @return Newly allocated string with generated command (trimmed of whitespace),
+ *         or NULL if AI is unavailable, query is empty, or an error occurs.
+ *         Caller must free the returned string.
+ */
 char *jshell_ai_execute_query(const char *query) {
   if (!jshell_ai_available()) {
     return NULL;

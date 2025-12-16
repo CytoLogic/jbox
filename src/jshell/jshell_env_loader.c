@@ -1,3 +1,11 @@
+/**
+ * @file jshell_env_loader.c
+ * @brief Environment variable loader for jshell.
+ *
+ * Loads environment variables from ~/.jshell/env file at shell startup.
+ * The file format supports KEY=VALUE pairs with optional quotes and comments.
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +23,14 @@
 #define MAX_PATH_LEN 4096
 
 
+/**
+ * Gets the user's home directory.
+ *
+ * Tries the HOME environment variable first, then falls back to
+ * querying the password database.
+ *
+ * @return Pointer to home directory string, or NULL if not found.
+ */
 static const char* get_home_directory(void) {
   const char* home = getenv("HOME");
   if (home != NULL && home[0] != '\0') {
@@ -30,6 +46,12 @@ static const char* get_home_directory(void) {
 }
 
 
+/**
+ * Removes leading and trailing whitespace from a string in-place.
+ *
+ * @param str String to trim (will be modified).
+ * @return Pointer to the trimmed string (points into the original buffer).
+ */
 static char* trim_whitespace(char* str) {
   while (isspace((unsigned char)*str)) {
     str++;
@@ -49,6 +71,15 @@ static char* trim_whitespace(char* str) {
 }
 
 
+/**
+ * Validates an environment variable name.
+ *
+ * Valid names start with a letter or underscore, followed by letters,
+ * digits, or underscores.
+ *
+ * @param name Variable name to validate.
+ * @return 1 if valid, 0 if invalid.
+ */
 static int is_valid_var_name(const char* name) {
   if (name == NULL || *name == '\0') {
     return 0;
@@ -68,6 +99,22 @@ static int is_valid_var_name(const char* name) {
 }
 
 
+/**
+ * Parses a single line from the env file.
+ *
+ * Supports the following formats:
+ * - KEY=value
+ * - KEY="value with spaces"
+ * - KEY='value with spaces'
+ * - # comment lines (ignored)
+ * - blank lines (ignored)
+ *
+ * @param line Line to parse.
+ * @param name_out Output parameter for variable name (caller must free).
+ * @param value_out Output parameter for variable value (caller must free).
+ * @return 1 if a valid KEY=VALUE pair was parsed, 0 if line was empty/comment,
+ *         -1 on error.
+ */
 static int parse_env_line(const char* line, char** name_out, char** value_out) {
   *name_out = NULL;
   *value_out = NULL;
@@ -134,6 +181,13 @@ static int parse_env_line(const char* line, char** name_out, char** value_out) {
 }
 
 
+/**
+ * Loads environment variables from the ~/.jshell/env file.
+ *
+ * This function should be called during shell initialization. If the file
+ * doesn't exist, the function returns silently. Syntax errors in the file
+ * are reported as warnings but don't stop processing.
+ */
 void jshell_load_env_file(void) {
   const char* home = get_home_directory();
   if (home == NULL) {

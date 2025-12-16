@@ -1,3 +1,7 @@
+/** @file cmd_rm.c
+ *  @brief Implementation of the rm command for removing files and directories.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +14,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * @brief Argument structure for rm command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *recursive;
@@ -21,6 +28,10 @@ typedef struct {
 } rm_args_t;
 
 
+/**
+ * @brief Builds the argtable3 structure for rm command arguments.
+ * @param args Pointer to rm_args_t structure to populate.
+ */
 static void build_rm_argtable(rm_args_t *args) {
   args->help      = arg_lit0("h", "help", "display this help and exit");
   args->recursive = arg_lit0("r", "recursive", "remove directories and their "
@@ -41,12 +52,20 @@ static void build_rm_argtable(rm_args_t *args) {
 }
 
 
+/**
+ * @brief Frees memory allocated for the rm argtable.
+ * @param args Pointer to rm_args_t structure to clean up.
+ */
 static void cleanup_rm_argtable(rm_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * @brief Prints usage information for the rm command.
+ * @param out File stream to write the usage information to.
+ */
 static void rm_print_usage(FILE *out) {
   rm_args_t args;
   build_rm_argtable(&args);
@@ -59,6 +78,12 @@ static void rm_print_usage(FILE *out) {
 }
 
 
+/**
+ * @brief Escapes special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -90,6 +115,13 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 static int remove_directory_recursive(const char *path);
 
 
+/**
+ * @brief Removes a single file or directory entry.
+ * @param path Path to remove.
+ * @param recursive If non-zero, recursively remove directories.
+ * @param force If non-zero, ignore nonexistent files.
+ * @return 0 on success, -1 on failure.
+ */
 static int remove_entry(const char *path, int recursive, int force) {
   struct stat st;
   if (lstat(path, &st) != 0) {
@@ -111,6 +143,11 @@ static int remove_entry(const char *path, int recursive, int force) {
 }
 
 
+/**
+ * @brief Recursively removes a directory and all its contents.
+ * @param path Directory path to remove.
+ * @return 0 on success, -1 on failure.
+ */
 static int remove_directory_recursive(const char *path) {
   DIR *dir = opendir(path);
   if (!dir) {
@@ -151,6 +188,15 @@ static int remove_directory_recursive(const char *path) {
 }
 
 
+/**
+ * @brief Removes a file and outputs result.
+ * @param path Path to remove.
+ * @param recursive If non-zero, recursively remove directories.
+ * @param force If non-zero, ignore nonexistent files.
+ * @param show_json If non-zero, output in JSON format.
+ * @param first_entry Pointer to flag tracking first JSON entry.
+ * @return 0 on success, non-zero on failure.
+ */
 static int rm_file(const char *path, int recursive, int force, int show_json,
                    int *first_entry) {
   int result = remove_entry(path, recursive, force);
@@ -191,6 +237,12 @@ static int rm_file(const char *path, int recursive, int force, int show_json,
 }
 
 
+/**
+ * @brief Main entry point for the rm command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, 1 on failure.
+ */
 static int rm_run(int argc, char **argv) {
   rm_args_t args;
   build_rm_argtable(&args);
@@ -236,6 +288,9 @@ static int rm_run(int argc, char **argv) {
 }
 
 
+/**
+ * @brief Command specification for rm.
+ */
 const jshell_cmd_spec_t cmd_rm_spec = {
   .name = "rm",
   .summary = "remove files or directories",
@@ -248,6 +303,9 @@ const jshell_cmd_spec_t cmd_rm_spec = {
 };
 
 
+/**
+ * @brief Registers the rm command with the shell command registry.
+ */
 void jshell_register_rm_command(void) {
   jshell_register_command(&cmd_rm_spec);
 }

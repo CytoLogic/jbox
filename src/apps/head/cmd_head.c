@@ -1,3 +1,8 @@
+/**
+ * @file cmd_head.c
+ * @brief Implementation of the head command for viewing file beginnings.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +15,9 @@
 #define DEFAULT_LINES 10
 
 
+/**
+ * Arguments structure for the head command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_int *num_lines;
@@ -20,6 +28,11 @@ typedef struct {
 } head_args_t;
 
 
+/**
+ * Initializes the argtable3 argument definitions for the head command.
+ *
+ * @param args Pointer to the head_args_t structure to initialize.
+ */
 static void build_head_argtable(head_args_t *args) {
   args->help      = arg_lit0("h", "help", "display this help and exit");
   args->num_lines = arg_int0("n", NULL, "N",
@@ -36,12 +49,22 @@ static void build_head_argtable(head_args_t *args) {
 }
 
 
+/**
+ * Frees memory allocated by build_head_argtable.
+ *
+ * @param args Pointer to the head_args_t structure to clean up.
+ */
 static void cleanup_head_argtable(head_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the head command.
+ *
+ * @param out File stream to write usage information to.
+ */
 static void head_print_usage(FILE *out) {
   head_args_t args;
   build_head_argtable(&args);
@@ -54,6 +77,13 @@ static void head_print_usage(FILE *out) {
 }
 
 
+/**
+ * Escapes special characters in a string for JSON output.
+ *
+ * @param str      The input string to escape.
+ * @param out      Buffer to write the escaped string to.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -82,6 +112,14 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * Reads and outputs the first N lines of a file.
+ *
+ * @param path      Path to the file, or NULL/"-" for stdin.
+ * @param num_lines Number of lines to output.
+ * @param show_json If non-zero, output in JSON format.
+ * @return 0 on success, non-zero on error or interruption.
+ */
 static int head_file(const char *path, int num_lines, int show_json) {
   FILE *fp;
   int is_stdin = (path == NULL || strcmp(path, "-") == 0);
@@ -173,6 +211,15 @@ static int head_file(const char *path, int num_lines, int show_json) {
 }
 
 
+/**
+ * Main entry point for the head command.
+ *
+ * Parses arguments and outputs the first N lines of a file.
+ *
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
 static int head_run(int argc, char **argv) {
   head_args_t args;
   build_head_argtable(&args);
@@ -215,6 +262,9 @@ static int head_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the head command.
+ */
 const jshell_cmd_spec_t cmd_head_spec = {
   .name = "head",
   .summary = "output the first part of files",
@@ -226,6 +276,9 @@ const jshell_cmd_spec_t cmd_head_spec = {
 };
 
 
+/**
+ * Registers the head command with the shell command registry.
+ */
 void jshell_register_head_command(void) {
   jshell_register_command(&cmd_head_spec);
 }

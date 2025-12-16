@@ -1,3 +1,7 @@
+/** @file cmd_mkdir.c
+ *  @brief Implementation of the mkdir command for creating directories.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +13,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * @brief Argument structure for mkdir command.
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_lit *parents;
@@ -19,6 +26,10 @@ typedef struct {
 } mkdir_args_t;
 
 
+/**
+ * @brief Builds the argtable3 structure for mkdir command arguments.
+ * @param args Pointer to mkdir_args_t structure to populate.
+ */
 static void build_mkdir_argtable(mkdir_args_t *args) {
   args->help    = arg_lit0("h", "help", "display this help and exit");
   args->parents = arg_lit0("p", "parents", "make parent directories as needed");
@@ -34,12 +45,20 @@ static void build_mkdir_argtable(mkdir_args_t *args) {
 }
 
 
+/**
+ * @brief Frees memory allocated for the mkdir argtable.
+ * @param args Pointer to mkdir_args_t structure to clean up.
+ */
 static void cleanup_mkdir_argtable(mkdir_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * @brief Prints usage information for the mkdir command.
+ * @param out File stream to write the usage information to.
+ */
 static void mkdir_print_usage(FILE *out) {
   mkdir_args_t args;
   build_mkdir_argtable(&args);
@@ -52,6 +71,12 @@ static void mkdir_print_usage(FILE *out) {
 }
 
 
+/**
+ * @brief Escapes special characters in a string for JSON output.
+ * @param str Input string to escape.
+ * @param out Output buffer for escaped string.
+ * @param out_size Size of the output buffer.
+ */
 static void escape_json_string(const char *str, char *out, size_t out_size) {
   size_t j = 0;
   for (size_t i = 0; str[i] && j < out_size - 1; i++) {
@@ -80,6 +105,12 @@ static void escape_json_string(const char *str, char *out, size_t out_size) {
 }
 
 
+/**
+ * @brief Creates a directory path with all parent directories as needed.
+ * @param path Directory path to create.
+ * @param mode Permissions mode for created directories.
+ * @return 0 on success, -1 on failure.
+ */
 static int mkdir_parents(const char *path, mode_t mode) {
   char *path_copy = strdup(path);
   if (!path_copy) {
@@ -115,6 +146,14 @@ static int mkdir_parents(const char *path, mode_t mode) {
 }
 
 
+/**
+ * @brief Creates a single directory and outputs result.
+ * @param path Directory path to create.
+ * @param parents If non-zero, create parent directories as needed.
+ * @param show_json If non-zero, output in JSON format.
+ * @param first_entry Pointer to flag tracking first JSON entry.
+ * @return 0 on success, non-zero on failure.
+ */
 static int make_dir(const char *path, int parents, int show_json,
                     int *first_entry) {
   int result;
@@ -154,6 +193,12 @@ static int make_dir(const char *path, int parents, int show_json,
 }
 
 
+/**
+ * @brief Main entry point for the mkdir command.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, 1 on failure.
+ */
 static int mkdir_run(int argc, char **argv) {
   mkdir_args_t args;
   build_mkdir_argtable(&args);
@@ -198,6 +243,9 @@ static int mkdir_run(int argc, char **argv) {
 }
 
 
+/**
+ * @brief Command specification for mkdir.
+ */
 const jshell_cmd_spec_t cmd_mkdir_spec = {
   .name = "mkdir",
   .summary = "make directories",
@@ -209,6 +257,9 @@ const jshell_cmd_spec_t cmd_mkdir_spec = {
 };
 
 
+/**
+ * @brief Registers the mkdir command with the shell command registry.
+ */
 void jshell_register_mkdir_command(void) {
   jshell_register_command(&cmd_mkdir_spec);
 }

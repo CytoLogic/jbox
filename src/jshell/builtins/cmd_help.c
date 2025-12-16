@@ -1,3 +1,8 @@
+/**
+ * @file cmd_help.c
+ * @brief Implementation of the help builtin command for displaying command help
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +11,9 @@
 #include "jshell/jshell_cmd_registry.h"
 
 
+/**
+ * Argument table structure for the help command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_str *command;
@@ -14,6 +22,11 @@ typedef struct {
 } help_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the help command.
+ *
+ * @param args Pointer to help_args_t structure to populate
+ */
 static void build_help_argtable(help_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->command = arg_str0(NULL, NULL, "COMMAND",
@@ -26,12 +39,22 @@ static void build_help_argtable(help_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the help command.
+ *
+ * @param args Pointer to help_args_t structure to free
+ */
 static void cleanup_help_argtable(help_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the help command.
+ *
+ * @param out Output stream to write to
+ */
 static void help_print_usage(FILE *out) {
   help_args_t args;
   build_help_argtable(&args);
@@ -47,6 +70,12 @@ static void help_print_usage(FILE *out) {
 }
 
 
+/**
+ * Callback function to print a command summary.
+ *
+ * @param spec Command specification to print
+ * @param userdata Unused user data pointer
+ */
 static void print_command_summary(const jshell_cmd_spec_t *spec,
                                   void *userdata) {
   (void)userdata;
@@ -55,6 +84,13 @@ static void print_command_summary(const jshell_cmd_spec_t *spec,
 }
 
 
+/**
+ * Executes the help command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int help_run(int argc, char **argv) {
   help_args_t args;
   build_help_argtable(&args);
@@ -104,6 +140,9 @@ static int help_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the help builtin
+ */
 const jshell_cmd_spec_t cmd_help_spec = {
   .name = "help",
   .summary = "display help for shell commands",
@@ -115,6 +154,9 @@ const jshell_cmd_spec_t cmd_help_spec = {
 };
 
 
+/**
+ * Registers the help command with the shell command registry.
+ */
 void jshell_register_help_command(void) {
   jshell_register_command(&cmd_help_spec);
 }

@@ -1,3 +1,8 @@
+/**
+ * @file cmd_history.c
+ * @brief Implementation of the history builtin command for displaying command history
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,6 +11,9 @@
 #include "jshell/jshell_history.h"
 
 
+/**
+ * Argument table structure for the history command
+ */
 typedef struct {
   struct arg_lit *help;
   struct arg_end *end;
@@ -13,6 +21,11 @@ typedef struct {
 } history_args_t;
 
 
+/**
+ * Builds the argtable3 argument table for the history command.
+ *
+ * @param args Pointer to history_args_t structure to populate
+ */
 static void build_history_argtable(history_args_t *args) {
   args->help = arg_lit0("h", "help", "display this help and exit");
   args->end = arg_end(20);
@@ -22,12 +35,22 @@ static void build_history_argtable(history_args_t *args) {
 }
 
 
+/**
+ * Cleans up the argtable3 argument table for the history command.
+ *
+ * @param args Pointer to history_args_t structure to free
+ */
 static void cleanup_history_argtable(history_args_t *args) {
   arg_freetable(args->argtable,
                 sizeof(args->argtable) / sizeof(args->argtable[0]));
 }
 
 
+/**
+ * Prints usage information for the history command.
+ *
+ * @param out Output stream to write to
+ */
 static void history_print_usage(FILE *out) {
   history_args_t args;
   build_history_argtable(&args);
@@ -42,6 +65,13 @@ static void history_print_usage(FILE *out) {
 }
 
 
+/**
+ * Executes the history command.
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit status (0 for success, non-zero for error)
+ */
 static int history_run(int argc, char **argv) {
   history_args_t args;
   build_history_argtable(&args);
@@ -75,6 +105,9 @@ static int history_run(int argc, char **argv) {
 }
 
 
+/**
+ * Command specification for the history builtin
+ */
 const jshell_cmd_spec_t cmd_history_spec = {
   .name = "history",
   .summary = "display command history",
@@ -86,6 +119,9 @@ const jshell_cmd_spec_t cmd_history_spec = {
 };
 
 
+/**
+ * Registers the history command with the shell command registry.
+ */
 void jshell_register_history_command(void) {
   jshell_register_command(&cmd_history_spec);
 }

@@ -1,3 +1,7 @@
+/** @file pkg_registry.c
+ *  @brief Package registry client for fetching and downloading packages.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +12,7 @@
 #include "pkg_json.h"
 
 
+/** Buffer structure for HTTP response data. */
 typedef struct {
   char *data;
   size_t size;
@@ -15,6 +20,13 @@ typedef struct {
 } response_buffer_t;
 
 
+/** CURL write callback for buffering response data.
+ *  @param contents Data received
+ *  @param size Size of each element
+ *  @param nmemb Number of elements
+ *  @param userp User pointer (response_buffer_t)
+ *  @return Number of bytes processed
+ */
 static size_t write_callback(void *contents, size_t size, size_t nmemb,
                              void *userp) {
   size_t realsize = size * nmemb;
@@ -41,6 +53,13 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb,
 }
 
 
+/** CURL write callback for writing to a file.
+ *  @param contents Data received
+ *  @param size Size of each element
+ *  @param nmemb Number of elements
+ *  @param userp User pointer (FILE*)
+ *  @return Number of bytes written
+ */
 static size_t file_write_callback(void *contents, size_t size, size_t nmemb,
                                   void *userp) {
   FILE *fp = (FILE *)userp;
@@ -48,6 +67,9 @@ static size_t file_write_callback(void *contents, size_t size, size_t nmemb,
 }
 
 
+/** Gets the package registry URL.
+ *  @return Registry URL (from JSHELL_PKG_REGISTRY env var or default)
+ */
 const char *pkg_registry_get_url(void) {
   const char *env_url = getenv("JSHELL_PKG_REGISTRY");
   if (env_url && env_url[0] != '\0') {
@@ -57,6 +79,10 @@ const char *pkg_registry_get_url(void) {
 }
 
 
+/** Fetches JSON content from a URL using CURL.
+ *  @param url URL to fetch
+ *  @return Allocated JSON string, or NULL on error. Caller must free.
+ */
 static char *fetch_json(const char *url) {
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -98,8 +124,11 @@ static char *fetch_json(const char *url) {
 }
 
 
-// Simple JSON string extraction helper
-// Finds "key": "value" and returns copy of value
+/** Extracts a string value from JSON by key.
+ *  @param json JSON string to search
+ *  @param key Key name to find
+ *  @return Allocated value string, or NULL if not found. Caller must free.
+ */
 static char *json_get_string(const char *json, const char *key) {
   char search[256];
   snprintf(search, sizeof(search), "\"%s\"", key);
@@ -151,6 +180,10 @@ static char *json_get_string(const char *json, const char *key) {
 }
 
 
+/** Parses a package registry entry from JSON object.
+ *  @param json JSON string containing package object
+ *  @return Allocated PkgRegistryEntry, or NULL on error. Caller must free with pkg_registry_entry_free.
+ */
 static PkgRegistryEntry *parse_package_object(const char *json) {
   PkgRegistryEntry *entry = calloc(1, sizeof(PkgRegistryEntry));
   if (!entry) return NULL;
@@ -169,6 +202,9 @@ static PkgRegistryEntry *parse_package_object(const char *json) {
 }
 
 
+/** Fetches all available packages from the registry.
+ *  @return Allocated PkgRegistryList, or NULL on error. Caller must free with pkg_registry_list_free.
+ */
 PkgRegistryList *pkg_registry_fetch_all(void) {
   const char *base_url = pkg_registry_get_url();
   char url[512];
@@ -268,6 +304,10 @@ PkgRegistryList *pkg_registry_fetch_all(void) {
 }
 
 
+/** Fetches a specific package from the registry by name.
+ *  @param name Package name
+ *  @return Allocated PkgRegistryEntry, or NULL on error. Caller must free with pkg_registry_entry_free.
+ */
 PkgRegistryEntry *pkg_registry_fetch_package(const char *name) {
   if (!name) return NULL;
 
@@ -307,6 +347,10 @@ PkgRegistryEntry *pkg_registry_fetch_package(const char *name) {
 }
 
 
+/** Searches the registry for packages matching a query.
+ *  @param query Search query string
+ *  @return Allocated PkgRegistryList with matching packages, or NULL on error. Caller must free with pkg_registry_list_free.
+ */
 PkgRegistryList *pkg_registry_search(const char *query) {
   if (!query) return NULL;
 
@@ -393,6 +437,11 @@ PkgRegistryList *pkg_registry_search(const char *query) {
 }
 
 
+/** Downloads a file from a URL to a local path.
+ *  @param url URL to download from
+ *  @param dest_path Destination file path
+ *  @return 0 on success, -1 on error
+ */
 int pkg_registry_download(const char *url, const char *dest_path) {
   if (!url || !dest_path) return -1;
 
@@ -430,6 +479,9 @@ int pkg_registry_download(const char *url, const char *dest_path) {
 }
 
 
+/** Frees a package registry entry.
+ *  @param entry Pointer to entry to free
+ */
 void pkg_registry_entry_free(PkgRegistryEntry *entry) {
   if (!entry) return;
   free(entry->name);
@@ -440,6 +492,9 @@ void pkg_registry_entry_free(PkgRegistryEntry *entry) {
 }
 
 
+/** Frees a package registry list and all its entries.
+ *  @param list Pointer to list to free
+ */
 void pkg_registry_list_free(PkgRegistryList *list) {
   if (!list) return;
   for (int i = 0; i < list->count; i++) {
@@ -453,6 +508,11 @@ void pkg_registry_list_free(PkgRegistryList *list) {
 }
 
 
+/** Compares two semantic version strings.
+ *  @param v1 First version string (e.g., "1.2.3")
+ *  @param v2 Second version string
+ *  @return -1 if v1 < v2, 0 if equal, 1 if v1 > v2
+ */
 int pkg_version_compare(const char *v1, const char *v2) {
   if (!v1 && !v2) return 0;
   if (!v1) return -1;
