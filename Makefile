@@ -72,24 +72,9 @@ BUILTIN_SRCS := $(SRC_DIR)/jshell/builtins/cmd_jobs.c \
 				$(SRC_DIR)/jshell/builtins/cmd_http_get.c \
 				$(SRC_DIR)/jshell/builtins/cmd_http_post.c
 
-EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/ls/cmd_ls.c \
-					 $(SRC_DIR)/apps/stat/cmd_stat.c \
-					 $(SRC_DIR)/apps/cat/cmd_cat.c \
-					 $(SRC_DIR)/apps/head/cmd_head.c \
-					 $(SRC_DIR)/apps/tail/cmd_tail.c \
-					 $(SRC_DIR)/apps/cp/cmd_cp.c \
-					 $(SRC_DIR)/apps/mv/cmd_mv.c \
-					 $(SRC_DIR)/apps/rm/cmd_rm.c \
-					 $(SRC_DIR)/apps/mkdir/cmd_mkdir.c \
-					 $(SRC_DIR)/apps/rmdir/cmd_rmdir.c \
-					 $(SRC_DIR)/apps/touch/cmd_touch.c \
-					 $(SRC_DIR)/apps/rg/cmd_rg.c \
-					 $(SRC_DIR)/apps/echo/cmd_echo.c \
-					 $(SRC_DIR)/apps/sleep/cmd_sleep.c \
-					 $(SRC_DIR)/apps/date/cmd_date.c \
-					 $(SRC_DIR)/apps/less/cmd_less.c \
-					 $(SRC_DIR)/apps/vi/cmd_vi.c \
-					 $(SRC_DIR)/apps/pkg/cmd_pkg.c \
+# Only pkg command is linked into jshell. Other external commands (ls, cat, etc.)
+# are built as standalone binaries and registered dynamically via pkg install.
+EXTERNAL_CMD_SRCS := $(SRC_DIR)/apps/pkg/cmd_pkg.c \
 					 $(SRC_DIR)/apps/pkg/pkg_utils.c \
 					 $(SRC_DIR)/apps/pkg/pkg_db.c \
 					 $(SRC_DIR)/apps/pkg/pkg_json.c \

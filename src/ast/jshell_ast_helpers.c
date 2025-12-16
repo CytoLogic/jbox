@@ -16,6 +16,7 @@
 #include "jshell/jshell_path.h"
 #include "jshell/jshell_thread_exec.h"
 #include "jshell/jshell_signals.h"
+#include "jshell/jshell_pkg_loader.h"
 #include "utils/jbox_utils.h"
 #include "jshell/jshell.h"
 #include "jshell/jshell_job_control.h"
@@ -612,6 +613,16 @@ int jshell_exec_job(JShellExecJob* job) {
          job->exec_job_type,
          job->jshell_cmd_vector_ptr->cmd_count);
 
+  // Check if the first command is "pkg" (for refreshing packages after)
+  int is_pkg_cmd = 0;
+  if (job->jshell_cmd_vector_ptr->cmd_count > 0) {
+    JShellCmdParams* first_cmd =
+      &job->jshell_cmd_vector_ptr->jshell_cmd_params_ptr[0];
+    if (first_cmd->argc > 0 && first_cmd->argv[0] != NULL) {
+      is_pkg_cmd = (strcmp(first_cmd->argv[0], "pkg") == 0);
+    }
+  }
+
   int result;
   if (job->jshell_cmd_vector_ptr->cmd_count == 1) {
     result = jshell_exec_single_cmd(job);
@@ -620,6 +631,13 @@ int jshell_exec_job(JShellExecJob* job) {
   }
 
   jshell_set_last_exit_status(result);
+
+  // If pkg command was run, refresh package registrations
+  // This handles install/remove commands that modify the package database
+  if (is_pkg_cmd && job->exec_job_type != BG_JOB) {
+    DPRINT("Refreshing package commands after pkg execution");
+    jshell_reload_packages();
+  }
 
   if (result != 0) {
     DPRINT("Command execution failed with status %d", result);
