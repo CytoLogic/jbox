@@ -1,5 +1,7 @@
 # jbox
 
+![jbox](City_Box.png)
+
 A custom UNIX shell implementation with CLI tools designed for AI agent (MCP) integration. jbox provides a complete shell environment with built-in commands, external applications, a package manager, FTP server/client, and AI assistance features.
 
 ## Features
